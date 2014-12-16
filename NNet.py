@@ -1,8 +1,58 @@
 from math import *
 verbosity = 1
 from random import *
-import pygame
+import numpy as np
 import sys
+
+class population:
+    def __init__(self, trainingSet, creatureList):
+        self.tSet = trainingSet
+        self.cList = creatureList
+        self.outputList=[]
+        self.fitnessList= []
+        self.creatureCount = len(creatureList)
+        self.inputCount = creatureList[0].inputCount
+        self.neuronCount = creatureList[0].neuronCount
+        self.outputCount = creatureList[0].outputCount
+        self.tCount = len(trainingSet)
+        self.masterOutputList = []
+        self.sigmas = []
+        self.targets = []
+        for r in range(self.outputCount):
+            self.sigmas.append(1.0)
+            self.targets.append([])
+            for t in range (len (tSet)):
+                self.targets[-1].append(tSet[i][1][outputCount-r])
+    def myGauss(mu,sig,val):
+        a=1/(sig*(sqrt(2*pi)))
+        return a*exp(-((val-mu)**2)/(2*sig**2))
+    
+    def calculateFitnessOfCreature(outputList):
+        self.masterOutputList.append(outputList)
+        perCreatFitnesses=[]
+        Avs = []
+        for o in range(self.outputCount):
+            perCreatFitnesses.append([])
+            for t in range (len (self.tSet)):
+                perCreatFitnesses[-1].append(self.myGauss(self.targets[o][t],self.sigma[o],outputList[t][o]))
+            Avs.append(sum(perCreatFitnesses[-1])/len(perCreatFitnesses[-1]))
+        fitness = sum(Avs)/len(Avs)
+        return fitness
+
+    def updateSigma():
+        #for each output
+            #build a histogram of output
+        for r in range(self.outputCount):
+            self.sigmas[r] = np.std(np.array(self.masterOutputList[:][:][r]))
+        self.masterOutputList=[]   
+        
+        '''for n in range len creatureList
+        temp = []
+        for each creature temp.append creature.output[n]
+        self.fitnessList[n] = np.gauss(self.outputList[n][:][])'''
+        #Calculate fitness for each creature for each output
+        #For each training set, for each output, for each creature, calculate sigma per output
+        #Of all creatures per training set
 
 class Creature:
     def __init__(self , neuronCount, inputCount, outputCount):
@@ -158,7 +208,7 @@ def generateStartingPopulation(creatureCount, neuronCount, inputCount, outputCou
 #trainingSet[i][j][k] ##Let's call this a "Static Training Set"
 # i: training set number
 # j: input/output as 0/1
-# k: input neuron # / output neuron #
+# k: input neuron # "or" output neuron #
 #
 #NOTE: We can technically add another dimension called cycles, l to catch dynamic input/output relationships
 #Lets call this type a "Dynamic Training Set" and we wont use it yet
@@ -177,6 +227,7 @@ def generateTrainingSet(creature, noOfSets):
             #what should the outputs be? Must have at least one
             if outputIndex == 0: #first output
                 temp2.append(float(bool(temp1[0])^bool(temp1[1])))#<---xor for inputs 0 and 1
+            
         trainingSet.append([temp1,temp2])
     return trainingSet
 
@@ -195,20 +246,6 @@ def fitnessFxn (creature):
     fitness = ( difference / creature.outputCount )
     return fitness
 
-#PRUNE:
-#removes creatures that perform below average
-def prune(population, cycles):
-    avgHealth = 0
-    for creature in population:
-
-        creature.health = fitness(creature, targetOuts, cycles)
-        avgHealth += creature.health
-    avgHealth /= len( population )
-    for creature in population:
-        if (creature.health > avgHealth):
-            population.remove(creature)
-    return population
-
 #REPOPULATE:
 #population is the population of creatures
 #creatureCount is the number of creatures to repopulate to
@@ -218,26 +255,44 @@ def repopulate(population, creatureCount):
           mother = choice( p )
           father = choice( p )
           if not (mother == father):
-            population.append( mate( mother , father ) )
+            child=mate( mother , father )
+            mutateCreature(child)
+            population.append( child )
      return population
+
+def mutateCreature (c):
+        for n in c.neuronList:
+            if (random() <= chanceOfMutation):
+                n.threshold *= amountOfMutation * random()
+        for s in c.synapseList:
+            if (random() <= chanceOfMutation):
+                s.a *= amountOfMutation * random()
+            if (random() <= chanceOfMutation):
+                s.b *= amountOfMutation * random()
+            if (random() <= chanceOfMutation):
+                s.c *= amountOfMutation * random()
+            if (random() <= chanceOfMutation):
+                s.d *= amountOfMutation * random()
+    return creature
+
 
 #MUTATE POPULATION
 #chanceOfMutation from 0.0 to 1.0
 #ammountOfMutation is randomized between 0.0 and itself
-def mutatePopulation (population, chanceOfMutation, ammountOfMutation):
+def mutatePopulation (population, chanceOfMutation, amountOfMutation):
      for c in population:
           for n in c.neuronList:
                 if (random() <= chanceOfMutation):
-                    n.threshold *= ammountOfMutation * random()
+                    n.threshold *= amountOfMutation * random()
           for s in c.synapseList:
                 if (random() <= chanceOfMutation):
-                    s.a *= ammountOfMutation * random()
+                    s.a *= amountOfMutation * random()
                 if (random() <= chanceOfMutation):
-                    s.b *= ammountOfMutation * random()
+                    s.b *= amountOfMutation * random()
                 if (random() <= chanceOfMutation):
-                    s.c *= ammountOfMutation * random()
+                    s.c *= amountOfMutation * random()
                 if (random() <= chanceOfMutation):
-                    s.d *= ammountOfMutation * random()
+                    s.d *= amountOfMutation * random()
      return population
 
 '''OVER-ARCHING CONCEPT:
@@ -258,17 +313,34 @@ i. generate a random population
     5. apply a tiny mutation to all creatures
     6. repeat with step 1
 '''
-TRAINING_SET_SIZE = 1
+TRAINING_SET_SIZE = 10
 CYCLES_PER_RUN = 10
-C = Creature(6,2,1)
-trainingSet = generateTrainingSet(C,TRAINING_SET_SIZE)
-for S in range ( TRAINING_SET_SIZE ):
-    totalDifference=0
-    C.setInputs(trainingSet[S][0])
-    C.setTargets(trainingSet[S][1])
-    C.run(CYCLES_PER_RUN)
-    totalDifference += fitnessFxn(C)
-C.setFitness(totalDifference/TRAINING_SET_SIZE)
+chanceOfMutation = .01
+amountOfMutation = .1
+Creepy = Creature(6,2,1)
+ceatureList.append(Creepy)
+trainingSet = generateTrainingSet(Creepy,TRAINING_SET_SIZE)
+P = population (trainingSet, creatureList)
+
+for G in range (generations):
+    P.fitnessList=[]
+    for C in creatureList:
+        OutList=[]
+        for T in trainingSet:
+            OutList.append([])
+            
+            C.setInputs(T[0])
+            
+            C.run(CYCLES_PER_RUN)
+            for outNeuron in C.neuronList[:-C.outputCount]:
+                OutList[-1].append(outNeuron.outbox)
+            
+        C.setFitness = P.calculateFitnessOfCreature(OutList)
+        P.fitnessList.append(C.fitness)
+    P.updateFitness()
+    creatureList = P.naturalSelection() #inludes prune and repopulate
+
+#C.setFitness(totalDifference/TRAINING_SET_SIZE)
 print "Expected output", C.targets
 print "Output",C.neuronList[-C.outputCount].outbox
 print "fitness =",C.fitness
