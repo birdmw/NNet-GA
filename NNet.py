@@ -1,58 +1,104 @@
 from math import *
-verbosity = 1
 from random import *
-import numpy as np
-import sys
+from copy import *
 
-class population:
-    def __init__(self, trainingSet, creatureList):
-        self.tSet = trainingSet
-        self.cList = creatureList
-        self.outputList=[]
-        self.fitnessList= []
-        self.creatureCount = len(creatureList)
-        self.inputCount = creatureList[0].inputCount
-        self.neuronCount = creatureList[0].neuronCount
-        self.outputCount = creatureList[0].outputCount
-        self.tCount = len(trainingSet)
-        self.masterOutputList = []
-        self.sigmas = []
-        self.targets = []
-        for r in range(self.outputCount):
-            self.sigmas.append(1.0)
-            self.targets.append([])
-            for t in range (len (tSet)):
-                self.targets[-1].append(tSet[i][1][outputCount-r])
-    def myGauss(mu,sig,val):
-        a=1/(sig*(sqrt(2*pi)))
-        return a*exp(-((val-mu)**2)/(2*sig**2))
-    
-    def calculateFitnessOfCreature(outputList):
-        self.masterOutputList.append(outputList)
-        perCreatFitnesses=[]
-        Avs = []
-        for o in range(self.outputCount):
-            perCreatFitnesses.append([])
-            for t in range (len (self.tSet)):
-                perCreatFitnesses[-1].append(self.myGauss(self.targets[o][t],self.sigma[o],outputList[t][o]))
-            Avs.append(sum(perCreatFitnesses[-1])/len(perCreatFitnesses[-1]))
-        fitness = sum(Avs)/len(Avs)
-        return fitness
+class Population:
+    def __init__(self, CREATURE_COUNT, NEURON_COUNT, INPUT_COUNT, OUTPUT_COUNT ):
+        self.creatureList = []
+        self.creatureCount = CREATURE_COUNT
+        self.neuronCount = NEURON_COUNT
+        self.inputCount = INPUT_COUNT
+        self.outputCount = OUTPUT_COUNT
+        self.sigmaCreature = Creature( NEURON_COUNT, INPUT_COUNT, OUTPUT_COUNT )
+        self.avgWinningCreature = Creature( NEURON_COUNT, INPUT_COUNT, OUTPUT_COUNT  )
+        self.avgLosingCreature = Creature( NEURON_COUNT, INPUT_COUNT, OUTPUT_COUNT  )
+        self.trainingCreature = Creature( NEURON_COUNT, INPUT_COUNT, OUTPUT_COUNT  )
+        self.synapseCount = len ( self.avgWinningCreature.synapseList )
+        self.populate()
 
-    def updateSigma():
-        #for each output
-            #build a histogram of output
-        for r in range(self.outputCount):
-            self.sigmas[r] = np.std(np.array(self.masterOutputList[:][:][r]))
-        self.masterOutputList=[]   
-        
-        '''for n in range len creatureList
-        temp = []
-        for each creature temp.append creature.output[n]
-        self.fitnessList[n] = np.gauss(self.outputList[n][:][])'''
-        #Calculate fitness for each creature for each output
-        #For each training set, for each output, for each creature, calculate sigma per output
-        #Of all creatures per training set
+    def populate( self ):
+         while (len(self.creatureList) < 2):
+              self.creatureList.append(Creature(self.neuronCount,self.inputCount,self.outputCount))
+         while (len(self.creatureList) < self.creatureCount):
+              mother = choice( self.creatureList )
+              father = choice( self.creatureList )
+              if not (mother == father):
+                child = mate( mother , father )
+                self.creatureList.append( child )
+         self.mutate()
+
+    def mutate( self ):
+        for creature in self.creatureList:
+            for n in range( len ( creature.neuronList ) ):
+                creature.neuronList[n].threshold = gauss( creature.neuronList[n].threshold , self.sigmaCreature.neuronList[n].threshold)
+            for s in range ( len ( creature.synapseList ) ):
+                creature.synapseList[s].a = gauss( creature.synapseList[s].a , self.sigmaCreature.synapseList[s].a )
+                creature.synapseList[s].b = gauss( creature.synapseList[s].b , self.sigmaCreature.synapseList[s].b )
+                creature.synapseList[s].c = gauss( creature.synapseList[s].c , self.sigmaCreature.synapseList[s].c )
+                creature.synapseList[s].d = gauss( creature.synapseList[s].d , self.sigmaCreature.synapseList[s].d )
+
+    def setTrainingCreature( self ):
+        for i in self.trainingCreature.input:
+            i.inbox = float(bool(getrandbits(1)))##random bool
+        for o in self.trainingCreature.output:
+            o.outbox = float(bool(self.trainingCreature.input[0])^bool(self.trainingCreature.input[1]))##<---xor for inputs 0 and 1
+
+    def compete( self, CYCLES_PER_RUN ):
+        for creature in self.creatureList:
+            creature.run(self, CYCLES_PER_RUN)
+
+    def resolve( self ):
+        sumFitness = 0.0
+        for creature in self.creatureList:
+            sumFitness += creature.fitness
+        averageFitness = sumFitness / self.creatureCount
+        winningCreatures = []
+        losingCreatures = []
+        for creature in self.creatureList:
+            if (creature.fitness >= averageFitness):
+                winningCreatures.append(creature)
+            else:
+                losingCreatures.append(creature)
+
+        for i in range ( self.neuronCount ):
+            self.avgWinningCreature.neuronList[i].threshold = sum( w.neuronList[i].threshold for w in winningCreatures) / self.neuronCount
+
+        for i in range ( self.synapseCount ):
+            self.avgWinningCreature.synapseList[i].a = sum( w.synapseList[i].a for w in winningCreatures ) / self.synapseCount
+            self.avgWinningCreature.synapseList[i].b = sum( w.synapseList[i].b for w in winningCreatures ) / self.synapseCount
+            self.avgWinningCreature.synapseList[i].c = sum( w.synapseList[i].c for w in winningCreatures ) / self.synapseCount
+            self.avgWinningCreature.synapseList[i].d = sum( w.synapseList[i].d for w in winningCreatures ) / self.synapseCount
+
+        for i in range ( self.neuronCount ):
+            self.avgLosingCreature.neuronList[i].threshold = sum( l.neuronList[i].threshold for l in losingCreatures ) / self.neuronCount
+
+        for i in range ( self.synapseCount ):
+            self.avgLosingCreature.synapseList[i].a = sum( l.synapseList[i].a for l in losingCreatures ) / self.synapseCount
+            self.avgLosingCreature.synapseList[i].b = sum( l.synapseList[i].b for l in losingCreatures ) / self.synapseCount
+            self.avgLosingCreature.synapseList[i].c = sum( l.synapseList[i].c for l in losingCreatures ) / self.synapseCount
+            self.avgLosingCreature.synapseList[i].d = sum( l.synapseList[i].d for l in losingCreatures ) / self.synapseCount
+
+        for i in range ( self.neuronCount ):
+            self.sigmaCreature.neuronList[i].threshold = abs( self.avgWinningCreature.neuronList[i].threshold - self.avgLosingCreature.neuronList[i].threshold  )
+
+        for i in range ( self.synapseCount ):
+            self.sigmaCreature.synapseList[i].a = abs( self.avgWinningCreature.synapseList[i].a - self.avgLosingCreature.synapseList[i].a  )
+            self.sigmaCreature.synapseList[i].b = abs( self.avgWinningCreature.synapseList[i].b - self.avgLosingCreature.synapseList[i].b  )
+            self.sigmaCreature.synapseList[i].c = abs( self.avgWinningCreature.synapseList[i].c - self.avgLosingCreature.synapseList[i].c  )
+            self.sigmaCreature.synapseList[i].d = abs( self.avgWinningCreature.synapseList[i].d - self.avgLosingCreature.synapseList[i].d  )
+
+        for creature in self.creatureList:
+            if (creature.fitness < averageFitness):
+                self.creatureList.remove(creature)              
+
+    def zeroCreature( self, creature ):
+        for neuron in creature.neuronList:
+            neuron.threshold = 0.0
+        for synapse in creature.synapseList:
+            synapse.a = 0.0
+            synapse.b = 0.0
+            synapse.c = 0.0
+            synapse.d = 0.0
 
 class Creature:
     def __init__(self , neuronCount, inputCount, outputCount):
@@ -61,102 +107,63 @@ class Creature:
         self.outputCount = outputCount
         self.neuronList  = []
         self.synapseList = []
-        self.outputList  = [] #contains values
+        self.error = 1.0
         self.fitness = 0.0
-##        generalA = random() / self.neuronCount
-##        generalB = random() / (2*pi) / self.neuronCount
-##        generalC = random() * pi / self.neuronCount
-##        generalD = random() / self.neuronCount
-##        generalThreshold = random()
+        self.input = []
+        self.output = []
 
-
-
-        #temporary input method
-        self.inputValues = []
-        for i in range(self.inputCount):
-            self.inputValues.append(random())
-        if verbosity == 1:
-            print 'Inputs:',self.inputValues
-
-        for n in range(neuronCount):
+        for n in range(self.neuronCount):
             self.neuronList.append(Neuron(random()))
 
-            if n < inputCount:
-                self.neuronList[n].inbox = self.inputValues[n]
+        for i in range (self.inputCount):
+            self.input.append(self.neuronList[i])
 
-        if verbosity == 1:
-            print 'number of neurons:',len(self.neuronList)
+        for o in range (self.outputCount):
+            index = self.neuronCount - self.outputCount + o
+            self.output.append(self.neuronList[index])
 
         for n1 in self.neuronList:
             for n2 in self.neuronList:
                 self.synapseList.append(Synapse(n1, n2, random() / self.neuronCount, random() / (2*pi) / self.neuronCount, random() * pi / self.neuronCount, random() / self.neuronCount))
 
-        if verbosity == 1:
-            print 'number of synapses:', len(self.synapseList)
 
-    def run(self,cycles):
-        for i in range(cycles):
-            #Should inject values into the INPUTS at this point
-            ''' for each input neuron set the value to the desired values'''
-            #for inputsInd in range(self.inputCount):
-            #   neuronList[inputsInd].inbox = 0.1
-            #run each neuron GOOD TIME TO APPLY PARALLEL PROCESSING
-            outputs = []
-            if verbosity:
-                print 'cycle:',i
-            #print self.neuronList[0].inbox
+    def run( self, population, cycles ): #GOOD TIME TO APPLY PARALLEL PROCESSING
+        for r in range( cycles ):
+            for i in range ( len ( self.input ) ):
+                self.input[i].inbox = population.trainingCreature.input[i].inbox
             for n in self.neuronList:
-                ind = self.neuronList.index(n)
-                if ind < self.inputCount:
-                   n.inbox = self.inputs[ind] ##<--------------CHANGED THIS TO BBE SELF REFFERENTIAL
                 n.run()
-                if verbosity:
-                    outputs.append(n.outToWorld)
-            if verbosity:
-                self.outputList.append(outputs)
-                #print 'Outputs'
-                #print self.outputList
-            #run each synapse
             for s in self.synapseList:
                 s.run()
-
-    def setInputs(self,inputs):
-        self.inputs = inputs
-
-    def setTargets(self,targets):
-        self.targets = targets
-
-    def setFitness(self, fitness):
-        self.fitness = fitness
-
+        error = 0.0
+        for i in range ( len ( self.output ) ):
+            try:
+                error += abs( self.output[i].outbox - population.trainingCreature.output[i].outbox ) / abs( max ( [ self.output[i].outbox , population.trainingCreature.output[i].outbox ] ) )
+            except:
+                absoluteError = abs( self.output[i].outbox - population.trainingCreature.output[i].outbox )
+                if ( absoluteError<= 1.0 ):
+                    error += absoluteError
+                else:
+                    pass
+        error = error / self.outputCount
+        self.error += ( self.outputCount * self.error + error ) / ( self.outputCount + 1)
+        self.fitness = 1.0 - self.error
 
 class Neuron:
     def __init__(self, threshold):
-        #self.index = index
-        self.type = type
         self.threshold = threshold
         self.inbox = 0.0
         self.value = 0.0
         self.outbox = 0.0
         self.prevOutbox = 0.0
-        self.outToWorld = 0.0
-
 
     def run(self):
-        if verbosity:
-            print round(self.inbox,2),'->',round(self.value,2),'/',round(self.threshold,2),'->',round(self.outbox,2)
-        self.value += self.inbox
-        self.outbox = 0.0
-        if (abs(self.value) >= abs(self.threshold)):
-            self.outbox += self.value
-            self.outToWorld = self.value
-            self.value = 0.0
-
         self.prevOutbox = self.outbox
+        self.value += self.inbox
+        if (self.value >= self.threshold):
+            self.outbox += self.value
+            self.value = 0.0
         self.inbox = 0.0
-
-    def clearValue():
-        self.value = 0.0
 
 class Synapse:
     def __init__(self, n1, n2, a, b, c, d):
@@ -168,179 +175,36 @@ class Synapse:
         self.n2 = n2
 
     def run(self):
-        out = self.a * sin(self.b * self.n1.outbox + self.c) + self.d * (self.n1.prevOutbox - self.n1.outbox) #NOTE: synapses fire a constant with empty inboxes this way (Dc offsets )
-        self.n2.inbox += out
+        self.n2.inbox += self.a * sin(self.b * self.n1.outbox + self.c) + self.d * (self.n1.prevOutbox - self.n1.outbox)
+        self.n1.outbox = 0.0
 
-def see(creature):
-    for n in creature.neuronList:
-        print n.inbox , n.value , n.outbox
-
-#MATE:
-#hand this function a couple creatures and it will return an offspring of theirs
 def mate (mother, father):
-     child = Creature(mother.neuronCount, mother.inputCount, mother.outputCount)
-     n = child.neuronList
-     m = mother.neuronList
-     f = father.neuronList
+     child = deepcopy( mother )
      for i in range(len(child.neuronList)):
-          n[i].threshold = choice( [m[i].threshold, f[i].threshold] )
-     s = child.synapseList
-     m = mother.synapseList
-     f = father.synapseList
+          if getrandbits(1):
+              child.neuronList[i].threshold = father.neuronList[i].threshold
      for i in range(len(child.synapseList)):
-          s[i].a = choice( [m[i].a, f[i].a] )
-          s[i].b = choice( [m[i].b, f[i].b] )
-          s[i].c = choice( [m[i].c, f[i].c] )
-          s[i].d = choice( [m[i].d, f[i].d] )
+          if getrandbits(1):
+              child.synapseList[i].a = father.synapseList[i].a
+          if getrandbits(1):
+              child.synapseList[i].b = father.synapseList[i].b
+          if getrandbits(1):
+              child.synapseList[i].c = father.synapseList[i].c
+          if getrandbits(1):
+              child.synapseList[i].d = father.synapseList[i].d
      return child
 
-#GENERATE STARTING POPULATION:
-#used to create an initial randomized population
-def generateStartingPopulation(creatureCount, neuronCount, inputCount, outputCount):
-    population = list()
-    for c in range (creatureCount):
-        population.append(Creature(neuronCount, inputCount, outputCount))
-    return population
 
-#GENERATE TRAINING SET:
-#accepts an example creature and the number of sets to create
-#trainingSet = generateTrainingSet(CreepyCreature)
-#trainingSet[i][j][k] ##Let's call this a "Static Training Set"
-# i: training set number
-# j: input/output as 0/1
-# k: input neuron # "or" output neuron #
-#
-#NOTE: We can technically add another dimension called cycles, l to catch dynamic input/output relationships
-#Lets call this type a "Dynamic Training Set" and we wont use it yet
+if __name__ == "__main__":
+    CREATURE_COUNT = 3
+    NEURON_COUNT= 10
+    INPUT_COUNT = 2
+    OUTPUT_COUNT = 2
+    CYCLES_PER_RUN = 10
 
-def generateTrainingSet(creature, noOfSets):
-    trainingSet = []
+    population = Population ( CREATURE_COUNT, NEURON_COUNT, INPUT_COUNT, OUTPUT_COUNT )
 
-    tempCombined = []
-    for Set in range(noOfSets):
-        temp1 = []
-        temp2 = []
-        for inputIndex in range(creature.inputCount):
-            #What should the inputs be?
-            temp1.append(float(bool(getrandbits(1))))#<---random bools
-        for outputIndex in range(creature.outputCount):
-            #what should the outputs be? Must have at least one
-            if outputIndex == 0: #first output
-                temp2.append(float(bool(temp1[0])^bool(temp1[1])))#<---xor for inputs 0 and 1
-            
-        trainingSet.append([temp1,temp2])
-    return trainingSet
-
-#FITNESS FUNCTION:
-#returns a creatures fitness
-#0.0 is a perfect fit
-def fitnessFxn (creature):
-    difference = 0
-    if not(len(creature.targets)==creature.outputCount):
-        print "output neuron list is not the same length as target list length"
-    else:
-        for i in range ( creature.outputCount ):
-            output = creature.neuronList[ creature.neuronCount - creature.outputCount + i ].outbox
-            target = creature.targets[i]
-            difference = abs(target-output)
-    fitness = ( difference / creature.outputCount )
-    return fitness
-
-#REPOPULATE:
-#population is the population of creatures
-#creatureCount is the number of creatures to repopulate to
-def repopulate(population, creatureCount):
-     p = list(population)
-     while (len(population) < creatureCount):
-          mother = choice( p )
-          father = choice( p )
-          if not (mother == father):
-            child=mate( mother , father )
-            mutateCreature(child)
-            population.append( child )
-     return population
-
-def mutateCreature (c):
-        for n in c.neuronList:
-            if (random() <= chanceOfMutation):
-                n.threshold *= amountOfMutation * random()
-        for s in c.synapseList:
-            if (random() <= chanceOfMutation):
-                s.a *= amountOfMutation * random()
-            if (random() <= chanceOfMutation):
-                s.b *= amountOfMutation * random()
-            if (random() <= chanceOfMutation):
-                s.c *= amountOfMutation * random()
-            if (random() <= chanceOfMutation):
-                s.d *= amountOfMutation * random()
-    return creature
-
-
-#MUTATE POPULATION
-#chanceOfMutation from 0.0 to 1.0
-#ammountOfMutation is randomized between 0.0 and itself
-def mutatePopulation (population, chanceOfMutation, amountOfMutation):
-     for c in population:
-          for n in c.neuronList:
-                if (random() <= chanceOfMutation):
-                    n.threshold *= amountOfMutation * random()
-          for s in c.synapseList:
-                if (random() <= chanceOfMutation):
-                    s.a *= amountOfMutation * random()
-                if (random() <= chanceOfMutation):
-                    s.b *= amountOfMutation * random()
-                if (random() <= chanceOfMutation):
-                    s.c *= amountOfMutation * random()
-                if (random() <= chanceOfMutation):
-                    s.d *= amountOfMutation * random()
-     return population
-
-'''OVER-ARCHING CONCEPT:
-i. generate a random population
-  -For G generations:
-    1. generate a training set of inputs and targets
-    2. train population:
-        I.  Set the inputs and outputs with creature.setInputs and creature.setTargets (each creature could technically have different targets herbavore / carnivore / plant / virus etc.)
-        II. for each creature
-            a. .run it for some number of cycles of interest
-                i.  NOTE: we are assuming the trainingSet is of the Static variety for now
-            b. at the end of the cycles use the fitness function to set the creature.fitness
-                i.  NOTE: we could check at every cycle, and we would need to with a Dynamic Training Set
-                ii. NOTE: You must always re-test old creatures (a rolling average would imply a "wisdom" honoring system)
-                    -There is also an effect where older creatures have values (pun intended?)
-    3. prune the unfit creatures
-    4. repopulate a desired population size
-    5. apply a tiny mutation to all creatures
-    6. repeat with step 1
-'''
-TRAINING_SET_SIZE = 10
-CYCLES_PER_RUN = 10
-chanceOfMutation = .01
-amountOfMutation = .1
-Creepy = Creature(6,2,1)
-ceatureList.append(Creepy)
-trainingSet = generateTrainingSet(Creepy,TRAINING_SET_SIZE)
-P = population (trainingSet, creatureList)
-
-for G in range (generations):
-    P.fitnessList=[]
-    for C in creatureList:
-        OutList=[]
-        for T in trainingSet:
-            OutList.append([])
-            
-            C.setInputs(T[0])
-            
-            C.run(CYCLES_PER_RUN)
-            for outNeuron in C.neuronList[:-C.outputCount]:
-                OutList[-1].append(outNeuron.outbox)
-            
-        C.setFitness = P.calculateFitnessOfCreature(OutList)
-        P.fitnessList.append(C.fitness)
-    P.updateFitness()
-    creatureList = P.naturalSelection() #inludes prune and repopulate
-
-#C.setFitness(totalDifference/TRAINING_SET_SIZE)
-print "Expected output", C.targets
-print "Output",C.neuronList[-C.outputCount].outbox
-print "fitness =",C.fitness
+    population.populate()
+    population.setTrainingCreature()
+    population.compete( CYCLES_PER_RUN )
+    population.resolve()
