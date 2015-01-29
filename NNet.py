@@ -13,7 +13,7 @@ class Population:
         self.avgWinningCreature = Creature( NEURON_COUNT, INPUT_COUNT, OUTPUT_COUNT  )
         self.avgLosingCreature = Creature( NEURON_COUNT, INPUT_COUNT, OUTPUT_COUNT  )
         self.trainingCreature = Creature( NEURON_COUNT, INPUT_COUNT, OUTPUT_COUNT  )
-        self.synapseCount = len ( self.avgWinningCreature.synapseList )
+        self.synapseCount = len ( self.sigmaCreature.synapseList )
         self.populate()
 
     def populate( self ):
@@ -40,8 +40,9 @@ class Population:
     def setTrainingCreature( self ):
         for i in self.trainingCreature.input:
             i.inbox = float(bool(getrandbits(1)))##random bool
+
         for o in self.trainingCreature.output:
-            o.outbox = float(bool(self.trainingCreature.input[0])^bool(self.trainingCreature.input[1]))##<---xor for inputs 0 and 1
+            o.outbox = float(bool(self.trainingCreature.input[0].inbox)^bool(self.trainingCreature.input[1].inbox))##<---xor for inputs 0 and 1
 
     def compete( self, CYCLES_PER_RUN ):
         for creature in self.creatureList:
@@ -56,11 +57,9 @@ class Population:
         losingCreatures = []
         for creature in self.creatureList:
             if (creature.fitness >= averageFitness):
-                print "pass ",creature.fitness
                 winningCreatures.append(creature)
             else:
                 losingCreatures.append(creature)
-                print "fail ",creature.fitness
 
         self.avgWinningCreature.fitness = sum( w.fitness for w in winningCreatures) / self.creatureCount
         for i in range ( self.neuronCount ):
@@ -115,11 +114,11 @@ class Creature:
         for o in range (self.outputCount):
             index = self.neuronCount - self.outputCount + o
             self.output.append(self.neuronList[index])
-
+        print len(self.neuronList)
         for n1 in self.neuronList:
             for n2 in self.neuronList:
-                self.synapseList.append(Synapse(n1, n2, random() / self.neuronCount, random() / (2*pi) / self.neuronCount, random() * pi / self.neuronCount, random() / self.neuronCount))
 
+                self.synapseList.append(Synapse(n1, n2, random() / self.neuronCount, random() / (2*pi) / self.neuronCount, random() * pi / self.neuronCount, random() / self.neuronCount))
 
     def run( self, population, cycles ): #GOOD TIME TO APPLY PARALLEL PROCESSING
         for r in range( cycles ):
@@ -130,15 +129,17 @@ class Creature:
             for s in self.synapseList:
                 s.run()
         error = 0.0
-        for i in range ( len ( self.output ) ):
+        for i in range ( self.outputCount ):
             try:
-                error += abs( self.output[i].outbox - population.trainingCreature.output[i].outbox ) / abs( population.trainingCreature.output[i].outbox ) 
+                error += abs( self.output[i].outbox - population.trainingCreature.output[i].outbox ) / (abs( population.trainingCreature.output[i].outbox )+abs(self.output[i].outbox))
+    
             except:
                 absoluteError = abs( self.output[i].outbox - population.trainingCreature.output[i].outbox )
                 if ( absoluteError<= 1.0 ):
                     error += absoluteError
                 else:
                     pass
+
         error = error / self.outputCount
         self.error += ( self.outputCount * self.error + error ) / ( self.outputCount + 1)
         self.fitness = 1.0 - self.error
@@ -188,19 +189,45 @@ def mate (mother, father):
               child.synapseList[i].d = father.synapseList[i].d
      return child
 
+def printPopulation ( population ):
+    for creature in population.creatureList:
+        print "=Population ", len ( population.creatureList )
+        print "  ",population.creatureCount," creatureCount, ", population.neuronCount, " neuronCount, ",population.inputCount," inputCount, ", population.outputCount, " outputCount, ",population.synapseCount," synapseCount"
+        print "==SIGMA CREATURE:"
+        printCreature ( population.sigmaCreature )
+        print "==AVERAGE WINNING CREATURE:"
+        printCreature ( population.avgWinningCreature )
+        print "==AVERAGE LOSING CREATURE:"
+        printCreature ( population.avgLosingCreature )
+        print "==TRAINING CREATURE:"
+        printCreature ( population.trainingCreature )
+
+def printCreature ( creature ):
+        print "  -Creature"
+        print "  --",creature.neuronCount," neurons, ",creature.inputCount," inputs, ",creature.outputCount," outputs, ", len(creature.synapseList)," synapses."
+        print "  --",creature.error," error, ",creature.fitness," fitness "
+
+def printSynapse ( synapse ):
+        print "    ~Synapse"
+        print "    ~~ a = ",synapse.a,", b = ",synapse.b,", c = ",synapse.c,", d = ",synapse.d
+
+def printNeuron ( neuron ):
+        print "    *Neuron"
+        print "    ** inbox = ",neuron.inbox,", value = ", neuron.value, ", outbox = ", neuron.outbox, ", threshold = ",neuron.threshold,", prevOutbox = ", neuron.prevOutbox
 
 if __name__ == "__main__":
-    CREATURE_COUNT = 20
-    NEURON_COUNT= 6
+    CREATURE_COUNT = 2
+    NEURON_COUNT= 4
     INPUT_COUNT = 2
     OUTPUT_COUNT = 2
-    CYCLES_PER_RUN = 4
-    GENERATIONS = 10
+    CYCLES_PER_RUN = 2
+    GENERATIONS = 1
 
     population = Population ( CREATURE_COUNT, NEURON_COUNT, INPUT_COUNT, OUTPUT_COUNT )
 
     for G in range (GENERATIONS):
-        print "GENERATION: ",G
+        print "|||||||||||||||||||||||| GENERATION: ",G,"||||||||||||||||||||||||"
+        printPopulation (population)
         population.populate()
         population.setTrainingCreature()
         population.compete( CYCLES_PER_RUN )
