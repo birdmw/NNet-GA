@@ -56,10 +56,13 @@ class Population:
         losingCreatures = []
         for creature in self.creatureList:
             if (creature.fitness >= averageFitness):
+                print "pass ",creature.fitness
                 winningCreatures.append(creature)
             else:
                 losingCreatures.append(creature)
+                print "fail ",creature.fitness
 
+        self.avgWinningCreature.fitness = sum( w.fitness for w in winningCreatures) / self.creatureCount
         for i in range ( self.neuronCount ):
             self.avgWinningCreature.neuronList[i].threshold = sum( w.neuronList[i].threshold for w in winningCreatures) / self.neuronCount
 
@@ -90,15 +93,6 @@ class Population:
         for creature in self.creatureList:
             if (creature.fitness < averageFitness):
                 self.creatureList.remove(creature)              
-
-    def zeroCreature( self, creature ):
-        for neuron in creature.neuronList:
-            neuron.threshold = 0.0
-        for synapse in creature.synapseList:
-            synapse.a = 0.0
-            synapse.b = 0.0
-            synapse.c = 0.0
-            synapse.d = 0.0
 
 class Creature:
     def __init__(self , neuronCount, inputCount, outputCount):
@@ -138,7 +132,7 @@ class Creature:
         error = 0.0
         for i in range ( len ( self.output ) ):
             try:
-                error += abs( self.output[i].outbox - population.trainingCreature.output[i].outbox ) / abs( max ( [ self.output[i].outbox , population.trainingCreature.output[i].outbox ] ) )
+                error += abs( self.output[i].outbox - population.trainingCreature.output[i].outbox ) / abs( population.trainingCreature.output[i].outbox ) 
             except:
                 absoluteError = abs( self.output[i].outbox - population.trainingCreature.output[i].outbox )
                 if ( absoluteError<= 1.0 ):
@@ -196,15 +190,19 @@ def mate (mother, father):
 
 
 if __name__ == "__main__":
-    CREATURE_COUNT = 3
-    NEURON_COUNT= 10
+    CREATURE_COUNT = 20
+    NEURON_COUNT= 6
     INPUT_COUNT = 2
     OUTPUT_COUNT = 2
-    CYCLES_PER_RUN = 10
+    CYCLES_PER_RUN = 4
+    GENERATIONS = 10
 
     population = Population ( CREATURE_COUNT, NEURON_COUNT, INPUT_COUNT, OUTPUT_COUNT )
 
-    population.populate()
-    population.setTrainingCreature()
-    population.compete( CYCLES_PER_RUN )
-    population.resolve()
+    for G in range (GENERATIONS):
+        print "GENERATION: ",G
+        population.populate()
+        population.setTrainingCreature()
+        population.compete( CYCLES_PER_RUN )
+        population.resolve()
+
