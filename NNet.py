@@ -2,6 +2,8 @@ from math import *
 from random import *
 from copy import *
 
+import matplotlib.pyplot as plt
+
 class Population:
     def __init__(self, CREATURE_COUNT, NEURON_COUNT, INPUT_COUNT, OUTPUT_COUNT ):
         self.creatureList = []
@@ -46,63 +48,24 @@ class Population:
                 creature.synapseList[s].d = gauss( creature.synapseList[s].d , self.sigmaCreature.synapseList[s].d )
 
     def setTrainingCreature( self ):
+        '''
         for i in self.trainingCreature.input:
             i.inbox = float(bool(getrandbits(1)))##random bool
 
         for o in self.trainingCreature.output:
             o.outbox = float(bool(self.trainingCreature.input[0].inbox)^bool(self.trainingCreature.input[1].inbox))##<---xor for inputs 0 and 1
+        '''
+        for i in self.trainingCreature.input:
+            i.inbox = 0.5
+        for o in self.trainingCreature.output:
+            o.inbox = 0.5
+
 
     def compete( self, CYCLES_PER_RUN ):
         for creature in self.creatureList:
             creature.run(self, CYCLES_PER_RUN)
 
     def resolve( self ):
-        sumFitness = 0.0
-        for creature in self.creatureList:
-            sumFitness += creature.fitness
-        averageFitness = sumFitness / self.creatureCount
-        winningCreatures = []
-        losingCreatures = []
-        for creature in self.creatureList:
-            printCreature ( creature )
-            if (creature.fitness >= averageFitness):
-                winningCreatures.append(creature)
-            else:
-                print "here"
-                losingCreatures.append(creature)
-
-        self.avgWinningCreature.fitness = sum( w.fitness for w in winningCreatures) / len(winningCreatures)
-        for i in range ( self.neuronCount ):
-            self.avgWinningCreature.neuronList[i].threshold = sum( w.neuronList[i].threshold for w in winningCreatures) / len(winningCreatures)
-            self.avgWinningCreature.neuronList[i].outbox = sum( w.neuronList[i].outbox for w in winningCreatures) / len(winningCreatures)
-
-            self.avgLosingCreature.neuronList[i].threshold = sum( l.neuronList[i].threshold for l in losingCreatures ) / len(losingCreatures)
-
-        for i in range ( self.synapseCount ):
-            self.avgWinningCreature.synapseList[i].a = sum( w.synapseList[i].a for w in winningCreatures ) / len(winningCreatures)
-            self.avgWinningCreature.synapseList[i].b = sum( w.synapseList[i].b for w in winningCreatures ) / len(winningCreatures)
-            self.avgWinningCreature.synapseList[i].c = sum( w.synapseList[i].c for w in winningCreatures ) / len(winningCreatures)
-            self.avgWinningCreature.synapseList[i].d = sum( w.synapseList[i].d for w in winningCreatures ) / len(winningCreatures)
-
-            self.avgLosingCreature.synapseList[i].a = sum( l.synapseList[i].a for l in losingCreatures ) / len(losingCreatures)
-            self.avgLosingCreature.synapseList[i].b = sum( l.synapseList[i].b for l in losingCreatures ) / len(losingCreatures)
-            self.avgLosingCreature.synapseList[i].c = sum( l.synapseList[i].c for l in losingCreatures ) / len(losingCreatures)
-            self.avgLosingCreature.synapseList[i].d = sum( l.synapseList[i].d for l in losingCreatures ) / len(losingCreatures)
-
-        for i in range ( self.neuronCount ):
-            self.sigmaCreature.neuronList[i].threshold = self.avgWinningCreature.neuronList[i].threshold - self.avgLosingCreature.neuronList[i].threshold
-            if i > (self.neuronCount-self.outputCount):
-                print self.trainingCreature.neuronList[i].outbox
-                print self.avgWinningCreature.neuronList[i].outbox
-                self.deltaCreature.neuronList[i].outbox = self.trainingCreature.neuronList[i].outbox - self.avgWinningCreature.neuronList[i].outbox
-
-        for i in range ( self.synapseCount ):
-            self.sigmaCreature.synapseList[i].a = self.avgWinningCreature.synapseList[i].a - self.avgLosingCreature.synapseList[i].a
-            self.sigmaCreature.synapseList[i].b = self.avgWinningCreature.synapseList[i].b - self.avgLosingCreature.synapseList[i].b
-            self.sigmaCreature.synapseList[i].c = self.avgWinningCreature.synapseList[i].c - self.avgLosingCreature.synapseList[i].c
-            self.sigmaCreature.synapseList[i].d = self.avgWinningCreature.synapseList[i].d - self.avgLosingCreature.synapseList[i].d
-
-
 
         #Calculate fitness
 
@@ -113,10 +76,53 @@ class Population:
                 mu = self.trainingCreature.output[out].outbox
                 sigma = self.deltaCreature.output[out].outbox
                 fitSum += myGauss(mu,sigma,creature.output[out].outbox)
-
             creature.fitness = fitSum/self.outputCount
             sumFitness += creature.fitness
             averageFitness = sumFitness / self.creatureCount
+
+        sumFitness = 0.0
+        for creature in self.creatureList:
+            sumFitness += creature.fitness
+        averageFitness = sumFitness / self.creatureCount
+        winningCreatures = []
+        losingCreatures = []
+        for creature in self.creatureList:
+            #printCreature ( creature )
+            if (creature.fitness >= averageFitness):
+                winningCreatures.append(creature)
+            else:
+                losingCreatures.append(creature)
+        if (len ( losingCreatures) != 0 and len(winningCreatures) !=0):
+            print "no losers out of ", len(self.creatureList),'average fit = ',averageFitness
+
+            self.avgWinningCreature.fitness = sum( w.fitness for w in winningCreatures) / len(winningCreatures)
+            for i in range ( self.neuronCount ):
+                self.avgWinningCreature.neuronList[i].threshold = sum( w.neuronList[i].threshold for w in winningCreatures) / len(winningCreatures)
+                self.avgWinningCreature.neuronList[i].outbox = sum( w.neuronList[i].outbox for w in winningCreatures) / len(winningCreatures)
+
+                self.avgLosingCreature.neuronList[i].threshold = sum( l.neuronList[i].threshold for l in losingCreatures ) / len(losingCreatures)
+
+            for i in range ( self.synapseCount ):
+                self.avgWinningCreature.synapseList[i].a = sum( w.synapseList[i].a for w in winningCreatures ) / len(winningCreatures)
+                self.avgWinningCreature.synapseList[i].b = sum( w.synapseList[i].b for w in winningCreatures ) / len(winningCreatures)
+                self.avgWinningCreature.synapseList[i].c = sum( w.synapseList[i].c for w in winningCreatures ) / len(winningCreatures)
+                self.avgWinningCreature.synapseList[i].d = sum( w.synapseList[i].d for w in winningCreatures ) / len(winningCreatures)
+
+                self.avgLosingCreature.synapseList[i].a = sum( l.synapseList[i].a for l in losingCreatures ) / len(losingCreatures)
+                self.avgLosingCreature.synapseList[i].b = sum( l.synapseList[i].b for l in losingCreatures ) / len(losingCreatures)
+                self.avgLosingCreature.synapseList[i].c = sum( l.synapseList[i].c for l in losingCreatures ) / len(losingCreatures)
+                self.avgLosingCreature.synapseList[i].d = sum( l.synapseList[i].d for l in losingCreatures ) / len(losingCreatures)
+
+            for i in range ( self.neuronCount ):
+                self.sigmaCreature.neuronList[i].threshold = self.avgWinningCreature.neuronList[i].threshold - self.avgLosingCreature.neuronList[i].threshold
+                if i > (self.neuronCount-self.outputCount):
+                    self.deltaCreature.neuronList[i].outbox = self.trainingCreature.neuronList[i].outbox - self.avgWinningCreature.neuronList[i].outbox
+
+            for i in range ( self.synapseCount ):
+                self.sigmaCreature.synapseList[i].a = self.avgWinningCreature.synapseList[i].a - self.avgLosingCreature.synapseList[i].a
+                self.sigmaCreature.synapseList[i].b = self.avgWinningCreature.synapseList[i].b - self.avgLosingCreature.synapseList[i].b
+                self.sigmaCreature.synapseList[i].c = self.avgWinningCreature.synapseList[i].c - self.avgLosingCreature.synapseList[i].c
+                self.sigmaCreature.synapseList[i].d = self.avgWinningCreature.synapseList[i].d - self.avgLosingCreature.synapseList[i].d
 
         for creature in self.creatureList:
             if (creature.fitness < averageFitness):
@@ -161,13 +167,14 @@ class Creature:
 class Neuron:
     def __init__(self, threshold):
         self.threshold = threshold
-        self.inbox = 0.0
-        self.value = 0.0
-        self.outbox = 0.0
-        self.prevOutbox = 0.0
+        self.inbox = random()
+        self.value = random()
+        self.outbox = random()
+        self.prevOutbox = random()
 
     def run(self):
         self.prevOutbox = self.outbox
+        self.outbox = 0.0
         self.value += self.inbox
         if (self.value >= self.threshold):
             self.outbox += self.value
@@ -185,7 +192,6 @@ class Synapse:
 
     def run(self):
         self.n2.inbox += self.a * sin(self.b * self.n1.outbox + self.c) + self.d * (self.n1.prevOutbox - self.n1.outbox)
-        self.n1.outbox = 0.0
 
 def mate (mother, father):
      child = deepcopy( mother )
@@ -230,31 +236,47 @@ def printNeuron ( neuron ):
         print "    ** inbox = ",neuron.inbox,", value = ", neuron.value, ", outbox = ", neuron.outbox, ", threshold = ",neuron.threshold,", prevOutbox = ", neuron.prevOutbox
 
 def myGauss(mu,sig,val):
-    sig = abs(sig)
-    if sig ==0:
-        print 'SIGMA IS ', sig
-        sig = 0.0001
+    #print 'mu = ',mu,'sig=',sig,'val=',val
+    if mu == val:
+        return 1
+    else:
+        sig = abs(sig)
+        if sig ==0:
+            #print 'SIGMA IS ', sig
+            sig = 0.0001
 
-    a=1/(sig*(sqrt(2*pi)))
-    return a*exp(-((val-mu)**2)/(2*sig**2))
+        a=1/(sig*(sqrt(2*pi)))
+        exponent =((val-mu)**2)/(2*sig**2)
+        g =  a*exp(-((val-mu)**2)/(2*sig**2))
+        return g
 
 if __name__ == "__main__":
-    CREATURE_COUNT = 2
-    NEURON_COUNT= 4
+    CREATURE_COUNT = 20
+    NEURON_COUNT= 5
     INPUT_COUNT = 2
     OUTPUT_COUNT = 2
-    CYCLES_PER_RUN = 2
+    CYCLES_PER_RUN = 100
     GENERATIONS = 10
+    naughtyWinnersFits=[]
+    for i in range(50):
+        naughtyWinnersFits.append([])
+        population = Population ( CREATURE_COUNT, NEURON_COUNT, INPUT_COUNT, OUTPUT_COUNT )
+        for G in range (GENERATIONS):
+            print "|||||||||||||||||||||||| GENERATION: ",G,"||||||||||||||||||||||||"
+            #printPopulation (population)
+            printCreature(population.creatureList[0])
+            #printSynapse(population.creatureList[0].synapseList[0])
+            naughtyWinnersFits[-1].append(population.avgWinningCreature.fitness)
+            population.populate()
+            population.setTrainingCreature()
+            population.compete( CYCLES_PER_RUN )
+            population.resolve()
 
-    population = Population ( CREATURE_COUNT, NEURON_COUNT, INPUT_COUNT, OUTPUT_COUNT )
 
-    for G in range (GENERATIONS):
-        print "|||||||||||||||||||||||| GENERATION: ",G,"||||||||||||||||||||||||"
-        #printPopulation (population)
-        #printCreature(population.creatureList[0])
-        #printSynapse(population.creatureList[0].synapseList[0])
-        population.populate()
-        population.setTrainingCreature()
-        population.compete( CYCLES_PER_RUN )
-        population.resolve()
+    for i in range(len(naughtyWinnersFits)):
+        name = 'Round: '+str(i)
+        plt.figure(name, figsize=(8,8))
+        plt.plot(naughtyWinnersFits[i])
+
+    plt.show()
 
