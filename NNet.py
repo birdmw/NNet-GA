@@ -52,8 +52,9 @@ class Population:
         for i in self.trainingCreature.input:
             i.inbox = float(bool(getrandbits(1)))##random bool
 
-        for o in self.trainingCreature.output:
-            o.outbox = float(bool(self.trainingCreature.input[0].inbox)^bool(self.trainingCreature.input[1].inbox))##<---xor for inputs 0 and 1
+        self.trainingCreature.output[0].outbox = float(bool(self.trainingCreature.input[0].inbox)^bool(self.trainingCreature.input[1].inbox))##<---xor for inputs 0 and 1
+        self.trainingCreature.output[1].outbox = not(float(bool(self.trainingCreature.input[0].inbox) and  bool(self.trainingCreature.input[1].inbox)))##<---xor for inputs 0 and 1
+
         '''
         for i in self.trainingCreature.input:
             i.inbox = 0.5
@@ -96,7 +97,7 @@ class Population:
                 losingCreatures.append(creature)
         if (len ( losingCreatures) != 0 and len(winningCreatures) !=0):
 
-            print "no losers out of ", len(self.creatureList),'average fit = ',averageFitness
+            print len(losingCreatures)," losers, ",len(winningCreatures)," winners, ","average fit = ",averageFitness
 
             self.avgWinningCreature.fitness = sum( w.fitness for w in winningCreatures) / len(winningCreatures)
             for i in range ( self.neuronCount ):
@@ -237,18 +238,28 @@ def printNeuron ( neuron ):
         print "    *Neuron"
         print "    ** inbox = ",neuron.inbox,", value = ", neuron.value, ", outbox = ", neuron.outbox, ", threshold = ",neuron.threshold,", prevOutbox = ", neuron.prevOutbox
 
+def printPopOuts ( population ):
+        print "::::::Training Outputs::::::::::::::"
+        c = population.trainingCreature
+        for o in c.output:
+            printNeuron ( o )
+        print "::::::Population Outputs::::::::::::"
+        for c in population.creatureList:
+            for o in c.output:
+                printNeuron ( o )
+
 def myGauss(mu,sig,x):
         return np.exp(-np.power(x - mu, 2.) / 2 * np.power(sig, 2.))
 
 if __name__ == "__main__":
-    CREATURE_COUNT = 100
-    NEURON_COUNT= 7
+    CREATURE_COUNT = 10
+    NEURON_COUNT= 20
     INPUT_COUNT = 2
     OUTPUT_COUNT = 2
-    CYCLES_PER_RUN = 100
-    GENERATIONS = 20
+    CYCLES_PER_RUN = 5
+    GENERATIONS = 200
     naughtyWinnersFits=[]
-    for i in range(10):
+    for i in range(1):
         naughtyWinnersFits.append([])
         population = Population ( CREATURE_COUNT, NEURON_COUNT, INPUT_COUNT, OUTPUT_COUNT )
         for G in range (GENERATIONS):
