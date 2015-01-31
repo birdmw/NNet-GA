@@ -1,7 +1,7 @@
 from math import *
 from random import *
 from copy import *
-
+import numpy as np
 import matplotlib.pyplot as plt
 
 class Population:
@@ -27,9 +27,9 @@ class Population:
 
 
     def populate( self ):
-         while (len(self.creatureList) < 2):
+         while (len(self.creatureList) < 2): #If there is only one left, create a random new creature.
               self.creatureList.append(Creature(self.neuronCount,self.inputCount,self.outputCount))
-         while (len(self.creatureList) < self.creatureCount):
+         while (len(self.creatureList) < self.creatureCount): #Breed until full population
               mother = choice( self.creatureList )
               father = choice( self.creatureList )
               if not (mother == father):
@@ -48,7 +48,7 @@ class Population:
                 creature.synapseList[s].d = gauss( creature.synapseList[s].d , self.sigmaCreature.synapseList[s].d )
 
     def setTrainingCreature( self ):
-        '''
+
         for i in self.trainingCreature.input:
             i.inbox = float(bool(getrandbits(1)))##random bool
 
@@ -60,9 +60,11 @@ class Population:
         for o in self.trainingCreature.output:
             o.inbox = 0.5
 
-
+        '''
     def compete( self, CYCLES_PER_RUN ):
         for creature in self.creatureList:
+            #Create new thread HERE. Please god...
+
             creature.run(self, CYCLES_PER_RUN)
 
     def resolve( self ):
@@ -78,7 +80,7 @@ class Population:
                 fitSum += myGauss(mu,sigma,creature.output[out].outbox)
             creature.fitness = fitSum/self.outputCount
             sumFitness += creature.fitness
-            averageFitness = sumFitness / self.creatureCount
+        averageFitness = sumFitness / self.creatureCount
 
         sumFitness = 0.0
         for creature in self.creatureList:
@@ -93,6 +95,7 @@ class Population:
             else:
                 losingCreatures.append(creature)
         if (len ( losingCreatures) != 0 and len(winningCreatures) !=0):
+
             print "no losers out of ", len(self.creatureList),'average fit = ',averageFitness
 
             self.avgWinningCreature.fitness = sum( w.fitness for w in winningCreatures) / len(winningCreatures)
@@ -115,8 +118,7 @@ class Population:
 
             for i in range ( self.neuronCount ):
                 self.sigmaCreature.neuronList[i].threshold = self.avgWinningCreature.neuronList[i].threshold - self.avgLosingCreature.neuronList[i].threshold
-                if i > (self.neuronCount-self.outputCount):
-                    self.deltaCreature.neuronList[i].outbox = self.trainingCreature.neuronList[i].outbox - self.avgWinningCreature.neuronList[i].outbox
+                self.deltaCreature.neuronList[i].outbox = self.trainingCreature.neuronList[i].outbox - self.avgWinningCreature.neuronList[i].outbox
 
             for i in range ( self.synapseCount ):
                 self.sigmaCreature.synapseList[i].a = self.avgWinningCreature.synapseList[i].a - self.avgLosingCreature.synapseList[i].a
@@ -235,36 +237,24 @@ def printNeuron ( neuron ):
         print "    *Neuron"
         print "    ** inbox = ",neuron.inbox,", value = ", neuron.value, ", outbox = ", neuron.outbox, ", threshold = ",neuron.threshold,", prevOutbox = ", neuron.prevOutbox
 
-def myGauss(mu,sig,val):
-    #print 'mu = ',mu,'sig=',sig,'val=',val
-    if mu == val:
-        return 1
-    else:
-        sig = abs(sig)
-        if sig ==0:
-            #print 'SIGMA IS ', sig
-            sig = 0.0001
-
-        a=1/(sig*(sqrt(2*pi)))
-        exponent =((val-mu)**2)/(2*sig**2)
-        g =  a*exp(-((val-mu)**2)/(2*sig**2))
-        return g
+def myGauss(mu,sig,x):
+        return np.exp(-np.power(x - mu, 2.) / 2 * np.power(sig, 2.))
 
 if __name__ == "__main__":
-    CREATURE_COUNT = 20
-    NEURON_COUNT= 5
+    CREATURE_COUNT = 100
+    NEURON_COUNT= 7
     INPUT_COUNT = 2
     OUTPUT_COUNT = 2
     CYCLES_PER_RUN = 100
-    GENERATIONS = 10
+    GENERATIONS = 20
     naughtyWinnersFits=[]
-    for i in range(50):
+    for i in range(10):
         naughtyWinnersFits.append([])
         population = Population ( CREATURE_COUNT, NEURON_COUNT, INPUT_COUNT, OUTPUT_COUNT )
         for G in range (GENERATIONS):
             print "|||||||||||||||||||||||| GENERATION: ",G,"||||||||||||||||||||||||"
             #printPopulation (population)
-            printCreature(population.creatureList[0])
+            #printCreature(population.creatureList[0])
             #printSynapse(population.creatureList[0].synapseList[0])
             naughtyWinnersFits[-1].append(population.avgWinningCreature.fitness)
             population.populate()
