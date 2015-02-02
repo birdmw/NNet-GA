@@ -62,10 +62,12 @@ class Population:
         self.trainingCreature.output[1].outbox = float(not(bool(self.trainingCreature.input[0].inbox) and  bool(self.trainingCreature.input[1].inbox)))##<---xor for inputs 0 and 1
 
         '''
+        count=0.0
         for i in self.trainingCreature.input:
             i.inbox = 0.5
         for o in self.trainingCreature.output:
-            o.outbox = 0.5
+            o.outbox = count
+            count += 1
 
 
     def compete( self, CYCLES_PER_RUN ):
@@ -117,7 +119,7 @@ class Population:
             self.avgWinningCreature.neuronList[i].outbox = sum( w.neuronList[i].outbox for w in winningCreatures) / len(winningCreatures)
             self.avgLosingCreature.neuronList[i].threshold = sum( l.neuronList[i].threshold for l in losingCreatures ) / len(losingCreatures)
             self.avgLosingCreature.neuronList[i].outbox = sum( l.neuronList[i].threshold for l in losingCreatures ) / len(losingCreatures)
-            self.sigmaCreature.neuronList[i].threshold = (self.avgWinningCreature.neuronList[i].threshold - self.avgLosingCreature.neuronList[i].threshold)/10
+            self.sigmaCreature.neuronList[i].threshold = (self.avgWinningCreature.neuronList[i].threshold - self.avgLosingCreature.neuronList[i].threshold)/7
             self.deltaCreature.neuronList[i].outbox = (self.trainingCreature.neuronList[i].outbox - self.avgWinningCreature.neuronList[i].outbox)*1
         for i in range ( self.synapseCount ):
             self.avgWinningCreature.synapseList[i].a = sum( w.synapseList[i].a for w in winningCreatures ) / len(winningCreatures)
@@ -130,10 +132,10 @@ class Population:
             self.avgLosingCreature.synapseList[i].c = sum( l.synapseList[i].c for l in losingCreatures ) / len(losingCreatures)
             self.avgLosingCreature.synapseList[i].d = sum( l.synapseList[i].d for l in losingCreatures ) / len(losingCreatures)
 
-            self.sigmaCreature.synapseList[i].a = (self.avgWinningCreature.synapseList[i].a - self.avgLosingCreature.synapseList[i].a)/10
-            self.sigmaCreature.synapseList[i].b = (self.avgWinningCreature.synapseList[i].b - self.avgLosingCreature.synapseList[i].b)/10
-            self.sigmaCreature.synapseList[i].c = (self.avgWinningCreature.synapseList[i].c - self.avgLosingCreature.synapseList[i].c)/10
-            self.sigmaCreature.synapseList[i].d = (self.avgWinningCreature.synapseList[i].d - self.avgLosingCreature.synapseList[i].d)/10
+            self.sigmaCreature.synapseList[i].a = (self.avgWinningCreature.synapseList[i].a - self.avgLosingCreature.synapseList[i].a)/7
+            self.sigmaCreature.synapseList[i].b = (self.avgWinningCreature.synapseList[i].b - self.avgLosingCreature.synapseList[i].b)/7
+            self.sigmaCreature.synapseList[i].c = (self.avgWinningCreature.synapseList[i].c - self.avgLosingCreature.synapseList[i].c)/7
+            self.sigmaCreature.synapseList[i].d = (self.avgWinningCreature.synapseList[i].d - self.avgLosingCreature.synapseList[i].d)/7
 
         for creature in self.creatureList:
             if (creature.fitness < averageFitness):
@@ -203,6 +205,8 @@ class Synapse:
 
     def run(self):
         self.n2.inbox += self.a * sin(self.b * self.n1.outbox + self.c) + self.d * (self.n1.prevOutbox - self.n1.outbox)
+        #except:
+        #    self.n2.inbox = 0.0
 
 def mate (mother, father):
      child = deepcopy( mother )
@@ -265,12 +269,12 @@ def printPopOuts ( population ):
                 printNeuron ( o )
 
 if __name__ == "__main__":
-    CREATURE_COUNT = 20
-    NEURON_COUNT= 7
-    INPUT_COUNT = 2
-    OUTPUT_COUNT = 2
-    CYCLES_PER_RUN = 10
-    GENERATIONS = 500
+    CREATURE_COUNT = 100
+    NEURON_COUNT= 4
+    INPUT_COUNT = 1
+    OUTPUT_COUNT = 3
+    CYCLES_PER_RUN = NEURON_COUNT + 1
+    GENERATIONS = 80
     WinnersFits=[]
     for i in range(1):
         WinnersFits.append([])
@@ -291,9 +295,15 @@ if __name__ == "__main__":
         plt.figure(name, figsize=(8,8))
         plt.plot(WinnersFits[i])
         plt.axis([0, GENERATIONS, 0, 2])
-    print population.trainingCreature.output[0].outbox
-    print population.trainingCreature.output[1].outbox
-    print population.creatureList[0].output[0].outbox
-    print population.creatureList[0].output[1].outbox
+
+    print "training outs:"
+    for o in range (len(population.trainingCreature.output)):
+        print population.trainingCreature.output[o].outbox
+    print "best creature outs:"
+    for c in range (len(population.creatureList[0].output)):
+        print population.creatureList[0].output[c].outbox
+    print
+
+
     plt.show()
 
