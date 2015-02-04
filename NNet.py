@@ -60,7 +60,7 @@ class Population:
 
         self.trainingCreature.output[0].outbox = float(bool(self.trainingCreature.input[0].inbox)^bool(self.trainingCreature.input[1].inbox))##<---xor for inputs 0 and 1
         self.trainingCreature.output[1].outbox = float(not(bool(self.trainingCreature.input[0].inbox) and  bool(self.trainingCreature.input[1].inbox)))##<---xor for inputs 0 and 1
-        '''
+
         '''
         count=0.0
         for i in self.trainingCreature.input:
@@ -68,6 +68,7 @@ class Population:
         for o in self.trainingCreature.output:
             o.outbox = count
             count += 1
+<<<<<<< HEAD
         '''
          # 4 output: xor, and, or, nand of 2 input
         for i in self.trainingCreature.input:
@@ -77,6 +78,8 @@ class Population:
         self.trainingCreature.output[1].outbox = float(bool(self.trainingCreature.input[0].inbox)&bool(self.trainingCreature.input[1].inbox))##<---and for inputs 0 and 1
         #self.trainingCreature.output[2].outbox = float(bool(self.trainingCreature.input[0].inbox) or bool(self.trainingCreature.input[1].inbox))##<---xor for inputs 0 and 1
         #self.trainingCreature.output[3].outbox = float(~(bool(self.trainingCreature.input[0].inbox) & bool(self.trainingCreature.input[1].inbox)))##<---xor for inputs 0 and 1
+=======
+>>>>>>> parent of a640fac... Output plotting
 
 
     def compete( self, CYCLES_PER_RUN ):
@@ -285,6 +288,7 @@ def printPopOuts ( population ):
                 printNeuron ( o )
 
 if __name__ == "__main__":
+<<<<<<< HEAD
     CREATURE_COUNT = 10
     NEURON_COUNT= 10
     INPUT_COUNT = 2
@@ -293,19 +297,24 @@ if __name__ == "__main__":
     GENERATIONS = 100000
 
     GLOBAL_MUTATE_DIVISOR = 10
+=======
+    CREATURE_COUNT = 100
+    NEURON_COUNT= 4
+    INPUT_COUNT = 1
+    OUTPUT_COUNT = 3
+    CYCLES_PER_RUN = NEURON_COUNT + 1
+    GENERATIONS = 80
+>>>>>>> parent of a640fac... Output plotting
     WinnersFits=[]
-    bestOutputs=[]
-    trainOutputs=[]
-
     for i in range(1):
         WinnersFits.append([])
-        bestOutputs.append([])
-        trainOutputs.append([])
         population = Population ( CREATURE_COUNT, NEURON_COUNT, INPUT_COUNT, OUTPUT_COUNT )
+<<<<<<< HEAD
         MUTATE_DIVISOR = 1.0
+=======
+>>>>>>> parent of a640fac... Output plotting
         for G in range (GENERATIONS):
-            print "|||||||||||||||||||||||| GENERATION: ",G,"||||||||||||||||||||||||"
-
+            #print "|||||||||||||||||||||||| GENERATION: ",G,"||||||||||||||||||||||||"
             #printPopulation (population)
             #printCreature(population.creatureList[0])
             #printSynapse(population.creatureList[0].synapseList[0])
@@ -315,13 +324,8 @@ if __name__ == "__main__":
             population.compete( CYCLES_PER_RUN )
             population.resolve()
 
-            bestOutputs[-1].append([])
-            trainOutputs[-1].append([])
-            for c in range (len(population.creatureList[0].output)):
-                bestOutputs[-1][-1].append(population.creatureList[0].output[c].outbox)
-                trainOutputs[-1][-1].append(population.trainingCreature.output[c].outbox)
-
     for i in range(len(WinnersFits)):
+<<<<<<< HEAD
 ##        name = 'Round: '+str(i)
 ##        plt.figure(name, figsize=(8,8))
 ##        plt.plot(WinnersFits[i])
@@ -345,6 +349,12 @@ if __name__ == "__main__":
             plt.plot(trainPlotter[o])
             plt.plot(bestPlotter[o])
             #plt.plot(diffPlotter[o])
+=======
+        name = 'Round: '+str(i)
+        plt.figure(name, figsize=(8,8))
+        plt.plot(WinnersFits[i])
+        plt.axis([0, GENERATIONS, 0, 2])
+>>>>>>> parent of a640fac... Output plotting
 
     print "training outs:"
     for o in range (len(population.trainingCreature.output)):
