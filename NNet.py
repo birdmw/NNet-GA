@@ -74,37 +74,41 @@ class Population:
             i.inbox = float(bool(getrandbits(1)))##random bool
 
         self.trainingCreature.output[0].outbox = float(bool(self.trainingCreature.input[0].inbox)^bool(self.trainingCreature.input[1].inbox))##<---xor for inputs 0 and 1
-        self.trainingCreature.output[1].outbox = float(bool(self.trainingCreature.input[0].inbox)&bool(self.trainingCreature.input[1].inbox))##<---xor for inputs 0 and 1
-        self.trainingCreature.output[2].outbox = float(bool(self.trainingCreature.input[0].inbox) or bool(self.trainingCreature.input[1].inbox))##<---xor for inputs 0 and 1
-        self.trainingCreature.output[3].outbox = float(~(bool(self.trainingCreature.input[0].inbox) & bool(self.trainingCreature.input[1].inbox)))##<---xor for inputs 0 and 1
+        self.trainingCreature.output[1].outbox = float(bool(self.trainingCreature.input[0].inbox)&bool(self.trainingCreature.input[1].inbox))##<---and for inputs 0 and 1
+        #self.trainingCreature.output[2].outbox = float(bool(self.trainingCreature.input[0].inbox) or bool(self.trainingCreature.input[1].inbox))##<---xor for inputs 0 and 1
+        #self.trainingCreature.output[3].outbox = float(~(bool(self.trainingCreature.input[0].inbox) & bool(self.trainingCreature.input[1].inbox)))##<---xor for inputs 0 and 1
 
 
     def compete( self, CYCLES_PER_RUN ):
         for creature in self.creatureList:
-            creature.run(self, CYCLES_PER_RUN)
+            try:
+                creature.run(self, CYCLES_PER_RUN)
+            except:
+                self.creatureList.remove(creature)
 
     def resolve( self ):
-
+        global GLOBAL_MUTATE_DIVISOR
         #Calculate fitness
 
         sumFitness=0.0
         for creature in self.creatureList:
 
             fitSum = 0.0
-            for out in range(self.outputCount):
+            for out in range( self.outputCount ):
 
                 mu = self.trainingCreature.output[out].outbox
 
                 #sigma = self.sigmaCreature.output[out].outbox
                 sigma = self.deltaCreature.output[out].outbox
-                fitSum += myGauss(mu,sigma,creature.output[out].outbox)# Bug here between sigma and creature.output
+                #fitSum += myGauss(mu,sigma,creature.output[out].outbox)# Bug here between sigma and creature.output
+                fitSum *= myGauss(mu,sigma,creature.output[out].outbox)# Bug here between sigma and creature.output
                 #fitSum += abs(creature.output[out].outbox - self.trainingCreature.output[out].outbox)
 
-            creature.fitness = fitSum/self.outputCount
+            creature.fitness = fitSum/len(creature.output)
 
             sumFitness += creature.fitness
 
-        averageFitness = sumFitness / self.creatureCount
+        averageFitness = sumFitness / len (self.creatureList)
 
         winningCreatures = []
         losingCreatures = []
@@ -128,7 +132,7 @@ class Population:
             self.avgWinningCreature.neuronList[i].outbox = sum( w.neuronList[i].outbox for w in winningCreatures) / len(winningCreatures)
             self.avgLosingCreature.neuronList[i].threshold = sum( l.neuronList[i].threshold for l in losingCreatures ) / len(losingCreatures)
             self.avgLosingCreature.neuronList[i].outbox = sum( l.neuronList[i].threshold for l in losingCreatures ) / len(losingCreatures)
-            self.sigmaCreature.neuronList[i].threshold = (self.avgWinningCreature.neuronList[i].threshold - self.avgLosingCreature.neuronList[i].threshold)/7
+            self.sigmaCreature.neuronList[i].threshold = (self.avgWinningCreature.neuronList[i].threshold - self.avgLosingCreature.neuronList[i].threshold)/GLOBAL_MUTATE_DIVISOR
             self.deltaCreature.neuronList[i].outbox = (self.trainingCreature.neuronList[i].outbox - self.avgWinningCreature.neuronList[i].outbox)*1
         for i in range ( self.synapseCount ):
             self.avgWinningCreature.synapseList[i].a = sum( w.synapseList[i].a for w in winningCreatures ) / len(winningCreatures)
@@ -141,10 +145,10 @@ class Population:
             self.avgLosingCreature.synapseList[i].c = sum( l.synapseList[i].c for l in losingCreatures ) / len(losingCreatures)
             self.avgLosingCreature.synapseList[i].d = sum( l.synapseList[i].d for l in losingCreatures ) / len(losingCreatures)
 
-            self.sigmaCreature.synapseList[i].a = (self.avgWinningCreature.synapseList[i].a - self.avgLosingCreature.synapseList[i].a)/7
-            self.sigmaCreature.synapseList[i].b = (self.avgWinningCreature.synapseList[i].b - self.avgLosingCreature.synapseList[i].b)/7
-            self.sigmaCreature.synapseList[i].c = (self.avgWinningCreature.synapseList[i].c - self.avgLosingCreature.synapseList[i].c)/7
-            self.sigmaCreature.synapseList[i].d = (self.avgWinningCreature.synapseList[i].d - self.avgLosingCreature.synapseList[i].d)/7
+            self.sigmaCreature.synapseList[i].a = (self.avgWinningCreature.synapseList[i].a - self.avgLosingCreature.synapseList[i].a)/GLOBAL_MUTATE_DIVISOR
+            self.sigmaCreature.synapseList[i].b = (self.avgWinningCreature.synapseList[i].b - self.avgLosingCreature.synapseList[i].b)/GLOBAL_MUTATE_DIVISOR
+            self.sigmaCreature.synapseList[i].c = (self.avgWinningCreature.synapseList[i].c - self.avgLosingCreature.synapseList[i].c)/GLOBAL_MUTATE_DIVISOR
+            self.sigmaCreature.synapseList[i].d = (self.avgWinningCreature.synapseList[i].d - self.avgLosingCreature.synapseList[i].d)/GLOBAL_MUTATE_DIVISOR
 
         for creature in self.creatureList:
             if (creature.fitness < averageFitness):
@@ -152,33 +156,31 @@ class Population:
 
 class Creature:
     def __init__(self , neuronCount, inputCount, outputCount):
-        self.neuronCount = neuronCount
-        self.inputCount = inputCount
-        self.outputCount = outputCount
         self.neuronList  = []
         self.synapseList = []
         self.fitness = random()
         self.input = []
         self.output = []
 
-        for n in range(self.neuronCount):
+        for n in range(neuronCount):
             self.neuronList.append(Neuron(random()))
 
-        for i in range (self.inputCount):
+        for i in range (inputCount):
             self.input.append(self.neuronList[i])
 
-        for o in range (self.outputCount):
-            index = self.neuronCount - self.outputCount + o
+        for o in range (outputCount):
+            index = len(self.neuronList) - outputCount + o
             self.output.append(self.neuronList[index])
+
         for n1 in self.neuronList:
             for n2 in self.neuronList:
 
-                self.synapseList.append(Synapse(n1, n2, random() / self.neuronCount, random() / (2*pi) / self.neuronCount, random() * pi / self.neuronCount, random() / self.neuronCount))
+                self.synapseList.append(Synapse(n1, n2, random() / len(self.neuronList), random() / (2*pi) / len(self.neuronList), random() * pi / len(self.neuronList), random() / len(self.neuronList)))
 
     def run( self, population, cycles ):
         for r in range( cycles ):
 
-            for i in range ( self.inputCount ):
+            for i in range ( len(self.input) ):
                 self.input[i].inbox += population.trainingCreature.input[i].inbox
 
             for n in self.neuronList:
@@ -239,7 +241,12 @@ def myGauss(mu,sig,x):
             return 1.0
         else:
             return 0.0
-    return np.exp(-np.power(x - mu, 2.) / (2 * np.power(sig, 2.)))
+    if sig>1e+100 or mu>1e+100 or x>1e+100:
+        return 0.0
+    try:
+        return np.exp(-np.power(x - mu, 2.) / (2 * np.power(sig, 2.)))
+    except:
+        return 0
 
 def printPopulation ( population ):
     print "==SIGMA CREATURE:"
@@ -256,7 +263,7 @@ def printPopulation ( population ):
 
 def printCreature ( creature ):
         print "  -Creature"
-        print "  --",creature.neuronCount," neurons, ",creature.inputCount," inputs, ",creature.outputCount," outputs, ", len(creature.synapseList)," synapses."
+        print "  --",len(creature.neuronList)," neurons, ",len(creature.input)," inputs, ",len(creature.output)," outputs, ", len(creature.synapseList)," synapses."
         print "  --",creature.fitness," fitness "
 
 def printSynapse ( synapse ):
@@ -278,12 +285,14 @@ def printPopOuts ( population ):
                 printNeuron ( o )
 
 if __name__ == "__main__":
-    CREATURE_COUNT = 250
-    NEURON_COUNT= 8
+    CREATURE_COUNT = 10
+    NEURON_COUNT= 10
     INPUT_COUNT = 2
-    OUTPUT_COUNT = 4
+    OUTPUT_COUNT = 2
     CYCLES_PER_RUN = NEURON_COUNT*2
-    GENERATIONS = 220
+    GENERATIONS = 100000
+
+    GLOBAL_MUTATE_DIVISOR = 10
     WinnersFits=[]
     bestOutputs=[]
     trainOutputs=[]
@@ -293,7 +302,7 @@ if __name__ == "__main__":
         bestOutputs.append([])
         trainOutputs.append([])
         population = Population ( CREATURE_COUNT, NEURON_COUNT, INPUT_COUNT, OUTPUT_COUNT )
-
+        MUTATE_DIVISOR = 1.0
         for G in range (GENERATIONS):
             print "|||||||||||||||||||||||| GENERATION: ",G,"||||||||||||||||||||||||"
 
@@ -337,9 +346,6 @@ if __name__ == "__main__":
             plt.plot(bestPlotter[o])
             #plt.plot(diffPlotter[o])
 
-
-
-
     print "training outs:"
     for o in range (len(population.trainingCreature.output)):
         print population.trainingCreature.output[o].outbox
@@ -347,7 +353,5 @@ if __name__ == "__main__":
     for c in range (len(population.creatureList[0].output)):
         print population.creatureList[0].output[c].outbox
     print
-
-
     plt.show()
 
