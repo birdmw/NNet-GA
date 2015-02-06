@@ -109,7 +109,7 @@ class Population:
                     #creature.synapseList[s].d = gauss( creature.synapseList[s].d , .01 )
                 '''
 
-    def setTrainingCreature( self ):
+    def setTrainingCreature( self, inList = None, outList = None ):
         '''
         for i in self.trainingCreature.input:
             i.inbox = float(bool(getrandbits(1)))##random bool
@@ -126,12 +126,16 @@ class Population:
             count += 1
 
         '''
+        '''
          # 6 output, 4 input
         for i in self.trainingCreature.input:
             i.inbox = float(bool(getrandbits(1)))##random bool
 
 ##        self.trainingCreature.input[-2].inbox = randint(-5,5)
 ##        self.trainingCreature.input[-1].inbox = random()
+        '''
+        for i in range(len(inList)):
+            self.trainingCreature.input[i].inbox = inList[i]
         #xor(I0,I1)
         self.trainingCreature.output[0].outbox = float(bool(self.trainingCreature.input[0].inbox)^bool(self.trainingCreature.input[1].inbox))
         #and(I0,I1)
@@ -697,15 +701,15 @@ if __name__ == "__main__":
     CREATURE_COUNT = 100
     INPUT_COUNT = 2
     OUTPUT_COUNT = 3
-    sobolTestPts = 7
+    sobolTestPts = 2
     # next seed = 109
     sobolSeed = 0 #Which sobol point to start from. Remeber, 0 indexed
-    POPS_TO_TEST=40
+    POPS_TO_TEST=30
 
     MAX_VALUE = 10
     #50 Gen, 100 Creat,2In, 3Out, 20 sobol, 1 pops =~ 20 to 50 min. On Chris' laptop. Depending on start/stop values
 
-    FILE_LOCATION =r"C:\Users\chris.nelson\Desktop\NNet\Feb 4"
+    FILE_LOCATION =r"C:\Users\chris.nelson\Desktop\NNet\ExhaustiveTrainingPerGen"
     #Relationships between inputs and outputs for this training set, only used in results file
     outputRelations = [r"In[0]^In[1]",r"In[0]&In[1]",r"In[0](or)In[1]"]
 
@@ -747,16 +751,16 @@ if __name__ == "__main__":
     scribe.writerow(toSobolTest+['Strength'])
     fdata.close()
 
-    ''' Uncomment to force specific test points
+    ''' Uncomment to force specific test points'''
     testPoints=[]
     testPoints.append([10,25,4,1,16])
-    testPoints.append([9,7,1,4,54])
-    testPoints.append([5,8,3,12,71])
-    testPoints.append([8,18,1,8,38])
-    testPoints.append([6,22,2,11,91])
-    testPoints.append([10,6,4,19,35])
+##    testPoints.append([9,7,1,4,54])
+##    testPoints.append([5,8,3,12,71])
+##    testPoints.append([8,18,1,8,38])
+##    testPoints.append([6,22,2,11,91])
+##    testPoints.append([10,6,4,19,35])
     testPoints.append([9,19,4,2,94])
-    '''
+
     print testPoints
     for i in range(sobolTestPts):
         NEURON_COUNT= int(testPoints[i][0])
@@ -804,6 +808,12 @@ if __name__ == "__main__":
             trainOutputs.append([])
             population = Population ( CREATURE_COUNT, NEURON_COUNT, INPUT_COUNT, OUTPUT_COUNT )
 
+
+
+            inList = [[0,0],[0,1],[1,0],[1,1]]
+            outList = [[0,0,0],[1,0,1],[1,0,1],[0,1,1]]
+
+
             for G in range (GENERATIONS):
                 print "|||||||||||||| POINT:",i," EVOLUTION:",p,", GENERATION:",G,"||||||||||||||"
 
@@ -811,8 +821,16 @@ if __name__ == "__main__":
                 #printCreature(population.creatureList[0])
                 #printSynapse(population.creatureList[0].synapseList[0])
                 population.populate()
-                population.setTrainingCreature()
-                population.compete( CYCLES_PER_RUN )
+                testedPoints =[]
+                for trainIndex in range(len(inList)):
+                    tstPt = choice(inList)
+                    if tstPt not in testedPoints:
+                        testedPoints.append(tstPt)
+                        population.setTrainingCreature(tstPt)
+                        population.compete( CYCLES_PER_RUN )
+                    else:
+                        trainIndex -= 1
+
                 population.resolve()
 
                 bestOutputs[-1].append([])
