@@ -1,10 +1,11 @@
 from math import *
 from random import *
 from copy import *
+from pickle import *
+from sobol_lib_NoNumpy import *
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.mlab as mlab
-from sobol_lib_NoNumpy import *
 
 import time
 #from matplotlib.ticker import NullFormatter
@@ -138,7 +139,10 @@ class Population:
         for i in range(len(inList)):
             self.trainingCreature.input[i].inbox = inList[i]
         #xor(I0,I1)
-        self.trainingCreature.output[0].outbox = float(bool(self.trainingCreature.input[0].inbox)^bool(self.trainingCreature.input[1].inbox))
+        #self.trainingCreature.output[0].outbox = float(bool(self.trainingCreature.input[0].inbox)^bool(self.trainingCreature.input[1].inbox))
+
+        #PAM4
+        self.trainingCreature.output[0].outbox = float(self.trainingCreature.input[0].inbox) + 0.5*float(self.trainingCreature.input[1].inbox)
         #and(I0,I1)
         self.trainingCreature.output[1].outbox = float(bool(self.trainingCreature.input[0].inbox)&bool(self.trainingCreature.input[1].inbox))
         #or(I0,I1)
@@ -728,13 +732,11 @@ def createSobolFiles(fileLoc,fileName, gens, creats, inCount, outCount,outputRel
     scribe.writerow([])
     scribe.writerow([])
     fdata.close()
-    print file_name
 
     return file_name
 
 
 def writeSobolFileRow(fname,data):
-    print fname
     fdata = open(fname,'ab')
     scribe= csv.writer(fdata, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
     scribe.writerow(data)
@@ -771,8 +773,7 @@ def createFig_creature_exhaustiveTrainingSpace(population,creature,cycles,inList
         for inp in range(len(inList)):
             creatPlots[-1].append(creatOuts[inp][outp])
             trainPlots[-1].append(trainOuts[inp][outp])
-    print creatPlots
-    print trainPlots
+
     for outp in range(len(creature.output)):
         plt.figure("ID:"+str(ID)+" Output:"+str(outp), figsize=(8,8))
         plt.plot(trainPlots[outp],'b',creatPlots[outp],'r')
@@ -800,6 +801,20 @@ def createFig_DistHistogram(data,divisions,xtitle,ytitle):
     plt.grid(True)
 
 
+def save_creature(creature,fileName):
+    fCreature = open(fileName,'wb')
+    dump(creature,fCreature)
+    fCreature.close()
+
+def load_creature(fileName):
+    fCreature = open(fileName,'r')
+    creat = load(fCreature)
+    fCreature.close()
+    return creat
+
+
+
+
 if __name__ == "__main__":
     '''
 
@@ -818,7 +833,7 @@ if __name__ == "__main__":
 
     FILE_LOCATION =r"C:\Users\chris.nelson\Desktop\NNet\ExhaustiveTrainingPerGen"
     #Relationships between inputs and outputs for this training set, only used in results file
-    outputRelations = [r"In[0]^In[1]",r"In[0]&In[1]",r"In[0](or)In[1]"]
+    outputRelations = [r"In[0]+0.5*In[1]",r"In[0]&In[1]",r"In[0](or)In[1]"]
 
     #Both of these are optional:
     inList = [[0,0],[0,1],[1,0],[1,1]]
