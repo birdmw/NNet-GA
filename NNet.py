@@ -3,6 +3,7 @@ from random import *
 from copy import *
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.mlab as mlab
 from sobol_lib_NoNumpy import *
 
 import time
@@ -152,9 +153,9 @@ class Population:
         # 2 / 3
         self.trainingCreature.output[5].outbox =  float(self.trainingCreature.input[2].inbox)**self.trainingCreature.input[-2].inbox
         '''
-    def compete( self, CYCLES_PER_RUN ):
+    def compete( self, cycles,lessons ):
         for creature in self.creatureList:
-            creature.test(self, LESSONS_PER_TEST,CYCLES_PER_RUN)
+            creature.test(self, lessons,cycles)
 
     def resolve( self ):
 
@@ -623,8 +624,8 @@ def printPopOuts ( population ):
             for o in c.output:
                 printNeuron ( o )
 
-def calculateOverallStrength(bestOutputs,trainOutputs):
-    strength = 0
+def calculateSpeciesFitness_goverG2(bestOutputs,trainOutputs):
+    myfit = 0
     G = len(bestOutputs)
     for g in range(G):
         distance = 0
@@ -632,8 +633,47 @@ def calculateOverallStrength(bestOutputs,trainOutputs):
             distance += abs(trainOutputs[g][o]-bestOutputs[g][o])
         m = g/(float(G)**2)
         #m=1
-        strength+=m*distance
-    return strength
+        myfit+=m*distance
+    return myfit
+
+
+def calculateSpeciesFitness_binaryOER(creatOutputs,trainOutputs,outThreshList):
+    OER = 0 #Output error rate
+    errors = 0
+    ptCnt = 0
+    G = len(creatOutputs)
+    for g in range(G):
+        for o in range(len(creatOutputs[-1])):
+            if (trainOutputs[g][o] < outThreshList[o][0]) and (creatOutputs[g][o] >outThreshList[o][0]) :
+                errors+=1
+            elif (trainOutputs[g][o] > outThreshList[o][1]) and (creatOutputs[g][o] < outThreshList[o][1]) :
+                errors+=1
+
+            ptCnt +=1
+
+    OER = errors/ptCnt
+    return OER
+
+
+
+def testSpeciesFitness_exhaustiveTrainingSpaceDistance(population,inList):
+    '''
+    NOTE: This function will OVERWRITE all creatures fitness and potentially change which creature is 'bestCreature'
+    '''
+    for creature in population.creatureList:        #For each creature
+
+        for inp in inList:                          #Test it against training creature for all combinations of inputs
+            population.setTrainingCreature(inp)
+            creature.run(population, cycles)
+
+            dist = 0
+            for outp in range (len(creature.output)):
+                dist +=  abs(population.trainingCreature.output[outp].outbox - creature.output[outp].outbox)
+
+            creature.fitness = 1-dist/(1+dist) #Will be '1' when dist = 0, and approach '0' when dist = inf
+
+    population.creatureList.sort(key = lambda x: x.fitness, reverse=True)
+
 
 def generateSobolCharacterizationPoints(numDims,numPts,starts,stops,resolution,startSeed = 0):
     dim_num = numDims
@@ -669,74 +709,13 @@ def generateSobolCharacterizationPoints(numDims,numPts,starts,stops,resolution,s
 
     return pts
 
-if __name__ == "__main__":
-    '''
-    Differences from main branch:
-        Fixed bug in selfMutatation() --main branch will always choose to keep NEW mutations
-
-        Sobol characterizations
-            Sobol generator (need file)
-            File saving
-
-        Sigma creature = avgWinners - avgLesserWinners (Losers completely disgarded)
-
-        Evolution strength calculation
-
-        Generational mutation:
-            Don't mutate best. Except during next generation's lessons. (ie, only change if it can be improved.)
-            Removed mutate() from populate()
-                Mutation now performed before re-population (If nothing else, saves half the mutation computations)
-            Percentage of traits mutated = 1-creature.fitness
-            mutate() calls creature.selfMutatation(...)
-
-        Lessonal mutation:
-            mu = same as generational
-            percentage of traits mutated = (1-selfWorth)/SELF_MUT_DIVIDER
-            sigma = ((1-selfWorth)*mu+0.1)/(SELF_MUT_DIVIDER)
-
-        Fitness =  {[(O1+O2+..+On)/n]+(O1*O2*...*On)}/2 = average of average fitness and multiplied fitness
-
-    '''
-    GENERATIONS = 50
-    CREATURE_COUNT = 100
-    INPUT_COUNT = 2
-    OUTPUT_COUNT = 3
-    sobolTestPts = 2
-    # next seed = 109
-    sobolSeed = 0 #Which sobol point to start from. Remeber, 0 indexed
-    POPS_TO_TEST=30
-
-    MAX_VALUE = 10
-    #50 Gen, 100 Creat,2In, 3Out, 20 sobol, 1 pops =~ 20 to 50 min. On Chris' laptop. Depending on start/stop values
-
-    FILE_LOCATION =r"C:\Users\chris.nelson\Desktop\NNet\ExhaustiveTrainingPerGen"
-    #Relationships between inputs and outputs for this training set, only used in results file
-    outputRelations = [r"In[0]^In[1]",r"In[0]&In[1]",r"In[0](or)In[1]"]
-
-    #Parameters controlled by sobol points
-    toSobolTest = ['Neurons','Cycles','Lessons','Lesson Mutation Divider','Gen Mutation Divider']
-
-    #xxx_startStop = [Minimum Value, Maximum Value, Resolution (ie: decimels to the right of 0. Can be negative)]
-    Neurons_startStop = [INPUT_COUNT+OUTPUT_COUNT,INPUT_COUNT+OUTPUT_COUNT+5,0]
-    Cycles_startStop = [Neurons_startStop[0],Neurons_startStop[1]*2.5,0]
-    Lessons_startStop = [1,7,0]
-    LessMutDiv_startStop = [1,20,0]
-    MutDivider_startStop = [5,100,0]
-
-    mins = [Neurons_startStop[0],Cycles_startStop[0],Lessons_startStop[0],LessMutDiv_startStop[0],MutDivider_startStop[0]]
-    maxs = [Neurons_startStop[1],Cycles_startStop[1],Lessons_startStop[1],LessMutDiv_startStop[1],MutDivider_startStop[1]]
-    resolution=[Neurons_startStop[2],Cycles_startStop[2],Lessons_startStop[2],LessMutDiv_startStop[2],MutDivider_startStop[2]]
-
-    #G
-    testPoints = generateSobolCharacterizationPoints(len(toSobolTest),sobolTestPts,mins,maxs,resolution,sobolSeed)
-
-
+def createSobolFiles(fileLoc,fileName, gens, creats, inCount, outCount,outputRelations):
     localtime = time.localtime(time.time())
     Date = str(localtime[0])+'_'+str(localtime[1])+'_'+str(localtime[2])
     Time = str(localtime[3])+'_'+str(localtime[4])
 
 
-    file_name=FILE_LOCATION+'\\SobolCharacterizationOfNNet_'+str(GENERATIONS)+'Gens_'+str(CREATURE_COUNT)+'Creats_'+str(INPUT_COUNT)+'Ins_'+str(OUTPUT_COUNT)+'Outs_'+str(Date)+'_'+str(Time)+'.csv'
+    file_name=fileLoc+'\\'+fileName+'_'+str(Date)+'_'+str(Time)+'.csv'
     fdata = open(file_name,'wb')
     scribe= csv.writer(fdata, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
 
@@ -748,20 +727,138 @@ if __name__ == "__main__":
         scribe.writerow(["Out["+str(o)+"]=",outputRelations[o]])
     scribe.writerow([])
     scribe.writerow([])
-    scribe.writerow(toSobolTest+['Strength'])
     fdata.close()
+    print file_name
+
+    return file_name
+
+
+def writeSobolFileRow(fname,data):
+    print fname
+    fdata = open(fname,'ab')
+    scribe= csv.writer(fdata, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+    scribe.writerow(data)
+    fdata.close()
+    return
+
+def writeSobolFileMultiRows(fname,data):
+    fdata = open(fname,'ab')
+    scribe= csv.writer(fdata, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+    for row in data:
+        scribe.writerow(row)
+    fdata.close()
+    return
+
+def createFig_creature_exhaustiveTrainingSpace(population,creature,cycles,inList,ID = randint(1,100)):
+    creature.run(population, cycles)
+    creatOuts = []
+    trainOuts = []
+    for inp in inList:
+        population.setTrainingCreature(inp)
+        creature.run(population, cycles)
+        creatOuts.append([])
+        trainOuts.append([])
+        for outp in range (len(creature.output)):
+            creatOuts[-1].append(creature.output[outp].outbox)
+            trainOuts[-1].append(population.trainingCreature.output[outp].outbox)
+
+    creatPlots=[]
+    trainPlots=[]
+
+    for outp in range(len(creature.output)):
+        creatPlots.append([])
+        trainPlots.append([])
+        for inp in range(len(inList)):
+            creatPlots[-1].append(creatOuts[inp][outp])
+            trainPlots[-1].append(trainOuts[inp][outp])
+    print creatPlots
+    print trainPlots
+    for outp in range(len(creature.output)):
+        plt.figure("ID:"+str(ID)+" Output:"+str(outp), figsize=(8,8))
+        plt.plot(trainPlots[outp],'b',creatPlots[outp],'r')
+    return
+
+def createFig_DistHistogram(data,divisions,xtitle,ytitle):
+    mu = np.mean(data)
+    sigma = np.std(data)
+    mini = min(data)
+    maxi = max(data)
+
+    plt.figure()
+
+    # the histogram of the data
+    n, bins, patches = plt.hist(data, divisions, normed=1, facecolor='green', alpha=0.85)
+
+    # add a 'best fit' line
+    y = mlab.normpdf( bins, mu, sigma)
+    l = plt.plot(bins, y, 'b--', linewidth=1)
+
+    plt.xlabel(xtitle)
+    plt.ylabel(ytitle)
+    plt.title(r'$\mathrm{Histogram\ of\ IQ:}\ \mu='+str(mu)+',\ \sigma='+str(sigma)+'$')
+    plt.axis([mini, maxi, 0, max(n)*1.2])
+    plt.grid(True)
+
+
+if __name__ == "__main__":
+    '''
+
+    '''
+    GENERATIONS = 10 #50
+    CREATURE_COUNT = 20 #100
+    INPUT_COUNT = 2
+    OUTPUT_COUNT = 3
+    sobolTestPts = 1
+    # next seed = 9
+    sobolSeed = 0 #Which sobol point to start from. Remeber, 0 indexed
+    POPS_TO_TEST=3
+
+    MAX_VALUE = 10
+    #50 Gen, 100 Creat,2In, 3Out, 20 sobol, 1 pops =~ 20 to 50 min. On Chris' laptop. Depending on start/stop values
+
+    FILE_LOCATION =r"C:\Users\chris.nelson\Desktop\NNet\ExhaustiveTrainingPerGen"
+    #Relationships between inputs and outputs for this training set, only used in results file
+    outputRelations = [r"In[0]^In[1]",r"In[0]&In[1]",r"In[0](or)In[1]"]
+
+    #Both of these are optional:
+    inList = [[0,0],[0,1],[1,0],[1,1]]
+    outList = [[0,0,0],[1,0,1],[1,0,1],[0,1,1]]
+    outThreshList = [[0.4,0.6],[0.4,0.6],[0.4,0.6]]
+
+    #Parameters controlled by sobol points
+    toSobolTest = ['Neurons','Cycles','Lessons','Lesson Mutation Divider','Gen Mutation Divider']
+
+    #xxx_startStop = [Minimum Value, Maximum Value, Resolution (ie: decimels to the right of 0. Can be negative)]
+    Neurons_startStop = [INPUT_COUNT+OUTPUT_COUNT+3,INPUT_COUNT+OUTPUT_COUNT+15,0]
+    Cycles_startStop = [Neurons_startStop[0],Neurons_startStop[1]*5,0]
+    Lessons_startStop = [1,7,0]
+    LessMutDiv_startStop = [0.1,50,1]
+    MutDivider_startStop = [5,100,0]
+
+    mins = [Neurons_startStop[0],Cycles_startStop[0],Lessons_startStop[0],LessMutDiv_startStop[0],MutDivider_startStop[0]]
+    maxs = [Neurons_startStop[1],Cycles_startStop[1],Lessons_startStop[1],LessMutDiv_startStop[1],MutDivider_startStop[1]]
+    resolution=[Neurons_startStop[2],Cycles_startStop[2],Lessons_startStop[2],LessMutDiv_startStop[2],MutDivider_startStop[2]]
+
+    #G
+    testPoints = generateSobolCharacterizationPoints(len(toSobolTest),sobolTestPts,mins,maxs,resolution,sobolSeed)
+
+
+    file_name='SobolCharacterizationOfNNet_'+str(GENERATIONS)+'Gens_'+str(CREATURE_COUNT)+'Creats_'+str(INPUT_COUNT)+'Ins_'+str(OUTPUT_COUNT)+'Outs'
+
+
+    charFileName = createSobolFiles(FILE_LOCATION,file_name, GENERATIONS, CREATURE_COUNT, INPUT_COUNT,OUTPUT_COUNT,outputRelations)
+    writeSobolFileRow(charFileName,toSobolTest+['Strength'])
 
     ''' Uncomment to force specific test points'''
-    testPoints=[]
-    testPoints.append([10,25,4,1,16])
-##    testPoints.append([9,7,1,4,54])
-##    testPoints.append([5,8,3,12,71])
-##    testPoints.append([8,18,1,8,38])
-##    testPoints.append([6,22,2,11,91])
-##    testPoints.append([10,6,4,19,35])
-    testPoints.append([9,19,4,2,94])
+##    testPoints=[]
+##    testPoints.append([10,25,4,1,16])
+####    testPoints.append([9,7,1,4,54])
+####    testPoints.append([5,8,3,12,71])
+####    testPoints.append([8,18,1,8,38])
+####    testPoints.append([6,22,2,11,91])
+####    testPoints.append([10,6,4,19,35])
+##    testPoints.append([9,19,4,2,94])
 
-    print testPoints
     for i in range(sobolTestPts):
         NEURON_COUNT= int(testPoints[i][0])
         CYCLES_PER_RUN = int(testPoints[i][1])
@@ -771,7 +868,7 @@ if __name__ == "__main__":
 
         for k in range(len(toSobolTest)):
             if k < 3:
-                print toSobolTest[k],"=",int(testPoints[i][k])
+                print toSobolTest[k],"=",testPoints[i][k]
             else:
                 print toSobolTest[k],"=",testPoints[i][k]
 
@@ -782,37 +879,26 @@ if __name__ == "__main__":
         testStrength=[]
 
         for p in range(POPS_TO_TEST):
-            details_file_name=FILE_LOCATION+'\\SobolGenerationDetails_'+str(GENERATIONS)+'Gens_'+str(CREATURE_COUNT)+'Creats_'+str(INPUT_COUNT)+'Ins_'+str(OUTPUT_COUNT)+'Outs_'+str(p)+"Evol_"+str(NEURON_COUNT)+"N_"+str(CYCLES_PER_RUN)+"Cyc_"+str(LESSONS_PER_TEST)+"L_"+str(LESSON_MUT_DIVIDER)+"LMD_"+str(MUT_DIVISOR)+"GMD_"+(Date)+'_'+str(Time)+'.csv'
-            fdetails = open(details_file_name,'wb')
-            nerdScribe= csv.writer(fdetails, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
-            nerdScribe.writerow(["Sobol Generation Details"])
-            nerdScribe.writerow(["Generations:",GENERATIONS])
-            nerdScribe.writerow(["Creatures:",CREATURE_COUNT])
-            nerdScribe.writerow(["Inputs:",INPUT_COUNT,"Outputs:",OUTPUT_COUNT])
+            details_file_name='SobolGenerationDetails_'+str(GENERATIONS)+'Gens_'+str(CREATURE_COUNT)+'Creats_'+str(INPUT_COUNT)+'Ins_'+str(OUTPUT_COUNT)+'Outs_'+str(p)+"Evol_"+str(NEURON_COUNT)+"N_"+str(CYCLES_PER_RUN)+"Cyc_"+str(LESSONS_PER_TEST)+"L_"+str(LESSON_MUT_DIVIDER)+"LMD_"+str(MUT_DIVISOR)+"GMD"
+            detailsFileName = createSobolFiles(FILE_LOCATION,details_file_name,GENERATIONS, CREATURE_COUNT, INPUT_COUNT,OUTPUT_COUNT,outputRelations)
 
             headers =["Generation","Best Fitness"]
             htemp = []
             for o in range(OUTPUT_COUNT):
-                nerdScribe.writerow(["Out["+str(o)+"]=",outputRelations[o]])
                 headers.append("Best Output "+str(o))
                 htemp.append("Train Output "+str(o))
 
-            nerdScribe.writerow(["Neurons:",NEURON_COUNT,"Cycles:",CYCLES_PER_RUN,"Lessons:",LESSONS_PER_TEST,"Lesson Mut Div:",LESSON_MUT_DIVIDER,"Generation Mut Divr:",MUT_DIVISOR])
-            nerdScribe.writerow([])
-            nerdScribe.writerow([])
-            nerdScribe.writerow(headers+htemp)
-            fdetails.close()
+            toWrite =[]
+            toWrite.append(["Neurons:",NEURON_COUNT,"Cycles:",CYCLES_PER_RUN,"Lessons:",LESSONS_PER_TEST,"Lesson Mut Div:",LESSON_MUT_DIVIDER,"Generation Mut Divr:",MUT_DIVISOR])
+            toWrite.append([])
+            toWrite.append(headers+htemp)
+            writeSobolFileMultiRows(detailsFileName,toWrite)
 
             BestFits.append([])
             bestOutputs.append([])
             trainOutputs.append([])
+
             population = Population ( CREATURE_COUNT, NEURON_COUNT, INPUT_COUNT, OUTPUT_COUNT )
-
-
-
-            inList = [[0,0],[0,1],[1,0],[1,1]]
-            outList = [[0,0,0],[1,0,1],[1,0,1],[0,1,1]]
-
 
             for G in range (GENERATIONS):
                 print "|||||||||||||| POINT:",i," EVOLUTION:",p,", GENERATION:",G,"||||||||||||||"
@@ -820,82 +906,64 @@ if __name__ == "__main__":
                 #printPopulation (population)
                 #printCreature(population.creatureList[0])
                 #printSynapse(population.creatureList[0].synapseList[0])
+
+                if G != 0: #Don't mutate the first round (no need to)
+                    population.mutate()
+
                 population.populate()
+
                 testedPoints =[]
                 for trainIndex in range(len(inList)):
                     tstPt = choice(inList)
                     if tstPt not in testedPoints:
                         testedPoints.append(tstPt)
                         population.setTrainingCreature(tstPt)
-                        population.compete( CYCLES_PER_RUN )
+                        population.compete( CYCLES_PER_RUN , LESSONS_PER_TEST)
+
+                        bestOutputs[-1].append([])
+                        trainOutputs[-1].append([])
+                        BestFits[-1].append([])
+                        for c in range (len(population.creatureList[0].output)):
+
+                            bestOutputs[-1][-1].append(population.creatureList[0].output[c].outbox)
+                            trainOutputs[-1][-1].append(population.trainingCreature.output[c].outbox)
+
+                        BestFits[-1][-1].append(population.creatureList[0].fitness)
+
+
                     else:
                         trainIndex -= 1
 
                 population.resolve()
 
-                bestOutputs[-1].append([])
-                trainOutputs[-1].append([])
-                BestFits[-1].append([])
-                for c in range (len(population.creatureList[0].output)):
-                    bestOutputs[-1][-1].append(population.creatureList[0].output[c].outbox)
-                    trainOutputs[-1][-1].append(population.trainingCreature.output[c].outbox)
-                BestFits[-1][-1].append(population.creatureList[0].fitness)
 
 
-                population.mutate()
+            testStrength.append( calculateSpeciesFitness_goverG2(bestOutputs[-1],trainOutputs[-1]))
+            print 'Final Species Fitness:',testStrength[-1]
 
-##                print "best creature outs:"
-##                for c in range (len(population.creatureList[0].output)):
-##                    out = population.creatureList[0].output[c].outbox
-##                    print out
-##                print "best creature fit:"
-##                print population.creatureList[0].fitness
 
-            testStrength.append( calculateOverallStrength(bestOutputs[-1],trainOutputs[-1]))
-            print 'Final Evolution Strength:',testStrength[-1]
-
-            fdetails = open(details_file_name,'ab')
-            #nerdScribe= csv.writer(fdetails, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
-            nerdScribe= csv.writer(fdetails, delimiter=',', quoting=csv.QUOTE_MINIMAL)
+            toWrite = []
             for G in range(GENERATIONS):
-                nerdScribe.writerow([G]+BestFits[p][G]+bestOutputs[p][G]+trainOutputs[p][G])
-            nerdScribe.writerow(['Final Evolution Strength:',testStrength[-1]])
-            nerdScribe.writerow([" "])
-            fdetails.close()
+                for trainInd in range(len(inList)):
+                    toWrite.append([G]+BestFits[p][G+trainInd]+bestOutputs[p][G+trainInd]+trainOutputs[p][G+trainInd])
 
+            toWrite.append(['Final Species Fitness:',testStrength[-1]])
+            toWrite.append([" "])
 
-        fdata = open(file_name,'ab')
-        scribe= csv.writer(fdata, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+            writeSobolFileMultiRows(detailsFileName,toWrite)
+
+            createFig_creature_exhaustiveTrainingSpace(population,population.creatureList[0],CYCLES_PER_RUN,inList,"So"+str(i)+"Ev"+str(p))
+
+        toWrite = []
         for testS in testStrength:
-            scribe.writerow([NEURON_COUNT,CYCLES_PER_RUN,LESSONS_PER_TEST,LESSON_MUT_DIVIDER,MUT_DIVISOR,testS])
-        fdata.close()
+            toWrite.append([NEURON_COUNT,CYCLES_PER_RUN,LESSONS_PER_TEST,LESSON_MUT_DIVIDER,MUT_DIVISOR,testS])
+        writeSobolFileMultiRows(charFileName,toWrite)
+
+        createFig_DistHistogram(testStrength,5,'Species Fitness','Probability')
+
+    plt.show()
+
     '''
-        for i in range(len(WinnersFits)):
-    ##        name = 'Round: '+str(i)
-    ##        plt.figure(name, figsize=(8,8))
-    ##        plt.plot(WinnersFits[i])
-    ##        plt.axis([0, GENERATIONS, 0, 2])
-            trainPlotter = []
-            bestPlotter = []
-            diffPlotter = []
-
-            for o in range(OUTPUT_COUNT):
-                trainPlotter.append([])
-                bestPlotter.append([])
-                diffPlotter.append([])
-                for j in range(len(trainOutputs[i])):
-                    trainPlotter[-1].append(trainOutputs[i][j][o])
-                    bestPlotter[-1].append(bestOutputs[i][j][o])
-                    diffPlotter[-1].append(trainPlotter[-1][-1]-bestPlotter[-1][-1])
-
-            for o in range(OUTPUT_COUNT):
-                name = 'Out'+str(o)+" Str"+str(round(testStrength[i],3))+" C"+str(CREATURE_COUNT)+" N"+str(NEURON_COUNT)+" Cy"+str(CYCLES_PER_RUN)+" L"+str(LESSONS_PER_TEST)+" Mp"+str(SELF_MUTATION_PERC)+" MDiv"+str(MUT_DIVISOR)
-                plt.figure(name, figsize=(8,8))
-                plt.plot(trainPlotter[o])
-                plt.plot(bestPlotter[o])
-    ##            plt.plot(diffPlotter[o])
-
-
 
 
     ##    print "training outs:"
@@ -905,9 +973,6 @@ if __name__ == "__main__":
     ##    for c in range (len(population.creatureList[0].output)):
     ##        print population.creatureList[0].output[c].outbox
     ##    print
-
-
-        plt.show()
 
 if __name__ == "__main__":
 	main()
