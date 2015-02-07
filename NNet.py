@@ -6,6 +6,8 @@ from sobol_lib_NoNumpy import *
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.mlab as mlab
+import threading
+from multiprocessing import Process
 
 import time
 #from matplotlib.ticker import NullFormatter
@@ -45,7 +47,7 @@ class Population:
                 self.creatureList.append( child )
          #self.mutate()
 
-    def mutate( self):
+    def mutate( self,LESSON_MUT_DIVIDER):
         for creature in self.creatureList:
             #Don't mutate the two best creatures.
             if (creature == self.creatureList[0]):
@@ -54,7 +56,7 @@ class Population:
                 #Randomly choose a property to mutate
                 percentageToMutate = (1-creature.fitness)/2
 
-                creature.selfMutation(percentageToMutate,self.sigmaCreature)
+                creature.selfMutation(percentageToMutate,LESSON_MUT_DIVIDER,self.sigmaCreature)
                 '''
                 mutationPerc = 0
                 mutationCount = 0
@@ -157,11 +159,22 @@ class Population:
         # 2 / 3
         self.trainingCreature.output[5].outbox =  float(self.trainingCreature.input[2].inbox)**self.trainingCreature.input[-2].inbox
         '''
-    def compete( self, cycles,lessons ):
+    def compete( self, cycles,lessons,LESSON_MUT_DIVIDER ):
+        threads = []
+        for creature in self.creatureList:
+            thread = threading.Thread(target = creature.test(self, lessons, cycles,LESSON_MUT_DIVIDER))
+            thread.start()
+            threads.append(thread)
+
+        for thread in threads:
+            thread.join()
+
+        '''
         for creature in self.creatureList:
             creature.test(self, lessons,cycles)
+        '''
 
-    def resolve( self ):
+    def resolve( self,MUT_DIVISOR ):
 
         #Calculate fitness
 
@@ -356,7 +369,7 @@ class Creature:
         self.bestNeuronList = deepcopy(self.neuronList)
         self.bestSynapseList = deepcopy(self.synapseList)
 
-    def selfMutation(self,percentageToMutate,sigmaCreature = None):
+    def selfMutation(self,percentageToMutate,LESSON_MUT_DIVIDER,sigmaCreature = None):
         mutationPerc = 0
         mutationCount = 0
         #mutationOptions = ['threshold','a','b','c','d']
@@ -483,10 +496,10 @@ class Creature:
         '''
 
 
-    def test(self,population,lessons,cycles):
+    def test(self,population,lessons,cycles,LESSON_MUT_DIVIDER):
         for l in range(lessons):
             if l > 0:#Skip mutation on first pass.
-                self.selfMutation((1-self.selfWorth)/LESSON_MUT_DIVIDER)
+                self.selfMutation((1-self.selfWorth)/LESSON_MUT_DIVIDER,LESSON_MUT_DIVIDER)
             self.run(population,cycles)
             self.selfEvaluation(population) #I think this could also be skipped first pass...
 
@@ -812,7 +825,121 @@ def load_creature(fileName):
     fCreature.close()
     return creat
 
+def evolve_species(CreatCount, NeurCount, InCount, OutCount, Gens, Cycles, Lessons,LESSON_MUT_DIVIDER,MUT_DIVISOR):
+    population = Population ( CreatCount, NeurCount, InCount, OutCount )
 
+    bestOutputs = []
+    trainOutputs = []
+    bestFits = []
+    testStrength = []
+
+    for G in range (Gens):
+
+        print "|||||||||||||| GENERATION:",G,"||||||||||||||"
+        if G != 0: #Don't mutate the first round (no need to)
+            population.mutate(LESSON_MUT_DIVIDER)
+
+        population.populate()
+
+        testedPoints =[]
+        for trainIndex in range(len(inList)):
+            tstPt = choice(inList)
+            if tstPt not in testedPoints:
+                testedPoints.append(tstPt)
+                population.setTrainingCreature(tstPt)
+                population.compete( Cycles , Lessons,LESSON_MUT_DIVIDER)
+
+                bestOutputs.append([])
+                trainOutputs.append([])
+                bestFits.append([])
+                for c in range (len(population.creatureList[0].output)):
+
+                    bestOutputs[-1].append(population.creatureList[0].output[c].outbox)
+                    trainOutputs[-1].append(population.trainingCreature.output[c].outbox)
+
+                bestFits[-1].append(population.creatureList[0].fitness)
+
+
+            else:
+                trainIndex -= 1
+
+        population.resolve(MUT_DIVISOR)
+
+    testStrength= calculateSpeciesFitness_goverG2(bestOutputs,trainOutputs)
+
+    return bestFits, bestOutputs, trainOutputs, testStrength
+
+
+def run_sobol(evolNum,testPoint,Gens, Creats, InCount,OutCount,charFileName):
+    NEURON_COUNT= int(testPoint[0])
+    CYCLES_PER_RUN = int(testPoint[1])
+    LESSONS_PER_TEST = int(testPoint[2])
+    LESSON_MUT_DIVIDER = testPoint[3]
+    MUT_DIVISOR = testPoint[4]
+
+    for k in range(len(toSobolTest)):
+        if k < 3:
+            print toSobolTest[k],"=",testPoint[k]
+        else:
+            print toSobolTest[k],"=",testPoint[k]
+
+
+    BestFits=[]
+    bestOutputs=[]
+    trainOutputs=[]
+    testStrength=[]
+
+    for p in range(POPS_TO_TEST):
+
+        print "|||||||||||||| POPULATION:",p,"||||||||||||||"
+        details_file_name='SobolGenerationDetails_'+str(Gens)+'Gens_'+str(Creats)+'Creats_'+str(InCount)+'Ins_'+str(OutCount)+'Outs_'+str(evolNum)+"Evol_"+str(NEURON_COUNT)+"N_"+str(CYCLES_PER_RUN)+"Cyc_"+str(LESSONS_PER_TEST)+"L_"+str(LESSON_MUT_DIVIDER)+"LMD_"+str(MUT_DIVISOR)+"GMD"
+        detailsFileName = createSobolFiles(FILE_LOCATION,details_file_name,Gens, Creats, InCount,OutCount,outputRelations)
+
+        headers =["Generation","Best Fitness"]
+        htemp = []
+        for o in range(OutCount):
+            headers.append("Best Output "+str(o))
+            htemp.append("Train Output "+str(o))
+
+        toWrite =[]
+        toWrite.append(["Neurons:",NEURON_COUNT,"Cycles:",CYCLES_PER_RUN,"Lessons:",LESSONS_PER_TEST,"Lesson Mut Div:",LESSON_MUT_DIVIDER,"Generation Mut Divr:",MUT_DIVISOR])
+        toWrite.append([])
+        toWrite.append(headers+htemp)
+        writeSobolFileMultiRows(detailsFileName,toWrite)
+
+        BestFits.append([])
+        bestOutputs.append([])
+        trainOutputs.append([])
+
+        results = evolve_species(Creats, NEURON_COUNT, InCount, OutCount, Gens, CYCLES_PER_RUN, LESSONS_PER_TEST,LESSON_MUT_DIVIDER,MUT_DIVISOR)
+
+        BestFits[-1].append(results[0])
+        bestOutputs[-1].append(results[1])
+        trainOutputs[-1].append(results[2])
+        testStrength.append(results[3])
+
+        print 'Final Species Fitness:',testStrength[-1]
+
+
+        toWrite = []
+        for G in range(GENERATIONS):
+            for trainInd in range(len(inList)):
+                print p, G, trainInd
+                toWrite.append([G]+BestFits[p][G+trainInd]+bestOutputs[p][G+trainInd]+trainOutputs[p][G+trainInd])
+
+        toWrite.append(['Final Species Fitness:',testStrength[-1]])
+        toWrite.append([" "])
+
+        writeSobolFileMultiRows(detailsFileName,toWrite)
+
+        #createFig_creature_exhaustiveTrainingSpace(population,population.creatureList[0],CYCLES_PER_RUN,inList,"So"+str(i)+"Ev"+str(p))
+
+    toWrite = []
+    for testS in testStrength:
+        toWrite.append([NEURON_COUNT,CYCLES_PER_RUN,LESSONS_PER_TEST,LESSON_MUT_DIVIDER,MUT_DIVISOR,testS])
+    writeSobolFileMultiRows(charFileName,toWrite)
+
+    #createFig_DistHistogram(testStrength,5,'Species Fitness','Probability')
 
 
 if __name__ == "__main__":
@@ -820,10 +947,10 @@ if __name__ == "__main__":
 
     '''
     GENERATIONS = 10 #50
-    CREATURE_COUNT = 20 #100
+    CREATURE_COUNT = 100 #100
     INPUT_COUNT = 2
     OUTPUT_COUNT = 3
-    sobolTestPts = 1
+    sobolTestPts = 2
     # next seed = 9
     sobolSeed = 0 #Which sobol point to start from. Remeber, 0 indexed
     POPS_TO_TEST=3
@@ -874,7 +1001,21 @@ if __name__ == "__main__":
 ####    testPoints.append([10,6,4,19,35])
 ##    testPoints.append([9,19,4,2,94])
 
+    ps = []
     for i in range(sobolTestPts):
+        print testPoints[i]
+
+        print "|||||||||||||| POINT:",i,"||||||||||||||"
+        p = Process(target = run_sobol(i,testPoints[i],GENERATIONS, CREATURE_COUNT, INPUT_COUNT,OUTPUT_COUNT,charFileName))
+        p.start()
+        ps.append(p)
+
+
+        #for p in ps:
+        #p.join()
+
+        #run_sobol(i,testPoints[i],GENERATIONS, CREATURE_COUNT, INPUT_COUNT,OUTPUT_COUNT,charFileName)
+        '''
         NEURON_COUNT= int(testPoints[i][0])
         CYCLES_PER_RUN = int(testPoints[i][1])
         LESSONS_PER_TEST = int(testPoints[i][2])
@@ -913,6 +1054,8 @@ if __name__ == "__main__":
             bestOutputs.append([])
             trainOutputs.append([])
 
+            '''
+    '''
             population = Population ( CREATURE_COUNT, NEURON_COUNT, INPUT_COUNT, OUTPUT_COUNT )
 
             for G in range (GENERATIONS):
@@ -951,9 +1094,15 @@ if __name__ == "__main__":
 
                 population.resolve()
 
+            '''
+'''
+            results = evolve_species(CREATURE_COUNT, NEURON_COUNT, INPUT_COUNT, OUTPUT_COUNT, GENERATIONS, CYCLES_PER_RUN, LESSONS_PER_TEST)
+            BestFits.append(results[0])
+            bestOutputs.append(results[1])
+            trainInd.append(results[2])
+            testStrength.append(results[3])
 
-
-            testStrength.append( calculateSpeciesFitness_goverG2(bestOutputs[-1],trainOutputs[-1]))
+            #testStrength.append( calculateSpeciesFitness_goverG2(bestOutputs[-1],trainOutputs[-1]))
             print 'Final Species Fitness:',testStrength[-1]
 
 
@@ -975,10 +1124,10 @@ if __name__ == "__main__":
         writeSobolFileMultiRows(charFileName,toWrite)
 
         createFig_DistHistogram(testStrength,5,'Species Fitness','Probability')
+        '''
+    #plt.show()
 
-    plt.show()
-
-    '''
+'''
 
 
     ##    print "training outs:"
