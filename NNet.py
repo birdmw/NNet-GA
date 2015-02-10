@@ -129,7 +129,6 @@ class Population:
             if creature.fitness == -1:
                 self.creatureList.remove(creature)
             else:
-                creature.fitness = tempFit
                 sumFitness += creature.fitness
 
         averageFitness = sumFitness / self.creatureCount
