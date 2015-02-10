@@ -614,7 +614,7 @@ def generateSobolCharacterizationPoints(numDims,numPts,starts,stops,resolution,s
 def createSobolFiles(fileLoc,fileName, gens, creats, inCount, outCount,outputRelations):
     localtime = time.localtime(time.time())
     Date = str(localtime[0])+'_'+str(localtime[1])+'_'+str(localtime[2])
-    Time = str(localtime[3])+'_'+str(localtime[4])
+    Time = str(localtime[3])+'_'+str(localtime[4])+'_'+str(localtime[5])
 
 
     file_name=fileLoc+'\\'+fileName+'_'+str(Date)+'_'+str(Time)+'.csv'
@@ -717,14 +717,14 @@ if __name__ == "__main__":
     '''
 
     '''
-    GENERATIONS = 10 #50
-    CREATURE_COUNT = 20 #100
+    GENERATIONS = 50
+    CREATURE_COUNT = 100
     INPUT_COUNT = 2
     OUTPUT_COUNT = 3
     sobolTestPts = 1
     # next seed = 9
     sobolSeed = 0 #Which sobol point to start from. Remeber, 0 indexed
-    POPS_TO_TEST=3
+    POPS_TO_TEST=2
 
     MAX_VALUE = 10
     #50 Gen, 100 Creat,2In, 3Out, 20 sobol, 1 pops =~ 20 to 50 min. On Chris' laptop. Depending on start/stop values
@@ -865,7 +865,7 @@ if __name__ == "__main__":
 
             writeSobolFileMultiRows(detailsFileName,toWrite)
 
-            createFig_creature_exhaustiveTrainingSpace(population,population.creatureList[0],CYCLES_PER_RUN,inList,"So"+str(i)+"Ev"+str(p))
+            #createFig_creature_exhaustiveTrainingSpace(population,population.creatureList[0],CYCLES_PER_RUN,inList,"So"+str(i)+"Ev"+str(p))
 
         toWrite = []
         for testS in testStrength:
