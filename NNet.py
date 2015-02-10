@@ -35,83 +35,41 @@ class Population:
 
 
     def populate( self ):
-         while (len(self.creatureList) < 2): #If there is only one left, create a random new creature.
-              self.creatureList.append(Creature(self.neuronCount,self.inputCount,self.outputCount))
-         while (len(self.creatureList) < self.creatureCount): #Breed until full population
-              mother = choice( self.creatureList )
-              father = choice( self.creatureList )
-              if not (mother == father):
+        while (len(self.creatureList) < 2): #If there is only one left, create a random new creature.
+            self.creatureList.append(Creature(self.neuronCount,self.inputCount,self.outputCount))
+        while (len(self.creatureList) < self.creatureCount): #Breed until full population
+            mother = choice( self.creatureList )
+            father = choice( self.creatureList )
+            if not (mother == father):
                 child = mate( mother , father )
                 self.creatureList.append( child )
-         #self.mutate()
 
     def mutate( self):
+        '''
+        Mutates all creatures in the populations, except the current best creature.
+        '''
         for creature in self.creatureList:
-            #Don't mutate the two best creatures.
+            #Don't mutate the best creature.
             if (creature == self.creatureList[0]):
                 pass
             else:
-                #Randomly choose a property to mutate
-                percentageToMutate = (1-creature.fitness)/2
+                #Calculate percentage of traits to mutate
+                percentageToMutate = (1-creature.fitness)/2     #TODO: Evaluate this calculation.
 
-                creature.selfMutation(percentageToMutate,self.sigmaCreature)
-                '''
-                mutationPerc = 0
-                mutationCount = 0
-                mutationOptions = ['threshold','a','b','c','d']
-                mutatedObjProps = []
-
-                while mutationPerc <= percentageToMutate:
-                    selectObjectToMutate = {'threshold':choice(creature.neuronList),
-                                        'a':choice(creature.synapseList),
-                                        'b':choice(creature.synapseList),
-                                        'c':choice(creature.synapseList),
-                                        'd':choice(creature.synapseList)}
-
-                    propertyToMutate = choice(mutationOptions)
-
-                    objectToMutate = selectObjectToMutate.get(propertyToMutate)
-
-                    if [objectToMutate,popertyToMutate] not in mutatedObjProps:
-                        mu = getattr(objectToMutate,propertyToMutate)
-
-                        if propertuToMutate == 'threshold':
-                            ind = creature.neruronList.index(objectToMutate)
-                            sigma = getattr(self.sigmaCreature.neuronList[ind],propertyToMutate)
-                        else:
-                            ind = creature.synapseList.index(objectToMutate)
-                            sigma = getattr(self.sigmaCreature.synapseList[ind],propertyToMutate)
-
-
-                        newVal = gauss(mu,sigma)
-                        #print "gauss(",mu,",",sigma,")=",newVal
-                        setattr(objectToMutate,propertyToMutate,newVal)
-                        mutationCount+=1
-                        mutationPerc = mutationCount/creature.propertyCount
-
-                        mutatedObjProps.append([objectToMutate,popertyToMutate])
-
-
-
-
-
-
-
-                for n in range( len ( creature.neuronList ) ):
-                    creature.neuronList[n].threshold = gauss( creature.neuronList[n].threshold , self.sigmaCreature.neuronList[n].threshold)
-                    #creature.neuronList[n].threshold = gauss( creature.neuronList[n].threshold , .5)
-                for s in range ( len ( creature.synapseList ) ):
-                    creature.synapseList[s].a = gauss( creature.synapseList[s].a , self.sigmaCreature.synapseList[s].a )
-                    creature.synapseList[s].b = gauss( creature.synapseList[s].b , self.sigmaCreature.synapseList[s].b )
-                    creature.synapseList[s].c = gauss( creature.synapseList[s].c , self.sigmaCreature.synapseList[s].c )
-                    creature.synapseList[s].d = gauss( creature.synapseList[s].d , self.sigmaCreature.synapseList[s].d )
-                    #creature.synapseList[s].a = gauss( creature.synapseList[s].a , .01 )
-                    #creature.synapseList[s].b = gauss( creature.synapseList[s].b , .01 )
-                    #creature.synapseList[s].c = gauss( creature.synapseList[s].c , .01 )
-                    #creature.synapseList[s].d = gauss( creature.synapseList[s].d , .01 )
-                '''
+                creature.mutateSelf(percentageToMutate,self.sigmaCreature)
 
     def setTrainingCreature( self, inList = None, outList = None ):
+        '''
+        Sets the values of this population's trainingCreature.
+        Parameters:
+            inList: (optional) A list of input values to set the inputs of trainingCreature ( len(inList) = len(inputs))
+            outList: (optional) A list of output values to set the outputs of trainingCreature ( len(outList) = len(outputs))
+        Returns:
+            None.
+
+        Commented out code are alternative training sets.
+        '''
+
         '''
         for i in self.trainingCreature.input:
             i.inbox = float(bool(getrandbits(1)))##random bool
@@ -164,31 +122,15 @@ class Population:
     def resolve( self ):
 
         #Calculate fitness
-
         sumFitness=0.0
         for creature in self.creatureList:
-            '''
-            fitSum = 0.0
-            for out in range(self.outputCount):
-
-                mu = self.trainingCreature.output[out].outbox
-
-                #sigma = self.sigmaCreature.output[out].outbox
-                sigma = self.deltaCreature.output[out].outbox
-                fitSum += myGauss(mu,sigma,creature.output[out].outbox)# Bug here between sigma and creature.output
-                #fitSum += abs(creature.output[out].outbox - self.trainingCreature.output[out].outbox)
-
-            creature.fitness = fitSum/self.outputCount
-            '''
-            tempFit = fitness(creature,self.trainingCreature,self.deltaCreature)
-            if tempFit == -1:
+            #tempFit = fitness(creature,self.trainingCreature,self.deltaCreature)
+            #fitness is now updated during lessons
+            if creature.fitness == -1:
                 self.creatureList.remove(creature)
             else:
                 creature.fitness = tempFit
                 sumFitness += creature.fitness
-
-
-
 
         averageFitness = sumFitness / self.creatureCount
 
@@ -196,7 +138,7 @@ class Population:
         lesserWinningCreatures=[]
         losingCreatures = []
 
-        #divide winners and losers
+        #divide winners and losers into winners, lesser winners, and losers
         self.creatureList.sort(key = lambda x: x.fitness, reverse=True)
 
         for i in range ( len(self.creatureList) ):
@@ -207,7 +149,7 @@ class Population:
             else:
                 losingCreatures.append(creature)
 
-        #build sigma and delta creature
+        #build sigma and delta creature NOTE: avgLosingCreature is really the average of the 'lesser winning creatures'
 
         self.avgWinningCreature.fitness = sum( w.fitness for w in winningCreatures) / len(winningCreatures)
         for i in range ( self.neuronCount ):
@@ -227,12 +169,6 @@ class Population:
                 outb += l.neuronList[i].outbox
             self.avgLosingCreature.neuronList[i].threshold = thresh/len(lesserWinningCreatures)
             self.avgLosingCreature.neuronList[i].outbox = outb / len(lesserWinningCreatures)
-
-##            for l in losingCreatures:
-##                thresh += l.neuronList[i].threshold
-##                outb += l.neuronList[i].outbox
-##            self.avgLosingCreature.neuronList[i].threshold = thresh/len(losingCreatures)
-##            self.avgLosingCreature.neuronList[i].outbox = outb / len(losingCreatures)
 
             self.sigmaCreature.neuronList[i].threshold = (self.avgWinningCreature.neuronList[i].threshold - self.avgLosingCreature.neuronList[i].threshold)/MUT_DIVISOR
             self.deltaCreature.neuronList[i].outbox = (self.trainingCreature.neuronList[i].outbox - self.avgWinningCreature.neuronList[i].outbox)*1
@@ -269,27 +205,19 @@ class Population:
             self.avgLosingCreature.synapseList[i].c = sumc/len(lesserWinningCreatures)
             self.avgLosingCreature.synapseList[i].d = sumd/len(lesserWinningCreatures)
 
-##            for l in losingCreatures:
-##                suma += l.synapseList[i].a
-##                sumb += l.synapseList[i].b
-##                sumc += l.synapseList[i].c
-##                sumd += l.synapseList[i].d
-##
-##            self.avgLosingCreature.synapseList[i].a = suma/len(losingCreatures)
-##            self.avgLosingCreature.synapseList[i].b = sumb/len(losingCreatures)
-##            self.avgLosingCreature.synapseList[i].c = sumc/len(losingCreatures)
-##            self.avgLosingCreature.synapseList[i].d = sumd/len(losingCreatures)
-
             self.sigmaCreature.synapseList[i].a = (self.avgWinningCreature.synapseList[i].a - self.avgLosingCreature.synapseList[i].a)/MUT_DIVISOR
             self.sigmaCreature.synapseList[i].b = (self.avgWinningCreature.synapseList[i].b - self.avgLosingCreature.synapseList[i].b)/MUT_DIVISOR
             self.sigmaCreature.synapseList[i].c = (self.avgWinningCreature.synapseList[i].c - self.avgLosingCreature.synapseList[i].c)/MUT_DIVISOR
             self.sigmaCreature.synapseList[i].d = (self.avgWinningCreature.synapseList[i].d - self.avgLosingCreature.synapseList[i].d)/MUT_DIVISOR
 
+
+        #Remove all losers, and all creatures exhibiting terrible fitness (helps remove the run-away condition)
         for creature in self.creatureList:
             if (creature.fitness <= 0.000001):
                 self.creatureList.remove(creature)
             elif creature in losingCreatures:
                 self.creatureList.remove(creature)
+
         if len(self.creatureList)==0:
             print '======== WARNING: ALL CREATURES DIED ========'
 
@@ -304,9 +232,12 @@ class Creature:
         self.input = []
         self.output = []
 
-        self.selfWorth = 0
+        #Best parameters are used in the lessons to allow improvement only
+        self.bestFitness = self.fitness
         self.bestNeuronList = []
         self.bestSynapseList = []
+
+        #Property count is used for calculating the percentage of traits to mutate - evaluated at initialization
         self.propertyCount = 0
 
         for n in range(self.neuronCount):
@@ -329,41 +260,54 @@ class Creature:
 
 
 
-    def selfEvaluation(self,population):
+    def evaluateSelf(self,population):
+        '''
+        Calculates the fitness of this creature, and determines if this creature should update or revert it's neurons, synapses and fitness
+        Parameters:
+            trainingCreature: The populations training creature to be used in the fitness calculation.
+            deltaCreature: The populations delta creature to be used in the fitness calculation.
+        '''
         tempFit = 0
-        fit =fitness(self,population.trainingCreature,population.deltaCreature)
-##        for out in range(self.outputCount):
-##            mu = population.trainingCreature.output[out].outbox
-##            sigma = population.deltaCreature.output[out].outbox
-##            tempFit += myGauss(mu,sigma,self.output[out].outbox)
-##
-##        fit =  tempFit/self.outputCount
+        fit = fitness(self,population.trainingCreature,population.deltaCreature)
 
-        if self.selfWorth > fit:
+        #If this new fitness is better than old fitness, keep changes, otherwise revert.
+        if self.fitness > fit:
             self.revertSelf()
-            #self.selfMutation(SELF_MUTATION_PERC)
         else:
             self.updateSelf(fit)
-            #self.selfMutation(SELF_MUTATION_PERC)
 
 
     def revertSelf(self):
+        '''
+        Reverts this creatures fitness, neuronList, and synapseList to their previous best.
+        '''
+        self.fitness = self.bestFitness
         self.neuronList = deepcopy(self.bestNeuronList)
         self.synapseList = deepcopy(self.bestSynapseList)
 
     def updateSelf(self,newFitness):
-        self.selfWorth = newFitness
+        '''
+        Updates this creatures fitness with 'newFitness' and updates the bestNeuronList and bestSynapselist.
+        '''
         self.bestNeuronList = deepcopy(self.neuronList)
         self.bestSynapseList = deepcopy(self.synapseList)
 
-    def selfMutation(self,percentageToMutate,sigmaCreature = None):
+    def mutateSelf(self,percentageToMutate,sigmaCreature = None):
+        '''
+        Mutates this creature's parameters according to a gaussian distribution.
+        Parameters:
+            percentageToMuate: The percentage of traits of this creature to mutate
+            sigmaCreature: (optional) The sigma creature of the population, allows sigma to be defined by the population
+        Returns:
+            none
+        '''
         mutationPerc = 0
         mutationCount = 0
-        #mutationOptions = ['threshold','a','b','c','d']
         mutatedObjProps = []
         propInds =[]
         watchdog = 0
 
+        #Determine, randomly, which properties to mutate.
         while mutationPerc <= percentageToMutate:
             if watchdog > self.propertyCount:
                 break
@@ -374,15 +318,14 @@ class Creature:
                 mutationPerc=mutationCount/self.propertyCount
             watchdog+=1
 
-
-
+        #Calculate the sigma for each property to mutate, and mutate that property.
         for propInd in propInds:
             if propInd < self.neuronCount:
                 mu=self.neuronList[propInd].threshold
                 if sigmaCreature != None:
                     sigma = sigmaCreature.neuronList[propInd].threshold
                 else:
-                    sigma = ((1-self.selfWorth)*mu+0.1)/(LESSON_MUT_DIVIDER)
+                    sigma = ((1-self.fitness)*mu+0.1)/(LESSON_MUT_DIVIDER)
                 self.neuronList[propInd].threshold = gauss(mu,sigma)
 
             else:
@@ -394,103 +337,57 @@ class Creature:
                     if sigmaCreature != None:
                         sigma = sigmaCreature.synapseList[synInd].a
                     else:
-                        sigma = ((1-self.selfWorth)*mu+0.1)/(LESSON_MUT_DIVIDER)
+                        sigma = ((1-self.fitness)*mu+0.1)/(LESSON_MUT_DIVIDER)
                     self.synapseList[synInd].a = gauss(mu,sigma)
                 elif abcd == 1:
                     mu = self.synapseList[synInd].b
                     if sigmaCreature != None:
                         sigma = sigmaCreature.synapseList[synInd].b
                     else:
-                        sigma = ((1-self.selfWorth)*mu+0.1)/(LESSON_MUT_DIVIDER)
+                        sigma = ((1-self.fitness)*mu+0.1)/(LESSON_MUT_DIVIDER)
                     self.synapseList[synInd].b = gauss(mu,sigma)
                 elif abcd == 2:
                     mu = self.synapseList[synInd].c
                     if sigmaCreature != None:
                         sigma = sigmaCreature.synapseList[synInd].c
                     else:
-                        sigma = ((1-self.selfWorth)*mu+0.1)/(LESSON_MUT_DIVIDER)
+                        sigma = ((1-self.fitness)*mu+0.1)/(LESSON_MUT_DIVIDER)
                     self.synapseList[synInd].c = gauss(mu,sigma)
                 elif abcd == 3:
                     mu = self.synapseList[synInd].d
                     if sigmaCreature != None:
                         sigma = sigmaCreature.synapseList[synInd].d
                     else:
-                        sigma = ((1-self.selfWorth)*mu+0.1)/(LESSON_MUT_DIVIDER)
+                        sigma = ((1-self.fitness)*mu+0.1)/(LESSON_MUT_DIVIDER)
                     self.synapseList[synInd].d = gauss(mu,sigma)
 
 
 
-
-
-        '''
-
-
-        while mutationPerc <= percentageToMutate:
-            selectObjectToMutate = {'threshold':choice(self.neuronList),
-                                'a':choice(self.synapseList),
-                                'b':choice(self.synapseList),
-                                'c':choice(self.synapseList),
-                                'd':choice(self.synapseList)}
-
-            propertyToMutate = choice(mutationOptions)
-
-            objectToMutate = selectObjectToMutate.get(propertyToMutate)
-
-            if [objectToMutate,propertyToMutate] not in mutatedObjProps:
-                mu = getattr(objectToMutate,propertyToMutate)
-
-                if sigmaCreature != None:
-                    if propertyToMutate == 'threshold':
-                        ind = self.neuronList.index(objectToMutate)
-                        sigma = getattr(sigmaCreature.neuronList[ind],propertyToMutate)
-                    else:
-                        ind = self.synapseList.index(objectToMutate)
-                        sigma = getattr(sigmaCreature.synapseList[ind],propertyToMutate)
-                else:
-                    sigma = 1-self.selfWorth #ie: 1-fitness
-
-                newVal = gauss(mu,sigma)
-                #print "gauss(",mu,",",sigma,")=",newVal
-                setattr(objectToMutate,propertyToMutate,newVal)
-                mutationCount+=1
-                mutationPerc = mutationCount/self.propertyCount
-
-                mutatedObjProps.append([objectToMutate,propertyToMutate])
-        '''
-        '''
-        mutationPerc = 0
-        mutationCount = 0
-        mutationOptions = ['threshold','a','b','c','d']
-        while mutationPerc <= percentageToMutate:
-            selectObjectToMutate = {'threshold':choice(self.neuronList),
-                                'a':choice(self.synapseList),
-                                'b':choice(self.synapseList),
-                                'c':choice(self.synapseList),
-                                'd':choice(self.synapseList)}
-
-            propertyToMutate = choice(mutationOptions)
-
-            objectToMutate = selectObjectToMutate.get(propertyToMutate)
-            mu = getattr(objectToMutate,propertyToMutate)
-
-
-
-            newVal = gauss(mu,sigma)
-            #print "gauss(",mu,",",sigma,")=",newVal
-            setattr(objectToMutate,propertyToMutate,newVal)
-            mutationCount+=1
-            mutationPerc = mutationCount/self.propertyCount
-        '''
-
-
     def test(self,population,lessons,cycles):
+        '''
+        Let each creature run 'lessons' number of 'cycles' length tests on the current training set
+        parameters:
+           population: The population this creature lives in. This can be replaced with trainingCreature and deltaCreature.
+           lessons: The number of iterations to, for this training set, mutate, run, and evaluate this creature. (Only keeping mutations that produces better fitnesses)
+           cycles: The number of cycles that this creature is allowed to run before it's outputs are read.
+        returns:
+            none
+        '''
         for l in range(lessons):
             if l > 0:#Skip mutation on first pass.
-                self.selfMutation((1-self.selfWorth)/LESSON_MUT_DIVIDER)
+                self.mutateSelf((1-self.fitness)/LESSON_MUT_DIVIDER)
             self.run(population,cycles)
-            self.selfEvaluation(population) #I think this could also be skipped first pass...
+            self.evaluateSelf(population) #I think this could also be skipped first pass...
 
     def run( self, population, cycles ):
+        '''
+        Let each creature run 'lessons' number of 'cycles' length tests on the current training set
+        parameters:
+           population: The population this creature lives in. This can be replaced with trainingCreature
+           cycles: The number of cycles that this creature is allowed to run before it's outputs are read.
+        returns:
+            none
+        '''
         for r in range( cycles ):
             for i in range ( self.inputCount ):
                 self.input[i].inbox += population.trainingCreature.input[i].inbox
@@ -541,6 +438,8 @@ def fitness(creature,trainingCreature,deltaCreature):
         mu = trainingCreature.output[out].outbox
         sigma = deltaCreature.output[out].outbox
         x = creature.output[out].outbox
+
+        #Check for run-away condition
         if abs(x) > MAX_VALUE:
             return -1
 
@@ -606,27 +505,27 @@ def printPopulation ( population ):
         print "  ",population.creatureCount," creatureCount, ", population.neuronCount, " neuronCount, ",population.inputCount," inputCount, ", population.outputCount, " outputCount, ",population.synapseCount," synapseCount"
 
 def printCreature ( creature ):
-        print "  -Creature"
-        print "  --",creature.neuronCount," neurons, ",creature.inputCount," inputs, ",creature.outputCount," outputs, ", len(creature.synapseList)," synapses."
-        print "  --",creature.fitness," fitness "
+    print "  -Creature"
+    print "  --",creature.neuronCount," neurons, ",creature.inputCount," inputs, ",creature.outputCount," outputs, ", len(creature.synapseList)," synapses."
+    print "  --",creature.fitness," fitness "
 
 def printSynapse ( synapse ):
-        print "    ~Synapse"
-        print "    ~~ a = ",synapse.a,", b = ",synapse.b,", c = ",synapse.c,", d = ",synapse.d
+    print "    ~Synapse"
+    print "    ~~ a = ",synapse.a,", b = ",synapse.b,", c = ",synapse.c,", d = ",synapse.d
 
 def printNeuron ( neuron ):
-        print "    *Neuron"
-        print "    ** inbox = ",neuron.inbox,", value = ", neuron.value, ", outbox = ", neuron.outbox, ", threshold = ",neuron.threshold,", prevOutbox = ", neuron.prevOutbox
+    print "    *Neuron"
+    print "    ** inbox = ",neuron.inbox,", value = ", neuron.value, ", outbox = ", neuron.outbox, ", threshold = ",neuron.threshold,", prevOutbox = ", neuron.prevOutbox
 
 def printPopOuts ( population ):
-        print "::::::Training Outputs::::::::::::::"
-        c = population.trainingCreature
+    print "::::::Training Outputs::::::::::::::"
+    c = population.trainingCreature
+    for o in c.output:
+        printNeuron ( o )
+    print "::::::Population Outputs::::::::::::"
+    for c in population.creatureList:
         for o in c.output:
             printNeuron ( o )
-        print "::::::Population Outputs::::::::::::"
-        for c in population.creatureList:
-            for o in c.output:
-                printNeuron ( o )
 
 def calculateSpeciesFitness_goverG2(bestOutputs,trainOutputs):
     myfit = 0
@@ -662,7 +561,7 @@ def calculateSpeciesFitness_binaryOER(creatOutputs,trainOutputs,outThreshList):
 
 def testSpeciesFitness_exhaustiveTrainingSpaceDistance(population,inList):
     '''
-    NOTE: This function will OVERWRITE all creatures fitness and potentially change which creature is 'bestCreature'
+    NOTE: This function will OVERWRITE all creatures fitness and, because of this, potentially change which creature is 'bestCreature'
     '''
     for creature in population.creatureList:        #For each creature
 
