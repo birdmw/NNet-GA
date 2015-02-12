@@ -2,6 +2,7 @@ from creature import *
 from math import *
 from random import *
 import numpy as np
+from creatureGUI import *
 
 class Population:
     def __init__(self, CreatureCount, NeuronCount, InputCount, OutputCount,Cycles, Lessons = 1, LessonMutationDivider=1,GenerationMutationDivider=1):
@@ -13,6 +14,7 @@ class Population:
         self.lessons = Lessons
         self.lessonMutDiv = LessonMutationDivider
         self.genMutDiv = GenerationMutationDivider
+        self.speciesFitness = 0
 
         #Create pseudo-creature data structures
         self.sigmaCreature = Creature( NeuronCount, InputCount, OutputCount )
@@ -26,6 +28,9 @@ class Population:
             self.deltaCreature.output[outIndex].outbox = random()
             self.trainingCreature.output[outIndex].outbox = random()
             self.statsCreature.output[outIndex].outbox = []
+
+        for inIndex in range(InputCount):
+            self.statsCreature.input[inIndex].inbox = []
 
         self.statsCreature.fitness = []
 
@@ -47,7 +52,7 @@ class Population:
                 self.creatureList.append( child )
          #self.mutate()
 
-    def mutate_lessonMutation(self):
+    def mutate_lesson(self):
         '''
         Mutates all creatures in the populations,
             Lesson mutation gaussian based on:
@@ -111,7 +116,7 @@ class Population:
 
 
 
-    def mutate_generationMutation(self):
+    def mutate_generation(self):
         '''
         Mutates all creatures in the populations, except the current best creature.
             Generation mutation gaussian based on:
@@ -241,6 +246,7 @@ class Population:
         Each creature runs once
         Updates creatures fitness
         Updates creatureList (sorts based on fitness)
+        Updates statsCreature
         '''
         inputSet = []
         for inp in self.trainingCreature.input:
@@ -255,6 +261,7 @@ class Population:
             creature.fitness = fitness(creature,inputSet,sigmas)
         #Sort creatures based on fitness
         self.creatureList.sort(key = lambda x: x.fitness, reverse=True)
+        self.update_statsCreature()
 
     def compete_lessons(self):
         '''
@@ -262,6 +269,7 @@ class Population:
         Mutation occurs between each lesson, but only mutations causing improved fitness will be kept
         Updates creatures fitness
         Updates creatureList (sorts based on fitness)
+        Updates statsCreature
         '''
         inputSet = []
         for inp in self.trainingCreature.input:
@@ -274,7 +282,7 @@ class Population:
         for l in range(self.lessons):
             if l != 0:
                 #Don't mutate the first lesson (generational mutation has not yet been tested)
-                self.mutate_lessonMutation()
+                self.mutate_lesson()
 
             for creature in self.creatureList:
                 creature.run(inputSet,self.cycles,self.lessonMutDiv)
@@ -288,6 +296,7 @@ class Population:
 
         #Sort creatures based on fitness
         self.creatureList.sort(key = lambda x: x.fitness, reverse=True)
+        self.update_statsCreature()
 
     def compete_exhaustiveLessons(self, inputSets):
         '''
@@ -296,6 +305,7 @@ class Population:
         Mutation occurs between each lesson, but only mutations causing improved fitness will be kept
         Updates creatures fitness
         Updates creatureList (sorts based on fitness)
+        Updates statsCreature
         '''
         sigmas = []
         for outp in self.deltaCreature.output:
@@ -304,7 +314,7 @@ class Population:
         for l in range(self.lessons):
             if l != 0:
                 #Don't mutate the first lesson (generational mutation has not yet been tested)
-                self.mutate_lessonMutation()
+                self.mutate_lesson()
 
             for creature in self.creatureList:
                 #Each creature runs on each input set once
@@ -317,6 +327,11 @@ class Population:
 
                 creature.fitness = fitness_exhaustiveCombiner(setFits)
 
+                #Track each training set for the current best creature with statsCreature
+                if self.creatureList.index(creature)==0:
+                    self.update_statsCreature()
+
+
                 if l == 0:
                     #On the first lesson, force creature to forget previous 'best' values, thereby keeping generational mutations
                     creature.updateBest()
@@ -326,13 +341,17 @@ class Population:
 
         #Sort creatures based on fitness
         self.creatureList.sort(key = lambda x: x.fitness, reverse=True)
-
     def update_statsCreature(self):
         '''
-        Appends the current best creatures outputs and fitness to the statsCreature's outputs and fitness
+        Appends the current status of the population to statsCreature
+            statsCreature.input = appends trainingCreature's inputs
+            statsCreature.output = appends [trainingCreature's outputs, best creature's outputs]
+            statsCreature.fitness = appends best creature's fitness
         '''
+        for i in range(len(self.trainingCreature.input)):
+            self.statsCreature.input[i].inbox.append(self.trainingCreature.input[i].inbox)
         for o in range(len(self.creatureList[0].output)):
-            self.statsCreature.output[o].outbox.append(self.creatureList[0].output[0])
+            self.statsCreature.output[o].outbox.append([self.trainingCreature.output[o].outbox,self.creatureList[0].output[o].outbox])
         self.statsCreature.fitness.append(self.creatureList[0].fitness)
 
 
@@ -441,17 +460,42 @@ class Population:
             print '======== !!RANDOMLY REPOPULATED!! ========'
 
 
-    def run_generationsBasic(self,generationCount):
+    def run_generationBasic(self):
         '''
-        Runs the population for generationCount generation, in a basic loop
+        Runs the population for one generation in the basic (populate)-(run)-(prune)-(mutate) sequence
         '''
-        for g in generationCount:
-            self.populate()
-            self.setTrainingCreature()
-            self.compete_run()
-            self.prune()
-            self.update_pseudoCreatures()
-            self.mutate_generationMutation()
+        self.populate()
+        self.setTrainingCreature()
+        self.compete_run()
+        self.prune()
+        self.update_pseudoCreatures()
+        self.mutate_generation()
+
+    def run_generationLessons(self):
+        '''
+        Runs the population for one generation in the (populate)-(run lessons)-(prune)-(mutate) sequence
+        '''
+        self.populate()
+        self.setTrainingCreature()
+        self.compete_lessons()
+        self.prune()
+        self.update_pseudoCreatures()
+        self.mutate_generation()
+
+    def run_generationLessons(self):
+        '''
+        Runs the population for one generation in the (populate)-(run lessons)-(prune)-(mutate) sequence
+        '''
+        self.populate()
+        self.setTrainingCreature()
+        self.compete_lessons()
+        self.prune()
+        self.update_pseudoCreatures()
+        self.mutate_generation()
+
+
+#END POPULATION CLASS
+
 
 def fitness(creature,mus,sigmas):
     '''
@@ -558,7 +602,7 @@ def main():
         demoPop.compete_run()
         demoPop.prune()
         demoPop.update_pseudoCreatures()
-        demoPop.mutate_generationMutation()
+        demoPop.mutate_generation()
 
         printTrain = []
         printDelta = []
@@ -577,6 +621,10 @@ def main():
         print "  bestCreature fitness:",demoPop.creatureList[0].fitness
 
         demoPop.populate()
+
+
+
+    seeCreature(demoPop, demoPop.creatureList[0])
 
 if __name__ == '__main__':
     MAX_VALUE = 15
