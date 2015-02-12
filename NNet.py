@@ -13,7 +13,7 @@ import time
 import csv
 
 class Population:
-    def __init__(self, CREATURE_COUNT, NEURON_COUNT, INPUT_COUNT, OUTPUT_COUNT ):
+    def __init__(self, CREATURE_COUNT, NEURON_COUNT, INPUT_COUNT, OUTPUT_COUNT,cycles=None,lessons = None ):
         self.creatureList = []
         self.creatureCount = CREATURE_COUNT
         self.neuronCount = NEURON_COUNT
@@ -32,6 +32,11 @@ class Population:
 
         self.synapseCount = len ( self.sigmaCreature.synapseList )
         self.populate()
+
+        if cycles != None:
+            self.cycles = cycles
+        if lessons != None:
+            self.lessons = lessons
 
 
     def populate( self ):
@@ -54,7 +59,7 @@ class Population:
                 #Randomly choose a property to mutate
                 percentageToMutate = (1-creature.fitness)/2
 
-                creature.selfMutation(percentageToMutate,self.sigmaCreature)
+                creature.mutateSelf(percentageToMutate,self.sigmaCreature)
                 '''
                 mutationPerc = 0
                 mutationCount = 0
@@ -112,10 +117,11 @@ class Population:
                 '''
 
     def setTrainingCreature( self, inList = None, outList = None ):
-        '''
-        for i in self.trainingCreature.input:
-            i.inbox = float(bool(getrandbits(1)))##random bool
 
+##        for i in self.trainingCreature.input:
+##            i.inbox = float(bool(getrandbits(1)))##random bool
+
+        '''
         self.trainingCreature.output[0].outbox = float(bool(self.trainingCreature.input[0].inbox)^bool(self.trainingCreature.input[1].inbox))##<---xor for inputs 0 and 1
         self.trainingCreature.output[1].outbox = float(not(bool(self.trainingCreature.input[0].inbox) and  bool(self.trainingCreature.input[1].inbox)))##<---xor for inputs 0 and 1
         '''
@@ -132,24 +138,25 @@ class Population:
          # 6 output, 4 input
         for i in self.trainingCreature.input:
             i.inbox = float(bool(getrandbits(1)))##random bool
-
+        '''
 ##        self.trainingCreature.input[-2].inbox = randint(-5,5)
 ##        self.trainingCreature.input[-1].inbox = random()
-        '''
+
         for i in range(len(inList)):
             self.trainingCreature.input[i].inbox = inList[i]
-        #xor(I0,I1)
-        #self.trainingCreature.output[0].outbox = float(bool(self.trainingCreature.input[0].inbox)^bool(self.trainingCreature.input[1].inbox))
-
-        #PAM4
-        self.trainingCreature.output[0].outbox = float(self.trainingCreature.input[0].inbox) + 0.5*float(self.trainingCreature.input[1].inbox)
-        #and(I0,I1)
-        self.trainingCreature.output[1].outbox = float(bool(self.trainingCreature.input[0].inbox)&bool(self.trainingCreature.input[1].inbox))
-        #or(I0,I1)
-        self.trainingCreature.output[2].outbox = float(bool(self.trainingCreature.input[0].inbox) or bool(self.trainingCreature.input[1].inbox))
-        #0.5*I0 + 0.5*I1
-        #self.trainingCreature.output[3].outbox = 0.5*float(self.trainingCreature.input[0].inbox) + 0.5*float(self.trainingCreature.input[1].inbox)
-        #
+            self.trainingCreature.output[i].outbox = inList[i]
+##        #xor(I0,I1)
+##        self.trainingCreature.output[0].outbox = float(bool(self.trainingCreature.input[0].inbox)^bool(self.trainingCreature.input[1].inbox))
+##
+##        #PAM4
+####        self.trainingCreature.output[0].outbox = float(self.trainingCreature.input[0].inbox) + 0.5*float(self.trainingCreature.input[1].inbox)
+##        #and(I0,I1)
+##        self.trainingCreature.output[1].outbox = float(bool(self.trainingCreature.input[0].inbox)&bool(self.trainingCreature.input[1].inbox))
+##        #or(I0,I1)
+##        self.trainingCreature.output[2].outbox = float(bool(self.trainingCreature.input[0].inbox) or bool(self.trainingCreature.input[1].inbox))
+##        #0.5*I0 + 0.5*I1
+##        #self.trainingCreature.output[3].outbox = 0.5*float(self.trainingCreature.input[0].inbox) + 0.5*float(self.trainingCreature.input[1].inbox)
+##        #
         '''
         self.trainingCreature.output[3].outbox = float(~(bool(self.trainingCreature.input[0].inbox) & bool(self.trainingCreature.input[1].inbox)))
         #2 * 3
@@ -160,6 +167,32 @@ class Population:
     def compete( self, cycles,lessons ):
         for creature in self.creatureList:
             creature.test(self, lessons,cycles)
+
+
+
+    def compete_exhaustiveLessons(self,inputSets,outputSigmas):
+        for creature in self.creatureList:
+            for l in range(self.lessons):
+                shuffle(inputSets)
+                setFits = []
+                creature.bestFitness = creature.fitness
+                for inputSet in inputSets:
+
+                    self.setTrainingCreature(inputSet)
+
+                    if l != 0:
+                        creature.mutateSelf(1/LESSON_MUT_DIVIDER)
+                    creature.run_noPop(inputSet,self.cycles)
+                    setFits.append(fitness_fixedSigmas(creature,inputSet,outputSigmas))
+##
+##                    print 'input set:',inputSet
+##                    print 'train outputs:',population.trainingCreature.output[0].outbox,population.trainingCreature.output[1].outbox,population.trainingCreature.output[2].outbox
+##                    print 'creat outputs:',creature.output[0].outbox,creature.output[1].outbox,creature.output[2].outbox
+
+                creature.fitness = fitness_exhaustiveCombiner(setFits)
+##                print 'overall fit:',creature.fitness
+                creature.evaluateSelf_noPop()
+
 
     def resolve( self ):
 
@@ -300,11 +333,11 @@ class Creature:
         self.outputCount = outputCount
         self.neuronList  = []
         self.synapseList = []
-        self.fitness = random()
+        self.fitness = 0.1
         self.input = []
         self.output = []
 
-        self.selfWorth = 0
+        self.bestFitness = 0.05
         self.bestNeuronList = []
         self.bestSynapseList = []
         self.propertyCount = 0
@@ -324,39 +357,37 @@ class Creature:
             for n2 in self.neuronList:
                 self.synapseList.append(Synapse(n1, n2, random() / self.neuronCount, random() / (2*pi) / self.neuronCount, random() * pi / self.neuronCount, random() / self.neuronCount))
                 self.propertyCount+=4
-        self.updateSelf(0)
+        self.updateSelf()
 
 
+    def evaluateSelf_noPop(self):
+        if self.bestFitness > self.fitness:
+            self.revertSelf()
+        else:
+            self.updateSelf()
 
 
-    def selfEvaluation(self,population):
+    def evaluteSelf(self,population):
         tempFit = 0
         fit =fitness(self,population.trainingCreature,population.deltaCreature)
-##        for out in range(self.outputCount):
-##            mu = population.trainingCreature.output[out].outbox
-##            sigma = population.deltaCreature.output[out].outbox
-##            tempFit += myGauss(mu,sigma,self.output[out].outbox)
-##
-##        fit =  tempFit/self.outputCount
 
-        if self.selfWorth > fit:
+        if self.fitness > fit:
             self.revertSelf()
-            #self.selfMutation(SELF_MUTATION_PERC)
         else:
-            self.updateSelf(fit)
-            #self.selfMutation(SELF_MUTATION_PERC)
+            self.updateSelf()
 
 
     def revertSelf(self):
+        self.fitness = deepcopy(self.bestFitness)
         self.neuronList = deepcopy(self.bestNeuronList)
         self.synapseList = deepcopy(self.bestSynapseList)
 
-    def updateSelf(self,newFitness):
-        self.selfWorth = newFitness
+    def updateSelf(self):
+        self.bestFitness = deepcopy(self.fitness)
         self.bestNeuronList = deepcopy(self.neuronList)
         self.bestSynapseList = deepcopy(self.synapseList)
 
-    def selfMutation(self,percentageToMutate,sigmaCreature = None):
+    def mutateSelf(self,percentageToMutate,sigmaCreature = None):
         mutationPerc = 0
         mutationCount = 0
         #mutationOptions = ['threshold','a','b','c','d']
@@ -382,7 +413,7 @@ class Creature:
                 if sigmaCreature != None:
                     sigma = sigmaCreature.neuronList[propInd].threshold
                 else:
-                    sigma = ((1-self.selfWorth)*mu+0.1)/(LESSON_MUT_DIVIDER)
+                    sigma = ((1-self.fitness)*mu+0.1)/(LESSON_MUT_DIVIDER)
                 self.neuronList[propInd].threshold = gauss(mu,sigma)
 
             else:
@@ -394,28 +425,28 @@ class Creature:
                     if sigmaCreature != None:
                         sigma = sigmaCreature.synapseList[synInd].a
                     else:
-                        sigma = ((1-self.selfWorth)*mu+0.1)/(LESSON_MUT_DIVIDER)
+                        sigma = ((1-self.fitness)*mu+0.1)/(LESSON_MUT_DIVIDER)
                     self.synapseList[synInd].a = gauss(mu,sigma)
                 elif abcd == 1:
                     mu = self.synapseList[synInd].b
                     if sigmaCreature != None:
                         sigma = sigmaCreature.synapseList[synInd].b
                     else:
-                        sigma = ((1-self.selfWorth)*mu+0.1)/(LESSON_MUT_DIVIDER)
+                        sigma = ((1-self.fitness)*mu+0.1)/(LESSON_MUT_DIVIDER)
                     self.synapseList[synInd].b = gauss(mu,sigma)
                 elif abcd == 2:
                     mu = self.synapseList[synInd].c
                     if sigmaCreature != None:
                         sigma = sigmaCreature.synapseList[synInd].c
                     else:
-                        sigma = ((1-self.selfWorth)*mu+0.1)/(LESSON_MUT_DIVIDER)
+                        sigma = ((1-self.fitness)*mu+0.1)/(LESSON_MUT_DIVIDER)
                     self.synapseList[synInd].c = gauss(mu,sigma)
                 elif abcd == 3:
                     mu = self.synapseList[synInd].d
                     if sigmaCreature != None:
                         sigma = sigmaCreature.synapseList[synInd].d
                     else:
-                        sigma = ((1-self.selfWorth)*mu+0.1)/(LESSON_MUT_DIVIDER)
+                        sigma = ((1-self.fitness)*mu+0.1)/(LESSON_MUT_DIVIDER)
                     self.synapseList[synInd].d = gauss(mu,sigma)
 
 
@@ -486,11 +517,13 @@ class Creature:
     def test(self,population,lessons,cycles):
         for l in range(lessons):
             if l > 0:#Skip mutation on first pass.
-                self.selfMutation((1-self.selfWorth)/LESSON_MUT_DIVIDER)
+                self.mutateSelf((1-self.fitness)/LESSON_MUT_DIVIDER)
             self.run(population,cycles)
-            self.selfEvaluation(population) #I think this could also be skipped first pass...
+            self.evaluteSelf(population) #I think this could also be skipped first pass...
 
     def run( self, population, cycles ):
+        for i in range ( self.inputCount ):
+            self.input[i].inbox = population.trainingCreature.input[i].inbox
         for r in range( cycles ):
             for i in range ( self.inputCount ):
                 self.input[i].inbox += population.trainingCreature.input[i].inbox
@@ -498,6 +531,20 @@ class Creature:
                 n.run()
             for s in self.synapseList:
                 s.run()
+
+    def run_noPop(self,inputSet,cycles):
+        for i in range ( self.inputCount ):
+            self.input[i].inbox = inputSet[i]
+        for r in range( cycles ):
+            if r != 0:
+                for i in range ( self.inputCount ):
+                    self.input[i].inbox += inputSet[i]
+            for n in self.neuronList:
+                n.run()
+            for s in self.synapseList:
+                s.run()
+
+
 
 class Neuron:
     def __init__(self, threshold):
@@ -529,6 +576,7 @@ class Synapse:
         try:
             self.n2.inbox += self.a * sin(self.b * self.n1.outbox + self.c) + self.d * (self.n1.prevOutbox - self.n1.outbox)
         except:
+            print'!!!!!! WARNING: Synapse broke math!!!!!!!'
             pass
         #    self.n2.inbox = 0.0
 
@@ -552,6 +600,30 @@ def fitness(creature,trainingCreature,deltaCreature):
     fitness = (avgFit+fitMult)/2
     return fitness #/outputCount
 
+def fitness_fixedSigmas(creature,mus,sigmas):
+    fitMult = 1
+    fitSum = 0
+    for out in range(len(mus)):
+        x = creature.output[out].outbox
+        if abs(x) > MAX_VALUE:
+            return -1
+        g = myGauss(mus[out],sigmas[out],x)
+        fitSum +=g
+        fitMult *= g
+
+    avgFit = fitSum/len(mus)
+    fitness = (avgFit+fitMult)/2
+    return fitness
+
+def fitness_exhaustiveCombiner(setFits):
+    setMult = 1
+    setSum = 0
+    for fit in setFits:
+        setSum+=fit
+        setMult*=fit
+    setAvg = setSum/len(setFits)
+    setFitness = (setAvg+setMult)/2
+    return setFitness
 
 def mate (mother, father):
      child = deepcopy( mother )
@@ -819,14 +891,14 @@ if __name__ == "__main__":
     '''
 
     '''
-    GENERATIONS = 10 #50
-    CREATURE_COUNT = 20 #100
-    INPUT_COUNT = 2
-    OUTPUT_COUNT = 3
+    GENERATIONS = 50 #50
+    CREATURE_COUNT = 100 #100
+    INPUT_COUNT = 1
+    OUTPUT_COUNT = 1
     sobolTestPts = 1
     # next seed = 9
     sobolSeed = 0 #Which sobol point to start from. Remeber, 0 indexed
-    POPS_TO_TEST=3
+    POPS_TO_TEST=1
 
     MAX_VALUE = 10
     #50 Gen, 100 Creat,2In, 3Out, 20 sobol, 1 pops =~ 20 to 50 min. On Chris' laptop. Depending on start/stop values
@@ -836,9 +908,12 @@ if __name__ == "__main__":
     outputRelations = [r"In[0]+0.5*In[1]",r"In[0]&In[1]",r"In[0](or)In[1]"]
 
     #Both of these are optional:
-    inList = [[0,0],[0,1],[1,0],[1,1]]
+    #inList = [[0,0],[0,1],[1,0],[1,1]]
+    inList = [[0],[1]]
     outList = [[0,0,0],[1,0,1],[1,0,1],[0,1,1]]
     outThreshList = [[0.4,0.6],[0.4,0.6],[0.4,0.6]]
+    #outSigmas = [0.3,0.3,0.3]
+    outSigmas = [0.5]
 
     #Parameters controlled by sobol points
     toSobolTest = ['Neurons','Cycles','Lessons','Lesson Mutation Divider','Gen Mutation Divider']
@@ -865,8 +940,9 @@ if __name__ == "__main__":
     writeSobolFileRow(charFileName,toSobolTest+['Strength'])
 
     ''' Uncomment to force specific test points'''
-##    testPoints=[]
-##    testPoints.append([10,25,4,1,16])
+    testPoints=[]
+    #testPoints.append([10,25,4,1,16])
+    testPoints.append([4,25,4,1,16])
 ####    testPoints.append([9,7,1,4,54])
 ####    testPoints.append([5,8,3,12,71])
 ####    testPoints.append([8,18,1,8,38])
@@ -913,7 +989,7 @@ if __name__ == "__main__":
             bestOutputs.append([])
             trainOutputs.append([])
 
-            population = Population ( CREATURE_COUNT, NEURON_COUNT, INPUT_COUNT, OUTPUT_COUNT )
+            population = Population ( CREATURE_COUNT, NEURON_COUNT, INPUT_COUNT, OUTPUT_COUNT, CYCLES_PER_RUN,LESSONS_PER_TEST )
 
             for G in range (GENERATIONS):
                 print "|||||||||||||| POINT:",i," EVOLUTION:",p,", GENERATION:",G,"||||||||||||||"
@@ -927,10 +1003,28 @@ if __name__ == "__main__":
 
                 population.populate()
 
-                testedPoints =[]
-                for trainIndex in range(len(inList)):
+                '''
+                population.setTrainingCreature()
+                population.compete( CYCLES_PER_RUN , LESSONS_PER_TEST)
+
+                bestOutputs[-1].append([])
+                trainOutputs[-1].append([])
+                BestFits[-1].append([])
+                for c in range (len(population.creatureList[0].output)):
+
+                    bestOutputs[-1][-1].append(population.creatureList[0].output[c].outbox)
+                    trainOutputs[-1][-1].append(population.trainingCreature.output[c].outbox)
+
+                BestFits[-1][-1].append(population.creatureList[0].fitness)
+
+                '''
+                '''
+                testedPoints = []
+                while (len(testedPoints) != len(inList)):
                     tstPt = choice(inList)
                     if tstPt not in testedPoints:
+                        print 'Training Inputs:',tstPt
+
                         testedPoints.append(tstPt)
                         population.setTrainingCreature(tstPt)
                         population.compete( CYCLES_PER_RUN , LESSONS_PER_TEST)
@@ -943,11 +1037,13 @@ if __name__ == "__main__":
                             bestOutputs[-1][-1].append(population.creatureList[0].output[c].outbox)
                             trainOutputs[-1][-1].append(population.trainingCreature.output[c].outbox)
 
+                        print 'Training Outputs:',trainOutputs[-1][-1]
+                        print 'Best Outputs:',bestOutputs[-1][-1]
                         BestFits[-1][-1].append(population.creatureList[0].fitness)
 
+                '''
 
-                    else:
-                        trainIndex -= 1
+                population.compete_exhaustiveLessons(inList,outSigmas)
 
                 population.resolve()
 
@@ -958,25 +1054,26 @@ if __name__ == "__main__":
 
 
             toWrite = []
-            for G in range(GENERATIONS):
-                for trainInd in range(len(inList)):
-                    toWrite.append([G]+BestFits[p][G+trainInd]+bestOutputs[p][G+trainInd]+trainOutputs[p][G+trainInd])
+            trainInd = 0
+            #for G in range(GENERATIONS):
+                #for trainInd in range(len(inList)):
+                #toWrite.append([G]+BestFits[p][G+trainInd]+bestOutputs[p][G+trainInd]+trainOutputs[p][G+trainInd])
 
             toWrite.append(['Final Species Fitness:',testStrength[-1]])
             toWrite.append([" "])
 
             writeSobolFileMultiRows(detailsFileName,toWrite)
 
-            createFig_creature_exhaustiveTrainingSpace(population,population.creatureList[0],CYCLES_PER_RUN,inList,"So"+str(i)+"Ev"+str(p))
+            #createFig_creature_exhaustiveTrainingSpace(population,population.creatureList[0],CYCLES_PER_RUN,inList,"So"+str(i)+"Ev"+str(p))
 
         toWrite = []
         for testS in testStrength:
             toWrite.append([NEURON_COUNT,CYCLES_PER_RUN,LESSONS_PER_TEST,LESSON_MUT_DIVIDER,MUT_DIVISOR,testS])
         writeSobolFileMultiRows(charFileName,toWrite)
 
-        createFig_DistHistogram(testStrength,5,'Species Fitness','Probability')
+        #createFig_DistHistogram(testStrength,5,'Species Fitness','Probability')
 
-    plt.show()
+    #plt.show()
 
     '''
 
