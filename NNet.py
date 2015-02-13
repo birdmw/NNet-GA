@@ -363,7 +363,7 @@ class Creature:
 
 
     def test(self,population,lessons,cycles):
-        '''
+        ''' sdfasdf
         Let each creature run 'lessons' number of 'cycles' length tests on the current training set
         parameters:
            population: The population this creature lives in. This can be replaced with trainingCreature and deltaCreature.
