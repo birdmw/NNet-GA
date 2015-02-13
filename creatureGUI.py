@@ -19,7 +19,7 @@ master = Tk()
 screenWidth = master.winfo_screenwidth()
 screenHeight = master.winfo_screenheight()
 
-def seeCreature(population, creature):
+def seeCreature(creature):
 
     w = Canvas(master, width=screenWidth*.75, height=screenHeight*.75)
     canvasWidth = int(w.cget("width"))

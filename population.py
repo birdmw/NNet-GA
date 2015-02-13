@@ -218,11 +218,15 @@ class Population:
 ##        self.trainingCreature.input[-2].inbox = randint(-5,5)
 ##        self.trainingCreature.input[-1].inbox = random()
 
-        for i in range(len(inList)):
-            self.trainingCreature.input[i].inbox = inList[i]
+##        for i in range(len(inList)):
+##            self.trainingCreature.input[i].inbox = inList[i]
 
 ##        for i in range(len(outList)):
 ##            self.trainingCreature.output[i].outbox = outList[i]
+        for i in self.trainingCreature.input:
+            i.inbox = float(bool(getrandbits(1)))##random bool
+        self.trainingCreature.output[0].outbox = self.trainingCreature.input[0].inbox
+        self.trainingCreature.output[1].outbox = self.trainingCreature.input[0].inbox
 
         #xor(I0,I1)
         #self.trainingCreature.output[0].outbox = float(bool(self.trainingCreature.input[0].inbox)^bool(self.trainingCreature.input[1].inbox))
@@ -232,7 +236,7 @@ class Population:
         #and(I0,I1)
         #self.trainingCreature.output[1].outbox = float(bool(self.trainingCreature.input[0].inbox)&bool(self.trainingCreature.input[1].inbox))
         #or(I0,I1)
-        self.trainingCreature.output[0].outbox = float(bool(self.trainingCreature.input[0].inbox) or bool(self.trainingCreature.input[1].inbox))
+        #self.trainingCreature.output[0].outbox = float(bool(self.trainingCreature.input[0].inbox) ^ bool(self.trainingCreature.input[1].inbox))
 ##        #0.5*I0 + 0.5*I1
 ##        #self.trainingCreature.output[3].outbox = 0.5*float(self.trainingCreature.input[0].inbox) + 0.5*float(self.trainingCreature.input[1].inbox)
 ##        #
@@ -268,7 +272,32 @@ class Population:
             creature.fitness = fitness(creature,outputSet,sigmas,self.MaxValue)
         #Sort creatures based on fitness
         self.creatureList.sort(key = lambda x: x.fitness, reverse=True)
+        #self.creatureList.sort(key = lambda x: x.fitness, reverse=False)
         self.update_statsCreature()
+
+    def compete_similarity(self):
+        '''
+        Each creature runs once
+        Updates creatures fitness
+        Updates creatureList (sorts based on fitness)
+        Updates statsCreature
+        '''
+        inputSet = []
+        for inp in self.trainingCreature.input:
+            inputSet.append(inp.inbox)
+
+        outputSet = []
+        for outp in self.trainingCreature.output:
+            outputSet.append(outp.outbox)
+
+        for creature in self.creatureList:
+            creature.run(inputSet,self.cycles)
+            creature.fitness = fitness_similarity(creature,outputSet,self.MaxValue)
+        #Sort creatures based on fitness
+        self.creatureList.sort(key = lambda x: x.fitness, reverse=True)
+        #self.creatureList.sort(key = lambda x: x.fitness, reverse=False)
+        self.update_statsCreature()
+
 
     def compete_lessons(self):
         '''
@@ -381,6 +410,7 @@ class Population:
         for o in range(len(self.creatureList[0].output)):
             self.statsCreature.output[o].outbox.append([self.trainingCreature.output[o].outbox,self.creatureList[0].output[o].outbox])
         self.statsCreature.fitness.append(self.creatureList[0].fitness)
+        #print self.statsCreature.fitness
 
 
     def update_pseudoCreatures( self ):
@@ -424,7 +454,8 @@ class Population:
             self.avgBottomCreature.neuronList[i].outbox = outb / len(bottomCreatures)
 
             self.sigmaCreature.neuronList[i].threshold = (self.avgTopCreature.neuronList[i].threshold - self.avgBottomCreature.neuronList[i].threshold)/self.genMutDiv
-            self.deltaCreature.neuronList[i].outbox = (self.trainingCreature.neuronList[i].outbox - self.avgTopCreature.neuronList[i].outbox)*1
+            #self.deltaCreature.neuronList[i].outbox = (self.trainingCreature.neuronList[i].outbox - self.avgTopCreature.neuronList[i].outbox)*1
+            self.deltaCreature.neuronList[i].outbox = 0.4
 
         for i in range ( self.synapseCount ):
             suma = 0
@@ -472,7 +503,8 @@ class Population:
         toBeRemoved = []
         for creature in self.creatureList:
             #print startLen,self.creatureList.index(creature),creature.fitness
-            if (creature.fitness <= 0.000000001):
+            if (creature.fitness < 0):
+                print '!!!!! Creature has exceeded MaxValue. !!!!!'
                 #self.creatureList.remove(creature)
                 toBeRemoved.append(creature)
             elif self.creatureList.index(creature)  > (startLen-1)/2:
@@ -493,32 +525,33 @@ class Population:
         Runs the population for one generation in the basic (populate)-(run)-(prune)-(mutate) sequence
         '''
         self.populate()
-        self.setTrainingCreature(inputSet,outputSet)
-        self.compete_run()
-        self.prune()
-        self.update_pseudoCreatures()
         self.mutate_generation()
+        self.setTrainingCreature(inputSet,outputSet)
+        #self.compete_run()
+        self.compete_similarity()
+        self.update_pseudoCreatures()
+        self.prune()
 
     def run_generationLessons(self,inputSet = None,outputSet = None):
         '''
         Runs the population for one generation in the (populate)-(run lessons)-(prune)-(mutate) sequence
         '''
         self.populate()
+        self.mutate_generation()
         self.setTrainingCreature(inputSet,outputSet)
         self.compete_lessons()
         self.prune()
         self.update_pseudoCreatures()
-        self.mutate_generation()
 
     def run_generationExhaustiveLessons(self,inputSets,outputSets=None):
         '''
         Runs the population for one generation in the (populate)-(run lessons)-(prune)-(mutate) sequence
         '''
         self.populate()
+        self.mutate_generation()
         self.compete_exhaustiveLessons(inputSets,outputSets)
         self.prune()
         self.update_pseudoCreatures()
-        self.mutate_generation()
 
 
 #END POPULATION CLASS
@@ -547,6 +580,30 @@ def fitness(creature,mus,sigmas,MaxValue):
     avgFit = fitSum/len(mus)
     fitness = (avgFit+fitMult)/2
     return fitness
+
+def fitness_similarity(creature,targets,MaxValue):
+    '''
+    Calculates the fitness for a creature using similarity. (eg: 1/distance)
+    Parameters:
+        creature: The creature who's fitness is being calculated
+        targets: A list of target outputs (usually from training creature)
+    Returns:
+        fitness: Bounded between 0 and 1000 via hardcoded check
+    '''
+    distance = 0
+    for outInd in range(len(targets)):
+        creatOut = creature.output[outInd].outbox
+        if abs(creatOut) > MaxValue:
+            return -1
+
+        distance+= abs(targets[outInd]-creatOut)
+
+    #Put an upper cap on similarity
+    if distance <= 0.0001:
+        return 10000
+
+    return 1/distance
+
 
 def fitness_exhaustiveCombiner(setFits):
     '''
@@ -599,24 +656,52 @@ def myGauss(mu,sig,x):
 
 
 def main():
-    CreatureCount = 100
-    NeuronCount = 10
-    InputCount = 2
-    OutputCount = 3
-    Cycles = 25
+    CreatureCount = 200
+    NeuronCount = 7
+    InputCount = 1
+    OutputCount = 2
+    Cycles = 50
     Lessons = 1
     LessonMutationDivider = 2
-    GenerationMutationDivider = 20
-    MaxValue=15
+    GenerationMutationDivider = 5
+    MaxValue=55
 
-    trainingSetInputs = [[1],[0],[1]]
-    trainingSetOutputs = [[1,1],[1,0],[1,1]]
-
+    trainingSetInputs = [[1],[0]]
+    trainingSetOutputs = [[1,1],[0,0]]
     print "Population Description:"
 
     demoPop =  Population(CreatureCount, NeuronCount, InputCount, OutputCount,Cycles, Lessons, LessonMutationDivider,GenerationMutationDivider,MaxValue)
 
-    demoPop.populate()
+    genCount = 200
+    for g in range(genCount):
+        if (g % 20) == 0:
+            print "Gen: ",g
+            runs = 5
+            print "Best Creature:"
+            testCreatureRepeatability(demoPop.creatureList[0],trainingSetInputs,runs,Cycles)
+            print ""
+            print "Worst Creature:"
+            testCreatureRepeatability(demoPop.creatureList[-1],trainingSetInputs,runs,Cycles)
+        demoPop.run_generationBasic()
+
+    #print demoPop.statsCreature.fitness
+
+    runs = 5
+    print "Best Creature:"
+    testCreatureRepeatability(demoPop.creatureList[0],trainingSetInputs,runs,Cycles)
+    print ""
+    print "Worst Creature:"
+    testCreatureRepeatability(demoPop.creatureList[-1],trainingSetInputs,runs,Cycles)
+
+    localtime = time.localtime(time.time())
+    Date = str(localtime[0])+'_'+str(localtime[1])+'_'+str(localtime[2])
+    Time = str(localtime[3])+'_'+str(localtime[4])+'_'+str(localtime[5])
+
+    filename = r"C:\Users\chris.nelson\Desktop\NNet\CreatureDebugging\bestie4lyfe_"+Date+'_'+Time
+    save_creature(demoPop.creatureList[0],filename)
+    '''
+
+
     print "  Number of creatures:",len(demoPop.creatureList)
 
     for setInd in range(len(trainingSetInputs)):
@@ -646,6 +731,7 @@ def main():
 
 
     seeCreature(demoPop, demoPop.creatureList[0] )
+    '''
 
 if __name__ == '__main__':
     main()

@@ -13,6 +13,7 @@ class Creature:
         self.fitness = 0.1
         self.input = []
         self.output = []
+        self.cycles=0
 
         #Best parameters are used in the lessons to allow improvement only
 
@@ -87,6 +88,45 @@ class Creature:
             for s in self.synapseList:
                 s.run()
 
+    def run_untilConverged(self,inputSet,maxCycles):
+        '''
+        Let each creature run 'lessons' number of 'cycles' length tests on the current training set
+        parameters:
+           population: The population this creature lives in. This can be replaced with trainingCreature
+           cycles: The number of cycles that this creature is allowed to run before it's outputs are read.
+        returns:
+            none
+        '''
+        self.cycles = 0
+        outputTracker = []
+        for i in range ( self.inputCount ):
+            self.input[i].inbox = inputSet[i]
+        for cycle in range( maxCycles ):
+            if cycle != 0:
+                for i in range ( self.inputCount ):
+                    self.input[i].inbox += inputSet[i]
+            for n in self.neuronList:
+                n.run()
+            for s in self.synapseList:
+                s.run()
+
+
+            self.cycles+=1
+
+            if cycle <= self.neuronCount:
+                outputTracker.append([])
+                for o in self.output:
+                    outputTracker[-1].append(o.outbox)
+            else:
+                for o in self.output:
+                    newVal.append(o)
+                outputTracker = outputTracker[1:]+outputTracker[:1]
+                outputTracker[-1] = newVal
+
+                if checkConvergence(outputTracker):
+                    break
+
+
 class Neuron:
     def __init__(self):
         self.threshold = random()*randint(-1,1)
@@ -122,6 +162,7 @@ class Synapse:
 
 
 def testCreatureRepeatability(creature,inputSets,runs,cycles):
+    print 'Creature fitness = ',creature.fitness
     for inputSet in inputSets:
         print 'Inputs: ',inputSet
         for r in range(runs):
@@ -164,8 +205,8 @@ def main():
 
     #demoCreature = Creature(neuronCount, inputCount, outputCount)
 
-    filename = r'C:\Users\chris.nelson\Desktop\NNet\ExhaustiveTrainingPerGen\MaNigga2015_2_12_20_0_45'
-    demoCreature = load_creature()
+    filename = r'C:\Users\chris.nelson\Desktop\NNet\ExhaustiveTrainingPerGen\MaNigga2015_2_12_21_52_24'
+    demoCreature = load_creature(filename)
 
 
     print 'Creature Description:'

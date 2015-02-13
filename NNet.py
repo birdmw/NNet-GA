@@ -382,6 +382,23 @@ def run_sobol_exhaustiveLesson(evolNum,sobolTestPoint,Gens, CreatCount, InCount,
 
 def main():
     '''
+    IMPORTANT INVESTIGATION AVENUES:
+        ELO's
+
+        Creature has it's own cycle count:
+            Use cycles as a measure, not a control
+            Allow creature to run until 'converged' or hit a populational max cycle count
+
+        Covariance should determine WHICH properties to mutate, NOT how much to mutate by:
+
+        Remove generational mutation divisor, each property doesn't necessarily need to mutate the same amount
+            Perhaps have each creature know it's own mutation rates for each property.
+                Start with constants, perhaps evolve/PID them later.
+            Alternatively:
+                Current sigmaCreature becomes covarianceCreature
+                sigmaCreature is still used for mutational sigmas, but they are NOT computed through covariance (See above)
+
+        Try removing mutation all together
 
     '''
 
@@ -412,8 +429,8 @@ def main():
 
     #Specfic mins, maxes, and resolution for sobol test points
     #xxx_startStop = [Minimum Value, Maximum Value, Resolution (ie: decimels to the right of 0. Can be negative)]
-    Neurons_startStop = [INPUT_COUNT+OUTPUT_COUNT+3,INPUT_COUNT+OUTPUT_COUNT+15,0]
-    Cycles_startStop = [Neurons_startStop[0],Neurons_startStop[1]*5,0]
+    Neurons_startStop = [INPUT_COUNT+OUTPUT_COUNT+3,INPUT_COUNT+OUTPUT_COUNT+10,0]
+    Cycles_startStop = [Neurons_startStop[0],Neurons_startStop[1]*4,0]
     Lessons_startStop = [1,7,0]
     LessMutDiv_startStop = [0.1,50,1]
     MutDivider_startStop = [5,100,0]
