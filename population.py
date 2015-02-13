@@ -5,7 +5,7 @@ import numpy as np
 from creatureGUI import *
 
 class Population:
-    def __init__(self, CreatureCount, NeuronCount, InputCount, OutputCount,Cycles, Lessons = 1, LessonMutationDivider=1,GenerationMutationDivider=1):
+    def __init__(self, CreatureCount, NeuronCount, InputCount, OutputCount,Cycles, Lessons = 1, LessonMutationDivider=1,GenerationMutationDivider=1,MaxValue=10):
         self.creatureList = []
         self.creatureCount = CreatureCount
         self.inputCount = InputCount
@@ -15,6 +15,7 @@ class Population:
         self.lessonMutDiv = LessonMutationDivider
         self.genMutDiv = GenerationMutationDivider
         self.speciesFitness = 0
+        self.MaxValue = MaxValue
 
         #Create pseudo-creature data structures
         self.sigmaCreature = Creature( NeuronCount, InputCount, OutputCount )
@@ -68,7 +69,7 @@ class Population:
 
             creatNeuronCount = len(creature.neuronList)
             creatSynapseCount = len(creature.synapseList)
-            creatPropertyCount = creatNeurons+creatSynapses
+            creatPropertyCount = creatNeuronCount+creatSynapseCount
 
             mutatedPerc = 0
             mutationCount = 0
@@ -90,7 +91,7 @@ class Population:
             for propInd in propInds:
                 if propInd < creatNeuronCount:
                     mu=creature.neuronList[propInd].threshold
-                    sigma = ((1-creature.fitness)*mu+0.1)/(self.lessonMutateDiv)
+                    sigma = ((1-creature.fitness)*mu+0.1)/(self.lessonMutDiv)
                     creature.neuronList[propInd].threshold = gauss(mu,sigma)
 
                 else:
@@ -99,19 +100,19 @@ class Population:
                     abcd = int(propInd/(synInd+1))
                     if abcd == 0:
                         mu = creature.synapseList[synInd].a
-                        sigma = ((1-creature.fitness)*mu+0.1)/(self.lessonMutateDiv)
+                        sigma = ((1-creature.fitness)*mu+0.1)/(self.lessonMutDiv)
                         creature.synapseList[synInd].a = gauss(mu,sigma)
                     elif abcd == 1:
                         mu = creature.synapseList[synInd].b
-                        sigma = ((1-creature.fitness)*mu+0.1)/(self.lessonMutateDiv)
+                        sigma = ((1-creature.fitness)*mu+0.1)/(self.lessonMutDiv)
                         creature.synapseList[synInd].b = gauss(mu,sigma)
                     elif abcd == 2:
                         mu = creature.synapseList[synInd].c
-                        sigma = ((1-creature.fitness)*mu+0.1)/(self.lessonMutateDiv)
+                        sigma = ((1-creature.fitness)*mu+0.1)/(self.lessonMutDiv)
                         creature.synapseList[synInd].c = gauss(mu,sigma)
                     elif abcd == 3:
                         mu = creature.synapseList[synInd].d
-                        sigma = ((1-creature.fitness)*mu+0.1)/(self.lessonMutateDiv)
+                        sigma = ((1-creature.fitness)*mu+0.1)/(self.lessonMutDiv)
                         creature.synapseList[synInd].d = gauss(mu,sigma)
 
 
@@ -158,7 +159,7 @@ class Population:
                 for propInd in propInds:
                     if propInd < creatNeuronCount:
                         mu=creature.neuronList[propInd].threshold
-                        sigma = self.sigmaCreature.neuronList[propInd].threshold
+                        sigma = self.sigmaCreature.neuronList[propInd].threshold/self.genMutDiv
                         creature.neuronList[propInd].threshold = gauss(mu,sigma)
 
                     else:
@@ -167,19 +168,19 @@ class Population:
                         abcd = int(propInd/(synInd+1))
                         if abcd == 0:
                             mu = creature.synapseList[synInd].a
-                            sigma = self.sigmaCreature.synapseList[synInd].a
+                            sigma = self.sigmaCreature.synapseList[synInd].a/self.genMutDiv
                             creature.synapseList[synInd].a = gauss(mu,sigma)
                         elif abcd == 1:
                             mu = creature.synapseList[synInd].b
-                            sigma = self.sigmaCreature.synapseList[synInd].b
+                            sigma = self.sigmaCreature.synapseList[synInd].b/self.genMutDiv
                             creature.synapseList[synInd].b = gauss(mu,sigma)
                         elif abcd == 2:
                             mu = creature.synapseList[synInd].c
-                            sigma = self.sigmaCreature.synapseList[synInd].c
+                            sigma = self.sigmaCreature.synapseList[synInd].c/self.genMutDiv
                             creature.synapseList[synInd].c = gauss(mu,sigma)
                         elif abcd == 3:
                             mu = creature.synapseList[synInd].d
-                            sigma = self.sigmaCreature.synapseList[synInd].d
+                            sigma = self.sigmaCreature.synapseList[synInd].d/self.genMutDiv
                             creature.synapseList[synInd].d = gauss(mu,sigma)
 
 
@@ -219,17 +220,19 @@ class Population:
 
         for i in range(len(inList)):
             self.trainingCreature.input[i].inbox = inList[i]
-        for i in range(len(outList)):
-            self.trainingCreature.output[i].outbox = outList[i]
-##        #xor(I0,I1)
-##        self.trainingCreature.output[0].outbox = float(bool(self.trainingCreature.input[0].inbox)^bool(self.trainingCreature.input[1].inbox))
-##
-##        #PAM4
-####        self.trainingCreature.output[0].outbox = float(self.trainingCreature.input[0].inbox) + 0.5*float(self.trainingCreature.input[1].inbox)
-##        #and(I0,I1)
-##        self.trainingCreature.output[1].outbox = float(bool(self.trainingCreature.input[0].inbox)&bool(self.trainingCreature.input[1].inbox))
-##        #or(I0,I1)
-##        self.trainingCreature.output[2].outbox = float(bool(self.trainingCreature.input[0].inbox) or bool(self.trainingCreature.input[1].inbox))
+
+##        for i in range(len(outList)):
+##            self.trainingCreature.output[i].outbox = outList[i]
+
+        #xor(I0,I1)
+        self.trainingCreature.output[0].outbox = float(bool(self.trainingCreature.input[0].inbox)^bool(self.trainingCreature.input[1].inbox))
+
+        #PAM4
+##        self.trainingCreature.output[0].outbox = float(self.trainingCreature.input[0].inbox) + 0.5*float(self.trainingCreature.input[1].inbox)
+        #and(I0,I1)
+        self.trainingCreature.output[1].outbox = float(bool(self.trainingCreature.input[0].inbox)&bool(self.trainingCreature.input[1].inbox))
+        #or(I0,I1)
+        self.trainingCreature.output[2].outbox = float(bool(self.trainingCreature.input[0].inbox) or bool(self.trainingCreature.input[1].inbox))
 ##        #0.5*I0 + 0.5*I1
 ##        #self.trainingCreature.output[3].outbox = 0.5*float(self.trainingCreature.input[0].inbox) + 0.5*float(self.trainingCreature.input[1].inbox)
 ##        #
@@ -252,13 +255,17 @@ class Population:
         for inp in self.trainingCreature.input:
             inputSet.append(inp.inbox)
 
+        outputSet = []
+        for outp in self.trainingCreature.output:
+            outputSet.append(outp.outbox)
+
         sigmas = []
         for outp in self.deltaCreature.output:
             sigmas.append(outp.outbox)
 
         for creature in self.creatureList:
             creature.run(inputSet,self.cycles)
-            creature.fitness = fitness(creature,inputSet,sigmas)
+            creature.fitness = fitness(creature,outputSet,sigmas,self.MaxValue)
         #Sort creatures based on fitness
         self.creatureList.sort(key = lambda x: x.fitness, reverse=True)
         self.update_statsCreature()
@@ -275,9 +282,14 @@ class Population:
         for inp in self.trainingCreature.input:
             inputSet.append(inp.inbox)
 
+        outputSet = []
+        for outp in self.trainingCreature.output:
+            outputSet.append(outp.outbox)
+
         sigmas = []
         for outp in self.deltaCreature.output:
             sigmas.append(outp.outbox)
+
 
         for l in range(self.lessons):
             if l != 0:
@@ -285,8 +297,8 @@ class Population:
                 self.mutate_lesson()
 
             for creature in self.creatureList:
-                creature.run(inputSet,self.cycles,self.lessonMutDiv)
-                creature.fitness = fitness(creature,inputSet,sigmas)
+                creature.run(inputSet,self.cycles)
+                creature.fitness = fitness(creature,inputSet,sigmas,self.MaxValue)
                 if l == 0:
                     #On the first lesson, force creature to forget previous 'best' values, thereby keeping generational mutations
                     creature.updateBest()
@@ -298,7 +310,7 @@ class Population:
         self.creatureList.sort(key = lambda x: x.fitness, reverse=True)
         self.update_statsCreature()
 
-    def compete_exhaustiveLessons(self, inputSets):
+    def compete_exhaustiveLessons(self, inputSets,outputSets= None):
         '''
         Each creature runs on each input set once, for every lesson.
         Creature fitness is calculated based on it's performance on ALL input sets
@@ -306,6 +318,7 @@ class Population:
         Updates creatures fitness
         Updates creatureList (sorts based on fitness)
         Updates statsCreature
+        Sets trainingCreature's inputs, optionally outputs
         '''
         sigmas = []
         for outp in self.deltaCreature.output:
@@ -320,10 +333,23 @@ class Population:
                 #Each creature runs on each input set once
                 shuffle(inputSets)
                 setFits = []
-                for inputSet in inputSets:
-                    self.setTrainingCreature(inputSet) #Each creature sees each set in the training set, but in potentially different orders
-                    creature.run(inputSet,self.cycles,self.lessonMutDiv)
-                    setFits.append(fitness(creature,inputSet,sigmas))
+                for inpInd in range(len(inputSets)):
+
+                    #Each creature sees each set in the training set, but in potentially different orders
+                    if outputSets != None:
+                        self.setTrainingCreature(inputSets[inpInd],outputSets[inpInd])
+                    else:
+                        self.setTrainingCreature(inputSets[inpInd])
+                        outputSet = [] #Since target output set not provided, must build it.
+                        for outp in self.trainingCreature.output:
+                            outputSet.append(outp.outbox)
+
+                    creature.run(inputSets[inpInd],self.cycles)
+
+                    if outputSets != None:
+                        setFits.append(fitness(creature,outputSets[inpInd],sigmas,self.MaxValue))
+                    else:
+                        setFits.append(fitness(creature,outputSet,sigmas,self.MaxValue))
 
                 creature.fitness = fitness_exhaustiveCombiner(setFits)
 
@@ -341,6 +367,8 @@ class Population:
 
         #Sort creatures based on fitness
         self.creatureList.sort(key = lambda x: x.fitness, reverse=True)
+
+
     def update_statsCreature(self):
         '''
         Appends the current status of the population to statsCreature
@@ -460,35 +488,34 @@ class Population:
             print '======== !!RANDOMLY REPOPULATED!! ========'
 
 
-    def run_generationBasic(self):
+    def run_generationBasic(self,inputSet = None,outputSet = None):
         '''
         Runs the population for one generation in the basic (populate)-(run)-(prune)-(mutate) sequence
         '''
         self.populate()
-        self.setTrainingCreature()
+        self.setTrainingCreature(inputSet,outputSet)
         self.compete_run()
         self.prune()
         self.update_pseudoCreatures()
         self.mutate_generation()
 
-    def run_generationLessons(self):
+    def run_generationLessons(self,inputSet = None,outputSet = None):
         '''
         Runs the population for one generation in the (populate)-(run lessons)-(prune)-(mutate) sequence
         '''
         self.populate()
-        self.setTrainingCreature()
+        self.setTrainingCreature(inputSet,outputSet)
         self.compete_lessons()
         self.prune()
         self.update_pseudoCreatures()
         self.mutate_generation()
 
-    def run_generationLessons(self):
+    def run_generationExhaustiveLessons(self,inputSets,outputSets=None):
         '''
         Runs the population for one generation in the (populate)-(run lessons)-(prune)-(mutate) sequence
         '''
         self.populate()
-        self.setTrainingCreature()
-        self.compete_lessons()
+        self.compete_exhaustiveLessons(inputSets,outputSets)
         self.prune()
         self.update_pseudoCreatures()
         self.mutate_generation()
@@ -497,7 +524,7 @@ class Population:
 #END POPULATION CLASS
 
 
-def fitness(creature,mus,sigmas):
+def fitness(creature,mus,sigmas,MaxValue):
     '''
     Calculates the fitness for a creature using it's outputs as points in gaussians created from the provided mus and sigmas
     Parameters:
@@ -511,7 +538,7 @@ def fitness(creature,mus,sigmas):
     fitSum = 0
     for out in range(len(mus)):
         x = creature.output[out].outbox
-        if abs(x) > MAX_VALUE:
+        if abs(x) > MaxValue:
             return -1
         g = myGauss(mus[out],sigmas[out],x)
         fitSum +=g
@@ -563,13 +590,6 @@ def myGauss(mu,sig,x):
         else:
             return 0.0
 
-    if (abs(mu) > MAX_VALUE):
-        return 0
-    if (abs(sig)>MAX_VALUE):
-        return 0
-    if (abs(x)>MAX_VALUE):
-        return 0
-
     p1 = -np.power(x-mu,2.)
     p2 = 2*np.power(sig,2.)
 
@@ -587,13 +607,14 @@ def main():
     Lessons = 1
     LessonMutationDivider = 2
     GenerationMutationDivider = 20
+    MaxValue=15
 
     trainingSetInputs = [[1],[0],[1]]
     trainingSetOutputs = [[1,1],[1,0],[1,1]]
 
     print "Population Description:"
 
-    demoPop =  Population(CreatureCount, NeuronCount, InputCount, OutputCount,Cycles, Lessons, LessonMutationDivider,GenerationMutationDivider)
+    demoPop =  Population(CreatureCount, NeuronCount, InputCount, OutputCount,Cycles, Lessons, LessonMutationDivider,GenerationMutationDivider,MaxValue)
     demoPop.populate()
     print "  Number of creatures:",len(demoPop.creatureList)
 
@@ -627,5 +648,4 @@ def main():
     seeCreature(demoPop, demoPop.creatureList[0])
 
 if __name__ == '__main__':
-    MAX_VALUE = 15
     main()

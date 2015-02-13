@@ -35,7 +35,7 @@ class Creature:
 
         for n1 in self.neuronList:
             for n2 in self.neuronList:
-                self.synapseList.append(Synapse(n1, n2, random() / self.neuronCount, random() / (2*pi) / self.neuronCount, random() * pi / self.neuronCount, random() / self.neuronCount))
+                self.synapseList.append(Synapse(n1, n2,self.neuronCount))
                 #self.propertyCount+=4
         self.updateBest()
 
@@ -89,10 +89,10 @@ class Creature:
 class Neuron:
     def __init__(self, threshold):
         self.threshold = threshold
-        self.inbox = random()
-        self.value = random()
-        self.outbox = random()
-        self.prevOutbox = random()
+        self.inbox = random()*randint(-1,1)
+        self.value = random()*randint(-1,1)
+        self.outbox = random()*randint(-1,1)
+        self.prevOutbox = random()*randint(-1,1)
 
     def run(self):
         self.prevOutbox = self.outbox
@@ -104,11 +104,11 @@ class Neuron:
         self.inbox = 0.0
 
 class Synapse:
-    def __init__(self, n1, n2, a, b, c, d):
-        self.a = a
-        self.b = b
-        self.c = c
-        self.d = d
+    def __init__(self, n1, n2,neuronCount):
+        self.a = random()*randint(-1,1)
+        self.b = random()*randint(-1,1)*pi
+        self.c = random()*randint(-1,1)*pi
+        self.d = random()*randint(-1,1)/neuronCount
         self.n1 = n1
         self.n2 = n2
 
@@ -120,13 +120,38 @@ class Synapse:
             pass
 
 
+def testCreatureRepeatability(creature,inputSets,runs,cycles):
+    for inputSet in inputSets:
+        print 'Inputs: ',inputSet
+        for r in range(runs):
+            creature.run(inputSet,cycles)
+            outputs = []
+            for outp in creature.output:
+                outputs.append(outp.outbox)
+
+            print '  Run',r,' Outputs: ',outputs
+
+def save_creature(creature,fileName):
+    fCreature = open(fileName,'wb')
+    dump(creature,fCreature)
+    fCreature.close()
+
+def load_creature(fileName):
+    fCreature = open(fileName,'r')
+    creat = load(fCreature)
+    fCreature.close()
+    return creat
+
+
 def main():
-    neuronCount = 8
+    neuronCount = 10
     inputCount =2
     outputCount = 2
 
     inputSet = [0,1]
-    cycles = 25
+    cycles = neuronCount*5
+
+    runs = 5
 
     demoCreature = Creature(neuronCount, inputCount, outputCount)
     print 'Creature Description:'
@@ -136,11 +161,20 @@ def main():
     print '  Number of outputs:',len(demoCreature.output)
     print '  Cycles to run:',cycles
     print '  Inputs: ',inputSet
+
     demoCreature.run(inputSet,cycles)
     outputs = []
     for outp in demoCreature.output:
         outputs.append(outp.outbox)
     print '  Outputs: ',outputs
+
+    print ''
+    print 'Repeatability test:'
+    inputSets = [[0,0],[0,1],[1,0],[1,1]]
+    testCreatureRepeatability(demoCreature,inputSets,runs,cycles)
+
+
+
 
 
 if __name__ == '__main__':

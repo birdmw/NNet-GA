@@ -1,5 +1,7 @@
 #==========================
 #
+# VERSION A02 2_12_2015
+#
 # THIS IS A PRE-ALPHA VERSION FOR DEMO PURPOSES
 # NOT INTENDED FOR PRACTICAL APPLICATION YET
 #
@@ -13,14 +15,12 @@
 
 from Tkinter import *
 from math import *
-
-from win32api import GetSystemMetrics
-screenWidth = GetSystemMetrics (0)
-screenHeight = GetSystemMetrics (1)
+master = Tk()
+screenWidth = master.winfo_screenwidth()
+screenHeight = master.winfo_screenheight()
 
 def seeCreature(population, creature):
 
-    master = Tk()
     w = Canvas(master, width=screenWidth*.75, height=screenHeight*.75)
     canvasWidth = int(w.cget("width"))
     canvasHeight = int(w.cget("height"))
@@ -91,12 +91,15 @@ def seeCreature(population, creature):
             except:
                 inlist.append(0.0)
                 print "input strange or empty - using 0.0"
-        local_setTrainingCreature(population,inList=inlist, outList = outlist)
-        local_run(population,creature,1)
+        #local_setTrainingCreature(population,inList=inlist, outList = outlist)
+        #local_run(inlist,creature,1)
+        print inlist
+        creature.run(inlist,1)
+        updateGraph( creature )
         for o in range(len(creature.output)):
             outStringVar[o].set(str(round(creature.output[o].outbox,2)))
 
-    def local_run( population, creature, cycles ):
+    def local_run( inlist, creature, cycles ):
         for r in range( cycles ):
             for i in range ( creature.inputCount ):
                 creature.input[i].inbox += population.trainingCreature.input[i].inbox
@@ -104,12 +107,32 @@ def seeCreature(population, creature):
                 n.run()
             for s in creature.synapseList:
                 s.run()
+        updateGraph( creature )
 
     def local_setTrainingCreature( population, inList = None, outList = None ):
         for i in range(len(inList)):
             population.trainingCreature.input[i].inbox = inList[i]
         for i in range(len(outList)):
             population.trainingCreature.output[i].outbox = outList[i]
+
+    def updateGraph(creature):
+        findMaxValues ( creature )
+
+    def findMaxValues ( creature ):
+        maxA=-999
+        maxB=-999
+        maxC=-999
+        maxD=-999
+        maxT=-999
+        for s in creature.synapseList:
+            maxA = max(maxA,s.a)
+            maxB = max(maxA,s.b)
+            maxC = max(maxA,s.c)
+            maxD = max(maxA,s.d)
+        for n in creature.neuronList:
+            maxT = max(maxA,n.threshold)
+
+        return maxA,maxB,maxC,maxD,maxT
 
     step = Button(master, text="Step", command=callback)
     step.place(x=canvasCenter[0],y=0,anchor=N)
