@@ -1,6 +1,7 @@
 from random import *
 from math import *
 from copy import *
+from pickle import *
 
 class Creature:
     def __init__(self , neuronCount, inputCount, outputCount):
@@ -23,7 +24,7 @@ class Creature:
         #self.propertyCount = 0
 
         for n in range(self.neuronCount):
-            self.neuronList.append(Neuron(random()))
+            self.neuronList.append(Neuron())
             #self.propertyCount+=1
 
         for i in range (self.inputCount):
@@ -87,8 +88,8 @@ class Creature:
                 s.run()
 
 class Neuron:
-    def __init__(self, threshold):
-        self.threshold = threshold
+    def __init__(self):
+        self.threshold = random()*randint(-1,1)
         self.inbox = random()*randint(-1,1)
         self.value = random()*randint(-1,1)
         self.outbox = random()*randint(-1,1)
@@ -135,25 +136,38 @@ def save_creature(creature,fileName):
     fCreature = open(fileName,'wb')
     dump(creature,fCreature)
     fCreature.close()
+    return fileName
 
 def load_creature(fileName):
     fCreature = open(fileName,'r')
     creat = load(fCreature)
     fCreature.close()
+    for n in range ( creat.neuronCount ):
+        if n < creat.inputCount:
+            creat.neuronList[n] = creat.input[n]
+        if (creat.neuronCount - n-1) < creat.outputCount:
+            creat.neuronList[n] = creat.output[creat.neuronCount -n-1]
+    #print 'Loaded Creatures outputs:'
+
     return creat
 
 
 def main():
-    neuronCount = 10
+    neuronCount = 6
     inputCount =2
-    outputCount = 2
+    outputCount = 1
 
     inputSet = [0,1]
-    cycles = neuronCount*5
+    cycles = 45
 
-    runs = 5
+    runs =6
 
-    demoCreature = Creature(neuronCount, inputCount, outputCount)
+    #demoCreature = Creature(neuronCount, inputCount, outputCount)
+
+    filename = r'C:\Users\chris.nelson\Desktop\NNet\ExhaustiveTrainingPerGen\MaNigga2015_2_12_20_0_45'
+    demoCreature = load_creature()
+
+
     print 'Creature Description:'
     print '  Number of neurons:',len(demoCreature.neuronList)
     print '  Number of synapses:',len(demoCreature.synapseList)

@@ -225,14 +225,14 @@ class Population:
 ##            self.trainingCreature.output[i].outbox = outList[i]
 
         #xor(I0,I1)
-        self.trainingCreature.output[0].outbox = float(bool(self.trainingCreature.input[0].inbox)^bool(self.trainingCreature.input[1].inbox))
+        #self.trainingCreature.output[0].outbox = float(bool(self.trainingCreature.input[0].inbox)^bool(self.trainingCreature.input[1].inbox))
 
         #PAM4
 ##        self.trainingCreature.output[0].outbox = float(self.trainingCreature.input[0].inbox) + 0.5*float(self.trainingCreature.input[1].inbox)
         #and(I0,I1)
-        self.trainingCreature.output[1].outbox = float(bool(self.trainingCreature.input[0].inbox)&bool(self.trainingCreature.input[1].inbox))
+        #self.trainingCreature.output[1].outbox = float(bool(self.trainingCreature.input[0].inbox)&bool(self.trainingCreature.input[1].inbox))
         #or(I0,I1)
-        self.trainingCreature.output[2].outbox = float(bool(self.trainingCreature.input[0].inbox) or bool(self.trainingCreature.input[1].inbox))
+        self.trainingCreature.output[0].outbox = float(bool(self.trainingCreature.input[0].inbox) or bool(self.trainingCreature.input[1].inbox))
 ##        #0.5*I0 + 0.5*I1
 ##        #self.trainingCreature.output[3].outbox = 0.5*float(self.trainingCreature.input[0].inbox) + 0.5*float(self.trainingCreature.input[1].inbox)
 ##        #
@@ -351,12 +351,12 @@ class Population:
                     else:
                         setFits.append(fitness(creature,outputSet,sigmas,self.MaxValue))
 
+
+                    #Track each training set for the current best creature with statsCreature
+                    if self.creatureList.index(creature)==0:
+                        self.update_statsCreature()
+
                 creature.fitness = fitness_exhaustiveCombiner(setFits)
-
-                #Track each training set for the current best creature with statsCreature
-                if self.creatureList.index(creature)==0:
-                    self.update_statsCreature()
-
 
                 if l == 0:
                     #On the first lesson, force creature to forget previous 'best' values, thereby keeping generational mutations
@@ -601,8 +601,8 @@ def myGauss(mu,sig,x):
 def main():
     CreatureCount = 100
     NeuronCount = 10
-    InputCount = 1
-    OutputCount = 2
+    InputCount = 2
+    OutputCount = 3
     Cycles = 25
     Lessons = 1
     LessonMutationDivider = 2
@@ -615,6 +615,7 @@ def main():
     print "Population Description:"
 
     demoPop =  Population(CreatureCount, NeuronCount, InputCount, OutputCount,Cycles, Lessons, LessonMutationDivider,GenerationMutationDivider,MaxValue)
+
     demoPop.populate()
     print "  Number of creatures:",len(demoPop.creatureList)
 
@@ -644,8 +645,7 @@ def main():
         demoPop.populate()
 
 
-
-    seeCreature(demoPop, demoPop.creatureList[0])
+    seeCreature(demoPop, demoPop.creatureList[0] )
 
 if __name__ == '__main__':
     main()

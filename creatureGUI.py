@@ -91,9 +91,8 @@ def seeCreature(population, creature):
             except:
                 inlist.append(0.0)
                 print "input strange or empty - using 0.0"
-        #local_setTrainingCreature(population,inList=inlist, outList = outlist)
-        #local_run(inlist,creature,1)
-        print inlist
+##        local_setTrainingCreature(population,inList=inlist, outList = outlist)
+##        local_run(inlist,creature,1)
         creature.run(inlist,1)
         updateGraph( creature )
         for o in range(len(creature.output)):

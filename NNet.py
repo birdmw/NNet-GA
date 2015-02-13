@@ -1,15 +1,16 @@
 from math import *
 from random import *
-from copy import *
-from pickle import *
+#from copy import *
+#from pickle import *
 from sobol_lib_NoNumpy import *
 from population import *
 from creature import *
 from creatureGUI import *
-import numpy as np
+#import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.mlab as mlab
 
+from Tkinter import *
 import time
 #from matplotlib.ticker import NullFormatter
 #from mpl_toolkits.mplot3d import Axes3D
@@ -298,12 +299,17 @@ def evolveSpecies_exhaustiveLesson(CreatCount, NeurCount, InCount, OutCount, Gen
     testStrength= calculateSpeciesFitness_goverG2(bestOutputs,trainOutputs)
 
 
+    localtime = time.localtime(time.time())
+    Date = str(localtime[0])+'_'+str(localtime[1])+'_'+str(localtime[2])
+    Time = str(localtime[3])+'_'+str(localtime[4])+'_'+str(localtime[5])
 
-    seeCreature(population, population.creatureList[0])
+    bestFileLocation = save_creature(population.creatureList[0],FILE_LOCATION+"\\MaNigga"+Date+'_'+Time)
+    print bestFileLocation
 
+    #seeCreature(population, population.creatureList[0])
 
     createFig_creature_exhaustiveTrainingSpace(population,population.creatureList[0],Cycles,InputSets)
-    return bestFits, bestOutputs, trainOutputs, testStrength
+    return bestFits, bestOutputs, trainOutputs, testStrength, bestFileLocation
 
 def run_sobol_exhaustiveLesson(evolNum,sobolTestPoint,Gens, CreatCount, InCount,OutCount,charFileName,inputSets,outputRelations=None):
     NeurCount= int(sobolTestPoint[0])
@@ -346,6 +352,7 @@ def run_sobol_exhaustiveLesson(evolNum,sobolTestPoint,Gens, CreatCount, InCount,
         bestOutputs.append(results[1])
         trainOutputs.append(results[2])
         testStrength.append(results[3])
+        bestFileLocation = results[4]
 
         print 'Final Species Fitness:',testStrength[-1]
 
@@ -353,10 +360,15 @@ def run_sobol_exhaustiveLesson(evolNum,sobolTestPoint,Gens, CreatCount, InCount,
         toWrite = []
         for G in range(GENERATIONS):
             for trainInd in range(len(inputSets)):
-                toWrite.append([G]+BestFits[p][G+trainInd]+bestOutputs[p][G+trainInd]+trainOutputs[p][G+trainInd])
+##                print p,G,trainInd
+##                print BestFits[p]
+##                print bestOutputs[p]
+##                print trainOutputs[p]
+                toWrite.append([G]+BestFits[p][G*len(inputSets)+trainInd]+bestOutputs[p][G*len(inputSets)+trainInd]+trainOutputs[p][G*len(inputSets)+trainInd])
 
         toWrite.append(['Final Species Fitness:',testStrength[-1]])
         toWrite.append([" "])
+        toWrite.append(["Best creature file:",bestFileLocation])
 
         writeSobolFileMultiRows(detailsFileName,toWrite)
 
@@ -372,10 +384,9 @@ def main():
     '''
 
     '''
-    #50 Gen, 100 Creat,2In, 3Out, 20 sobol, 1 pops =~ 20 to 50 min. On Chris' laptop. Depending on start/stop values
 
     #Relationships between inputs and outputs for this training set, only used in results file
-    sobolTestPts = 1
+    sobolTestPts = 10
     # next seed = 9
     sobolSeed = 0 #Which sobol point to start from. Remeber, 0 indexed
 
@@ -416,8 +427,8 @@ def main():
     testPoints = generateSobolCharacterizationPoints(len(toSobolTest),sobolTestPts,mins,maxs,resolution,sobolSeed)
 
     ''' Uncomment to force specific test points'''
-    testPoints=[]
-    testPoints.append([10,25,4,1,16])
+##    testPoints=[]
+##    testPoints.append([10,25,4,1,16])
 ##    testPoints.append([4,25,4,1,16])
 ##    testPoints.append([9,7,1,4,54])
 ##    testPoints.append([5,8,3,12,71])
@@ -437,10 +448,10 @@ if __name__ == "__main__":
 
     FILE_LOCATION =r"C:\Users\chris.nelson\Desktop\NNet\ExhaustiveTrainingPerGen"
 
-    GENERATIONS = 10 #50
-    CREATURE_COUNT = 50 #100
+    GENERATIONS = 50 #50
+    CREATURE_COUNT = 100 #100
     INPUT_COUNT = 2
-    OUTPUT_COUNT = 3
+    OUTPUT_COUNT = 1
     POPS_TO_TEST=1
 
     main()
