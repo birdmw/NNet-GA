@@ -19,7 +19,7 @@ master = Tk()
 screenWidth = master.winfo_screenwidth()
 screenHeight = master.winfo_screenheight()
 
-def seeCreature(creature):
+def seeCreature(population, creature):
 
     w = Canvas(master, width=screenWidth*.75, height=screenHeight*.75)
     canvasWidth = int(w.cget("width"))
@@ -91,14 +91,12 @@ def seeCreature(creature):
             except:
                 inlist.append(0.0)
                 print "input strange or empty - using 0.0"
-##        local_setTrainingCreature(population,inList=inlist, outList = outlist)
-##        local_run(inlist,creature,1)
-        creature.run(inlist,1)
-        updateGraph( creature )
+        local_setTrainingCreature(population,inList=inlist, outList = outlist)
+        local_run(population,creature,1)
         for o in range(len(creature.output)):
             outStringVar[o].set(str(round(creature.output[o].outbox,2)))
 
-    def local_run( inlist, creature, cycles ):
+    def local_run( population, creature, cycles ):
         for r in range( cycles ):
             for i in range ( creature.inputCount ):
                 creature.input[i].inbox += population.trainingCreature.input[i].inbox

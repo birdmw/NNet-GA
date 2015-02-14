@@ -161,6 +161,34 @@ class Synapse:
             pass
 
 
+def checkConvergence(outputLists):
+    '''
+    Takes the given list of output lists, finds the min and max value for each output
+    For all output sets:
+        If the difference between the min and max value is greater than 0.01 % of the max value, return False
+
+    Return true if all outputs pass
+
+    outputLists = [[cycleA_output0,cycleA_output1,...],[cycleB_output0,cycleB_output1,...],...]
+    '''
+
+    percentageDifferenceToBeConverged = 0.0001
+
+    for outInd in range(len(pt)):
+        reorderedOutputs = []
+        for pt in outputList:
+            reorderedOutputs.append(pt[outInd])
+
+        minOut = min(reorderedOutputs)
+        maxOut = max(reordredOutput)
+        diff = maxOut-minOut
+        if diff > (maxOut *percentageDifferenceToBeConverged):
+            return False
+
+    return True
+
+
+
 def testCreatureRepeatability(creature,inputSets,runs,cycles):
     print 'Creature fitness = ',creature.fitness
     for inputSet in inputSets:

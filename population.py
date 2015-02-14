@@ -3,6 +3,8 @@ from math import *
 from random import *
 import numpy as np
 from creatureGUI import *
+import time
+
 
 class Population:
     def __init__(self, CreatureCount, NeuronCount, InputCount, OutputCount,Cycles, Lessons = 1, LessonMutationDivider=1,GenerationMutationDivider=1,MaxValue=10):
@@ -225,7 +227,7 @@ class Population:
 ##            self.trainingCreature.output[i].outbox = outList[i]
         for i in self.trainingCreature.input:
             i.inbox = float(bool(getrandbits(1)))##random bool
-        self.trainingCreature.output[0].outbox = self.trainingCreature.input[0].inbox
+        self.trainingCreature.output[0].outbox = 1-self.trainingCreature.input[0].inbox
         self.trainingCreature.output[1].outbox = self.trainingCreature.input[0].inbox
 
         #xor(I0,I1)
@@ -656,14 +658,14 @@ def myGauss(mu,sig,x):
 
 
 def main():
-    CreatureCount = 200
-    NeuronCount = 7
+    CreatureCount = 1000
+    NeuronCount = 5
     InputCount = 1
     OutputCount = 2
     Cycles = 50
     Lessons = 1
     LessonMutationDivider = 2
-    GenerationMutationDivider = 5
+    GenerationMutationDivider = 2
     MaxValue=55
 
     trainingSetInputs = [[1],[0]]
@@ -672,17 +674,23 @@ def main():
 
     demoPop =  Population(CreatureCount, NeuronCount, InputCount, OutputCount,Cycles, Lessons, LessonMutationDivider,GenerationMutationDivider,MaxValue)
 
-    genCount = 200
+    genCount = 400
     for g in range(genCount):
-        if (g % 20) == 0:
-            print "Gen: ",g
-            runs = 5
+        if ((g) % 20) == 0:
+            print ""
+            print ""
+            print "GENERATION: ",g
+
+        demoPop.run_generationBasic()
+
+        if ((g) % 20) == 0:
+            runs = 3
             print "Best Creature:"
             testCreatureRepeatability(demoPop.creatureList[0],trainingSetInputs,runs,Cycles)
             print ""
             print "Worst Creature:"
             testCreatureRepeatability(demoPop.creatureList[-1],trainingSetInputs,runs,Cycles)
-        demoPop.run_generationBasic()
+
 
     #print demoPop.statsCreature.fitness
 
