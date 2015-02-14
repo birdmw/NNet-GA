@@ -174,7 +174,7 @@ def checkConvergence(outputLists):
     outputLists = [[cycleA_output0,cycleA_output1,...],[cycleB_output0,cycleB_output1,...],...]
     '''
 
-    percentageDifferenceToBeConverged = 0.0001
+    percentageDifferenceToBeConverged = 0.001 #0.0001
     for outInd in range(len(outputLists[0])):
         reorderedOutputs = []
         for pt in outputLists:

@@ -225,10 +225,22 @@ class Population:
 
 ##        for i in range(len(outList)):
 ##            self.trainingCreature.output[i].outbox = outList[i]
-        for i in self.trainingCreature.input:
-            i.inbox = float(bool(getrandbits(1)))##random bool
-        self.trainingCreature.output[0].outbox = 1-self.trainingCreature.input[0].inbox
-        self.trainingCreature.output[1].outbox = self.trainingCreature.input[0].inbox
+
+        if inList != None:
+            for i in range(len(self.trainingCreature.input)):
+                self.trainingCreature.input[i].inbox = inList[i]
+        else:
+            for i in self.trainingCreature.input:
+                i.inbox = float(bool(getrandbits(1)))##random bool
+
+        if outList != None:
+            print outList
+
+            for o in range(len(self.trainingCreature.output)):
+                self.trainingCreature.output[o].outbox = outList[o]
+        else:
+            self.trainingCreature.output[0].outbox = 1-self.trainingCreature.input[0].inbox
+            self.trainingCreature.output[1].outbox = self.trainingCreature.input[0].inbox
 
         #xor(I0,I1)
         #self.trainingCreature.output[0].outbox = float(bool(self.trainingCreature.input[0].inbox)^bool(self.trainingCreature.input[1].inbox))
@@ -557,12 +569,18 @@ class Population:
         self.prune()
 
 
-    def run_generation_runUntilConverged(self,inputSet = None,outputSet = None):
+    def run_generation_runUntilConverged(self,inputSets = None,outputSets = None):
         '''
         Runs the population for one generation in the basic (populate)-(run)-(prune)-(mutate) sequence
         '''
+        inputSet = None
+        outputSet = None
         self.populate()
         self.mutate_generation()
+        if inputSets != None:
+            inputSet = choice(inputSets)
+        if outputSets != None:
+            outputSet = outputSets[inputSets.index(inputSet)]
         self.setTrainingCreature(inputSet,outputSet)
         #self.compete_run()
         self.compete_similarity_runUntilConverged()
@@ -722,32 +740,32 @@ def myGauss(mu,sig,x):
 
 
 def main():
-    CreatureCount = 500
-    NeuronCount = 5
-    InputCount = 1
+    CreatureCount = 10000
+    NeuronCount = 7
+    InputCount = 2
     OutputCount = 2
     MaxCycles = 200
     Lessons = 1
     LessonMutationDivider = 2
-    GenerationMutationDivider = 2
+    GenerationMutationDivider = 1
     MaxValue=55
 
     runs = 5
 
-    trainingSetInputs = [[1],[0]]
-    trainingSetOutputs = [[0,1],[1,0]]
+    trainingSetInputs = [[0,0],[0,1],[1,0],[1,1]]
+    trainingSetOutputs = [[0,0],[0,1],[1,0],[1,1]]
     print "Population Description:"
 
     demoPop =  Population(CreatureCount, NeuronCount, InputCount, OutputCount,MaxCycles, Lessons, LessonMutationDivider,GenerationMutationDivider,MaxValue)
     bRepFit = 0
-    genCount = 400
+    genCount = 500
     for g in range(genCount):
         if ((g) % 10) == 0:
             print ""
             print ""
             print "GENERATION: ",g
 
-        demoPop.run_generation_runUntilConverged()
+        demoPop.run_generation_runUntilConverged(trainingSetInputs,trainingSetOutputs)
 
         if ((g) % 10) == 0:
             print "Best Creature:"
@@ -760,8 +778,10 @@ def main():
             #testCreatureRepeatability(demoPop.creatureList[-1],trainingSetInputs,runs,MaxCycles)
             fitness_repeatability(demoPop.creatureList[-1],trainingSetInputs,runs,MaxCycles,trainingSetOutputs)
 
-        if bRepFit > 1000:
+        if bRepFit > 20:
             break
+
+
 
 
     #print demoPop.statsCreature.fitness
