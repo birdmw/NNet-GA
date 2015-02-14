@@ -300,6 +300,28 @@ class Population:
         #self.creatureList.sort(key = lambda x: x.fitness, reverse=False)
         self.update_statsCreature()
 
+    def compete_similarity_runUntilConverged(self):
+        '''
+        Each creature runs once
+        Updates creatures fitness
+        Updates creatureList (sorts based on fitness)
+        Updates statsCreature
+        '''
+        inputSet = []
+        for inp in self.trainingCreature.input:
+            inputSet.append(inp.inbox)
+
+        outputSet = []
+        for outp in self.trainingCreature.output:
+            outputSet.append(outp.outbox)
+
+        for creature in self.creatureList:
+            creature.run_untilConverged(inputSet,self.cycles)
+            creature.fitness = fitness_similarity(creature,outputSet,self.MaxValue)
+        #Sort creatures based on fitness
+        self.creatureList.sort(key = lambda x: x.fitness, reverse=True)
+        #self.creatureList.sort(key = lambda x: x.fitness, reverse=False)
+        self.update_statsCreature()
 
     def compete_lessons(self):
         '''
@@ -534,6 +556,21 @@ class Population:
         self.update_pseudoCreatures()
         self.prune()
 
+
+    def run_generation_runUntilConverged(self,inputSet = None,outputSet = None):
+        '''
+        Runs the population for one generation in the basic (populate)-(run)-(prune)-(mutate) sequence
+        '''
+        self.populate()
+        self.mutate_generation()
+        self.setTrainingCreature(inputSet,outputSet)
+        #self.compete_run()
+        self.compete_similarity_runUntilConverged()
+        self.update_pseudoCreatures()
+        self.prune()
+
+
+
     def run_generationLessons(self,inputSet = None,outputSet = None):
         '''
         Runs the population for one generation in the (populate)-(run lessons)-(prune)-(mutate) sequence
@@ -582,6 +619,33 @@ def fitness(creature,mus,sigmas,MaxValue):
     avgFit = fitSum/len(mus)
     fitness = (avgFit+fitMult)/2
     return fitness
+
+
+def fitness_repeatability(creature,inputSets,runs,maxCycles,outputSets):
+    repDist = 0
+
+    print 'Creature fitness = ',creature.fitness
+    for inputSet in inputSets:
+        print 'Inputs: ',inputSet
+        for r in range(runs):
+            creature.run_untilConverged(inputSet,maxCycles)
+            #creature.run(inputSet,cycles)
+            outputs = []
+            for outInd in range(len(creature.output)):
+                outputs.append(creature.output[outInd].outbox)
+                repDist+= abs(outputSets[inputSets.index(inputSet)][outInd]-outputs[-1])
+
+            print '  Run',r,' Outputs: ',outputs
+
+    normalizer = runs*len(outputSets)
+    if repDist <= 0.0001:
+        sim = 10000
+    else:
+        sim = normalizer/repDist
+    print 'Repeatability fitness = ',sim
+    print ''
+    return sim
+
 
 def fitness_similarity(creature,targets,MaxValue):
     '''
@@ -658,55 +722,66 @@ def myGauss(mu,sig,x):
 
 
 def main():
-    CreatureCount = 1000
+    CreatureCount = 500
     NeuronCount = 5
     InputCount = 1
     OutputCount = 2
-    Cycles = 50
+    MaxCycles = 200
     Lessons = 1
     LessonMutationDivider = 2
     GenerationMutationDivider = 2
     MaxValue=55
 
+    runs = 5
+
     trainingSetInputs = [[1],[0]]
-    trainingSetOutputs = [[1,1],[0,0]]
+    trainingSetOutputs = [[0,1],[1,0]]
     print "Population Description:"
 
-    demoPop =  Population(CreatureCount, NeuronCount, InputCount, OutputCount,Cycles, Lessons, LessonMutationDivider,GenerationMutationDivider,MaxValue)
-
+    demoPop =  Population(CreatureCount, NeuronCount, InputCount, OutputCount,MaxCycles, Lessons, LessonMutationDivider,GenerationMutationDivider,MaxValue)
+    bRepFit = 0
     genCount = 400
     for g in range(genCount):
-        if ((g) % 20) == 0:
+        if ((g) % 10) == 0:
             print ""
             print ""
             print "GENERATION: ",g
 
-        demoPop.run_generationBasic()
+        demoPop.run_generation_runUntilConverged()
 
-        if ((g) % 20) == 0:
-            runs = 3
+        if ((g) % 10) == 0:
             print "Best Creature:"
-            testCreatureRepeatability(demoPop.creatureList[0],trainingSetInputs,runs,Cycles)
+            print "  Cycles:",demoPop.creatureList[0].cycles
+            #testCreatureRepeatability(demoPop.creatureList[0],trainingSetInputs,runs,MaxCycles)
+            bRepFit = fitness_repeatability(demoPop.creatureList[0],trainingSetInputs,runs,MaxCycles,trainingSetOutputs)
             print ""
             print "Worst Creature:"
-            testCreatureRepeatability(demoPop.creatureList[-1],trainingSetInputs,runs,Cycles)
+            print "  Cycles:",demoPop.creatureList[-1].cycles
+            #testCreatureRepeatability(demoPop.creatureList[-1],trainingSetInputs,runs,MaxCycles)
+            fitness_repeatability(demoPop.creatureList[-1],trainingSetInputs,runs,MaxCycles,trainingSetOutputs)
+
+        if bRepFit > 1000:
+            break
 
 
     #print demoPop.statsCreature.fitness
-
+    '''
     runs = 5
     print "Best Creature:"
-    testCreatureRepeatability(demoPop.creatureList[0],trainingSetInputs,runs,Cycles)
+    testCreatureRepeatability(demoPop.creatureList[0],trainingSetInputs,runs,MaxCycles)
     print ""
     print "Worst Creature:"
-    testCreatureRepeatability(demoPop.creatureList[-1],trainingSetInputs,runs,Cycles)
-
+    testCreatureRepeatability(demoPop.creatureList[-1],trainingSetInputs,runs,MaxCycles)
+    '''
     localtime = time.localtime(time.time())
     Date = str(localtime[0])+'_'+str(localtime[1])+'_'+str(localtime[2])
     Time = str(localtime[3])+'_'+str(localtime[4])+'_'+str(localtime[5])
 
     filename = r"C:\Users\chris.nelson\Desktop\NNet\CreatureDebugging\bestie4lyfe_"+Date+'_'+Time
     save_creature(demoPop.creatureList[0],filename)
+
+
+    print '--FINISHED--'
     '''
 
 
