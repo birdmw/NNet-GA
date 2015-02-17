@@ -235,8 +235,8 @@ def main():
 
     demoCreature = Creature(neuronCount, inputCount, outputCount)
 
-    filename = r'C:\Users\chris.nelson\Desktop\NNet\ExhaustiveTrainingPerGen\MaNigga2015_2_12_21_52_24'
-    #demoCreature = load_creature(filename)
+    filename = r'C:\Users\chris.nelson\Desktop\NNet\CreatureDebugging\bestie4lyfe_2015_2_17_12_17_35'
+    demoCreature = load_creature(filename)
 
 
     print 'Creature Description:'
