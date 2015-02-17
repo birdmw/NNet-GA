@@ -684,7 +684,8 @@ class Population:
         inputSet = None
         outputSet = None
         self.populate()
-        self.mutate_generation()
+        #self.mutate_generation()
+        self.mutate_generation_random()
         if inputSets != None:
             inputSet = choice(inputSets)
         if outputSets != None:
@@ -887,7 +888,7 @@ def myGauss(mu,sig,x):
 
 
 def main():
-    CreatureCount = 500
+    CreatureCount = 1000
     NeuronCount = 7
     InputCount = 2
     OutputCount = 2
@@ -930,17 +931,6 @@ def main():
             break
 
 
-
-
-    #print demoPop.statsCreature.fitness
-    '''
-    runs = 5
-    print "Best Creature:"
-    testCreatureRepeatability(demoPop.creatureList[0],trainingSetInputs,runs,MaxCycles)
-    print ""
-    print "Worst Creature:"
-    testCreatureRepeatability(demoPop.creatureList[-1],trainingSetInputs,runs,MaxCycles)
-    '''
     localtime = time.localtime(time.time())
     Date = str(localtime[0])+'_'+str(localtime[1])+'_'+str(localtime[2])
     Time = str(localtime[3])+'_'+str(localtime[4])+'_'+str(localtime[5])
@@ -980,9 +970,9 @@ def main():
 
         demoPop.populate()
 
-
-    seeCreature(demoPop, demoPop.creatureList[0] )
     '''
+    seeCreature(demoPop, demoPop.creatureList[0] )
+
 
 if __name__ == '__main__':
     main()
