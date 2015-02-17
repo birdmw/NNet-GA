@@ -7,7 +7,7 @@ import time
 
 
 class Population:
-    def __init__(self, CreatureCount, NeuronCount, InputCount, OutputCount,Cycles, Lessons = 1, LessonMutationDivider=1,GenerationMutationDivider=1,MaxValue=10):
+    def __init__(self, CreatureCount, NeuronCount, InputCount, OutputCount,Cycles, Lessons = 1, LessonMutationDivider=1,GenerationMutationDivider=1,MaxValue=10,inputSets = None,outputSets = None):
         self.creatureList = []
         self.creatureCount = CreatureCount
         self.inputCount = InputCount
@@ -18,6 +18,8 @@ class Population:
         self.genMutDiv = GenerationMutationDivider
         self.speciesFitness = 0
         self.MaxValue = MaxValue
+        self.inputSets = inputSets
+        self.outputSets = outputSets
 
         #Create pseudo-creature data structures
         self.sigmaCreature = Creature( NeuronCount, InputCount, OutputCount )
@@ -135,7 +137,8 @@ class Population:
                 pass
             else:
                 #Calculate percentage of traits to mutate
-                percentageToMutate = (1-creature.fitness)/2     #TODO: Evaluate this calculation.
+                #percentageToMutate = (1-creature.fitness)/2     #TODO: Evaluate this calculation.
+                percentageToMutate = 0.5
 
                 creatNeuronCount = len(creature.neuronList)
                 creatSynapseCount = len(creature.synapseList)
@@ -161,7 +164,8 @@ class Population:
                 for propInd in propInds:
                     if propInd < creatNeuronCount:
                         mu=creature.neuronList[propInd].threshold
-                        sigma = self.sigmaCreature.neuronList[propInd].threshold/self.genMutDiv
+                        #sigma = self.sigmaCreature.neuronList[propInd].threshold*self.genMutDiv
+                        sigma = 1/self.genMutDiv
                         creature.neuronList[propInd].threshold = gauss(mu,sigma)
 
                     else:
@@ -170,21 +174,98 @@ class Population:
                         abcd = int(propInd/(synInd+1))
                         if abcd == 0:
                             mu = creature.synapseList[synInd].a
-                            sigma = self.sigmaCreature.synapseList[synInd].a/self.genMutDiv
+                            #sigma = self.sigmaCreature.synapseList[synInd].a*self.genMutDiv
+                            sigma =  1/self.genMutDiv
                             creature.synapseList[synInd].a = gauss(mu,sigma)
                         elif abcd == 1:
                             mu = creature.synapseList[synInd].b
-                            sigma = self.sigmaCreature.synapseList[synInd].b/self.genMutDiv
+                            #sigma = self.sigmaCreature.synapseList[synInd].b*self.genMutDiv
+                            sigma =  1/self.genMutDiv
                             creature.synapseList[synInd].b = gauss(mu,sigma)
                         elif abcd == 2:
                             mu = creature.synapseList[synInd].c
-                            sigma = self.sigmaCreature.synapseList[synInd].c/self.genMutDiv
+                            #sigma = self.sigmaCreature.synapseList[synInd].c*self.genMutDiv
+                            sigma =  1/self.genMutDiv
                             creature.synapseList[synInd].c = gauss(mu,sigma)
                         elif abcd == 3:
                             mu = creature.synapseList[synInd].d
-                            sigma = self.sigmaCreature.synapseList[synInd].d/self.genMutDiv
+                            #sigma = self.sigmaCreature.synapseList[synInd].d*self.genMutDiv
+                            sigma =  1/self.genMutDiv
                             creature.synapseList[synInd].d = gauss(mu,sigma)
 
+    def mutate_generation_random(self):
+        '''
+        Mutates all creatures in the populations, except the current best creature.
+            Generation mutation gaussian based on:
+                mu = current propery's value  (ex: creature.neuronList[0].threshold)
+                sigma = sigmaCreatures's property value (ex: sigmaCreature.neuronList[0].threshold)
+
+            Percentage of traits to mutate:
+                % = (1-creature.fitness)/2
+        '''
+        for creature in self.creatureList:
+            #Don't mutate the best creature.
+            if (creature == self.creatureList[0]):
+                #print "I'm the best! Suck it."
+                pass
+            else:
+                #Calculate percentage of traits to mutate
+                percentageToMutate = random()/3
+                #percentageToMutate = 1-(creature.fitness/self.creatureList[0].fitness)*(random())
+
+                creatNeuronCount = len(creature.neuronList)
+                creatSynapseCount = len(creature.synapseList)
+                creatPropertyCount = creatNeuronCount+creatSynapseCount
+
+                mutatedPerc = 0
+                mutationCount = 0
+                propInds =[]
+                watchdog = 0
+
+                #Determine, randomly, which properties to mutate.
+                while mutatedPerc <= percentageToMutate:
+                    if watchdog > creatPropertyCount:
+                        break
+                    newInd = randint(0,creatPropertyCount-1)
+                    if newInd not in propInds:
+                        propInds.append(newInd)
+                        mutationCount+=1
+                        mutatedPerc=mutationCount/creatPropertyCount
+                    watchdog+=1
+
+                #Calculate the sigma for each property to mutate, and mutate that property.
+                for propInd in propInds:
+                    if propInd < creatNeuronCount:
+                        mu=creature.neuronList[propInd].threshold
+                        #sigma = self.sigmaCreature.neuronList[propInd].threshold*self.genMutDiv
+                        #sigma = 1/self.genMutDiv
+                        sigma = random()/self.genMutDiv
+                        creature.neuronList[propInd].threshold = gauss(mu,sigma)
+
+                    else:
+                        propInd -= creatNeuronCount
+                        synInd = int(propInd/4)
+                        abcd = int(propInd/(synInd+1))
+                        if abcd == 0:
+                            mu = creature.synapseList[synInd].a
+                            #sigma = self.sigmaCreature.synapseList[synInd].a*self.genMutDiv
+                            sigma =  random()/self.genMutDiv
+                            creature.synapseList[synInd].a = gauss(mu,sigma)
+                        elif abcd == 1:
+                            mu = creature.synapseList[synInd].b
+                            #sigma = self.sigmaCreature.synapseList[synInd].b*self.genMutDiv
+                            sigma =  random()/self.genMutDiv
+                            creature.synapseList[synInd].b = gauss(mu,sigma)
+                        elif abcd == 2:
+                            mu = creature.synapseList[synInd].c
+                            #sigma = self.sigmaCreature.synapseList[synInd].c*self.genMutDiv
+                            sigma =  random()/self.genMutDiv
+                            creature.synapseList[synInd].c = gauss(mu,sigma)
+                        elif abcd == 3:
+                            mu = creature.synapseList[synInd].d
+                            #sigma = self.sigmaCreature.synapseList[synInd].d*self.genMutDiv
+                            sigma =  random()/self.genMutDiv
+                            creature.synapseList[synInd].d = gauss(mu,sigma)
 
 
     def setTrainingCreature( self, inList = None, outList = None ):
@@ -225,10 +306,22 @@ class Population:
 
 ##        for i in range(len(outList)):
 ##            self.trainingCreature.output[i].outbox = outList[i]
-        for i in self.trainingCreature.input:
-            i.inbox = float(bool(getrandbits(1)))##random bool
-        self.trainingCreature.output[0].outbox = 1-self.trainingCreature.input[0].inbox
-        self.trainingCreature.output[1].outbox = self.trainingCreature.input[0].inbox
+
+        if inList != None:
+            for i in range(len(self.trainingCreature.input)):
+                self.trainingCreature.input[i].inbox = inList[i]
+        else:
+            for i in self.trainingCreature.input:
+                i.inbox = float(bool(getrandbits(1)))##random bool
+
+        if outList != None:
+            print outList
+
+            for o in range(len(self.trainingCreature.output)):
+                self.trainingCreature.output[o].outbox = outList[o]
+        else:
+            self.trainingCreature.output[0].outbox = 1-self.trainingCreature.input[0].inbox
+            self.trainingCreature.output[1].outbox = self.trainingCreature.input[0].inbox
 
         #xor(I0,I1)
         #self.trainingCreature.output[0].outbox = float(bool(self.trainingCreature.input[0].inbox)^bool(self.trainingCreature.input[1].inbox))
@@ -295,6 +388,55 @@ class Population:
         for creature in self.creatureList:
             creature.run(inputSet,self.cycles)
             creature.fitness = fitness_similarity(creature,outputSet,self.MaxValue)
+        #Sort creatures based on fitness
+        self.creatureList.sort(key = lambda x: x.fitness, reverse=True)
+        #self.creatureList.sort(key = lambda x: x.fitness, reverse=False)
+        self.update_statsCreature()
+
+    def compete_similarity_runUntilConverged(self):
+        '''
+        Each creature runs once
+        Updates creatures fitness
+        Updates creatureList (sorts based on fitness)
+        Updates statsCreature
+        '''
+        inputSet = []
+        for inp in self.trainingCreature.input:
+            inputSet.append(inp.inbox)
+
+        outputSet = []
+        for outp in self.trainingCreature.output:
+            outputSet.append(outp.outbox)
+
+        for creature in self.creatureList:
+            creature.run_untilConverged(inputSet,self.cycles)
+            creature.fitness = fitness_similarity(creature,outputSet,self.MaxValue)
+        #Sort creatures based on fitness
+        self.creatureList.sort(key = lambda x: x.fitness, reverse=True)
+        #self.creatureList.sort(key = lambda x: x.fitness, reverse=False)
+        self.update_statsCreature()
+
+    def compete_similarity_runUntilConverged_repeatabilityFitness(self):
+        '''
+
+
+        Updates creatures fitness
+        Updates creatureList (sorts based on fitness)
+        Updates statsCreature
+        '''
+        '''
+        inputSet = []
+        for inp in self.trainingCreature.input:
+            inputSet.append(inp.inbox)
+
+        outputSet = []
+        for outp in self.trainingCreature.output:
+            outputSet.append(outp.outbox)
+        '''
+        for creature in self.creatureList:
+            #creature.run_untilConverged(inputSet,self.cycles)
+            #creature.fitness = fitness_similarity(creature,outputSet,self.MaxValue)
+            creature.fitness = fitness_repeatability(creature,self.inputSets,2,self.cycles,self.outputSets)
         #Sort creatures based on fitness
         self.creatureList.sort(key = lambda x: x.fitness, reverse=True)
         #self.creatureList.sort(key = lambda x: x.fitness, reverse=False)
@@ -534,6 +676,47 @@ class Population:
         self.update_pseudoCreatures()
         self.prune()
 
+
+    def run_generation_runUntilConverged(self,inputSets = None,outputSets = None):
+        '''
+        Runs the population for one generation in the basic (populate)-(run)-(prune)-(mutate) sequence
+        '''
+        inputSet = None
+        outputSet = None
+        self.populate()
+        self.mutate_generation()
+        if inputSets != None:
+            inputSet = choice(inputSets)
+        if outputSets != None:
+            outputSet = outputSets[inputSets.index(inputSet)]
+        self.setTrainingCreature(inputSet,outputSet)
+        #self.compete_run()
+        self.compete_similarity_runUntilConverged()
+        self.update_pseudoCreatures()
+        self.prune()
+
+    def run_generation_runUntilConverged_repeatabilityFitness(self,inputSets,outputSets):
+        '''
+        Runs the population for one generation in the basic (populate)-(run)-(prune)-(mutate) sequence
+        '''
+        inputSet = None
+        outputSet = None
+        self.inputSets = inputSets
+        self.outputSets = outputSets
+        self.populate()
+        self.mutate_generation_random()
+        '''
+        if inputSets != None:
+            inputSet = choice(inputSets)
+        if outputSets != None:
+            outputSet = outputSets[inputSets.index(inputSet)]
+        '''
+        #self.setTrainingCreature(inputSet,outputSet)
+        #self.compete_run()
+        self.compete_similarity_runUntilConverged_repeatabilityFitness()
+        self.update_pseudoCreatures()
+        self.prune()
+
     def run_generationLessons(self,inputSet = None,outputSet = None):
         '''
         Runs the population for one generation in the (populate)-(run lessons)-(prune)-(mutate) sequence
@@ -582,6 +765,52 @@ def fitness(creature,mus,sigmas,MaxValue):
     avgFit = fitSum/len(mus)
     fitness = (avgFit+fitMult)/2
     return fitness
+
+
+def fitness_repeatability(creature,inputSets,runs,maxCycles,outputSets):
+    repDist = 0
+
+    for inputSet in inputSets:
+        for r in range(runs):
+            creature.run_untilConverged(inputSet,maxCycles)
+            #creature.run(inputSet,cycles)
+            outputs = []
+            for outInd in range(len(creature.output)):
+                outputs.append(creature.output[outInd].outbox)
+                repDist+= abs(outputSets[inputSets.index(inputSet)][outInd]-outputs[-1])
+
+
+    normalizer = runs*len(outputSets)
+    if repDist <= 0.0001:
+        sim = 10000
+    else:
+        sim = normalizer/repDist
+    return sim
+
+def fitness_repeatability_printer(creature,inputSets,runs,maxCycles,outputSets):
+    repDist = 0
+
+    print 'Creature fitness = ',creature.fitness
+    for inputSet in inputSets:
+        print 'Inputs: ',inputSet
+        for r in range(runs):
+            creature.run_untilConverged(inputSet,maxCycles)
+            #creature.run(inputSet,cycles)
+            outputs = []
+            for outInd in range(len(creature.output)):
+                outputs.append(creature.output[outInd].outbox)
+                repDist+= abs(outputSets[inputSets.index(inputSet)][outInd]-outputs[-1])
+
+            print '  Run',r,' Outputs: ',outputs
+
+    normalizer = runs*len(outputSets)
+    if repDist <= 0.0001:
+        sim = 10000
+    else:
+        sim = normalizer/repDist
+    print 'Repeatability fitness = ',sim
+    print ''
+    return sim
 
 def fitness_similarity(creature,targets,MaxValue):
     '''
@@ -658,55 +887,69 @@ def myGauss(mu,sig,x):
 
 
 def main():
-    CreatureCount = 1000
-    NeuronCount = 5
-    InputCount = 1
+    CreatureCount = 500
+    NeuronCount = 7
+    InputCount = 2
     OutputCount = 2
-    Cycles = 50
+    MaxCycles = 150
     Lessons = 1
-    LessonMutationDivider = 2
-    GenerationMutationDivider = 2
-    MaxValue=55
+    LessonMutationDivider = 1
+    GenerationMutationDivider =3
+    MaxValue=35
 
-    trainingSetInputs = [[1],[0]]
-    trainingSetOutputs = [[1,1],[0,0]]
+    runs = 5
+
+    trainingSetInputs = [[0,0],[0,1],[1,0],[1,1]]
+    trainingSetOutputs = [[0,0],[0,1],[1,0],[1,1]]
     print "Population Description:"
 
-    demoPop =  Population(CreatureCount, NeuronCount, InputCount, OutputCount,Cycles, Lessons, LessonMutationDivider,GenerationMutationDivider,MaxValue)
-
-    genCount = 400
+    demoPop =  Population(CreatureCount, NeuronCount, InputCount, OutputCount,MaxCycles, Lessons, LessonMutationDivider,GenerationMutationDivider,MaxValue)
+    bRepFit = 0
+    genCount = 600
     for g in range(genCount):
-        if ((g) % 20) == 0:
-            print ""
-            print ""
-            print "GENERATION: ",g
+        #if ((g) % 10) == 0:
+        print ""
+        print ""
+        print "GENERATION: ",g
 
-        demoPop.run_generationBasic()
+        demoPop.run_generation_runUntilConverged(trainingSetInputs,trainingSetOutputs)
 
-        if ((g) % 20) == 0:
-            runs = 3
+        if ((g) % 10) == 0:
             print "Best Creature:"
-            testCreatureRepeatability(demoPop.creatureList[0],trainingSetInputs,runs,Cycles)
+            print "  Cycles:",demoPop.creatureList[0].cycles
+            #testCreatureRepeatability(demoPop.creatureList[0],trainingSetInputs,runs,MaxCycles)
+            bRepFit = fitness_repeatability_printer(demoPop.creatureList[0],trainingSetInputs,runs,MaxCycles,trainingSetOutputs)
             print ""
             print "Worst Creature:"
-            testCreatureRepeatability(demoPop.creatureList[-1],trainingSetInputs,runs,Cycles)
+            print "  Cycles:",demoPop.creatureList[-1].cycles
+            #testCreatureRepeatability(demoPop.creatureList[-1],trainingSetInputs,runs,MaxCycles)
+            fitness_repeatability_printer(demoPop.creatureList[-1],trainingSetInputs,runs,MaxCycles,trainingSetOutputs)
+
+        if bRepFit > 20:
+            print "Found exceptional creature. Discontinuing evolution"
+            break
+
+
 
 
     #print demoPop.statsCreature.fitness
-
+    '''
     runs = 5
     print "Best Creature:"
-    testCreatureRepeatability(demoPop.creatureList[0],trainingSetInputs,runs,Cycles)
+    testCreatureRepeatability(demoPop.creatureList[0],trainingSetInputs,runs,MaxCycles)
     print ""
     print "Worst Creature:"
-    testCreatureRepeatability(demoPop.creatureList[-1],trainingSetInputs,runs,Cycles)
-
+    testCreatureRepeatability(demoPop.creatureList[-1],trainingSetInputs,runs,MaxCycles)
+    '''
     localtime = time.localtime(time.time())
     Date = str(localtime[0])+'_'+str(localtime[1])+'_'+str(localtime[2])
     Time = str(localtime[3])+'_'+str(localtime[4])+'_'+str(localtime[5])
 
     filename = r"C:\Users\chris.nelson\Desktop\NNet\CreatureDebugging\bestie4lyfe_"+Date+'_'+Time
     save_creature(demoPop.creatureList[0],filename)
+
+
+    print '--FINISHED--'
     '''
 
 

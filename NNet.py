@@ -385,10 +385,6 @@ def main():
     IMPORTANT INVESTIGATION AVENUES:
         ELO's
 
-        Creature has it's own cycle count:
-            Use cycles as a measure, not a control
-            Allow creature to run until 'converged' or hit a populational max cycle count
-
         Covariance should determine WHICH properties to mutate, NOT how much to mutate by:
 
         Remove generational mutation divisor, each property doesn't necessarily need to mutate the same amount
@@ -397,9 +393,6 @@ def main():
             Alternatively:
                 Current sigmaCreature becomes covarianceCreature
                 sigmaCreature is still used for mutational sigmas, but they are NOT computed through covariance (See above)
-
-        Try removing mutation all together
-
     '''
 
     #Relationships between inputs and outputs for this training set, only used in results file

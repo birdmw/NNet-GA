@@ -2,6 +2,7 @@ from random import *
 from math import *
 from copy import *
 from pickle import *
+from creatureGUI import *
 
 class Creature:
     def __init__(self , neuronCount, inputCount, outputCount):
@@ -118,8 +119,9 @@ class Creature:
                 for o in self.output:
                     outputTracker[-1].append(o.outbox)
             else:
+                newVal=[]
                 for o in self.output:
-                    newVal.append(o)
+                    newVal.append(o.outbox)
                 outputTracker = outputTracker[1:]+outputTracker[:1]
                 outputTracker[-1] = newVal
 
@@ -172,15 +174,14 @@ def checkConvergence(outputLists):
     outputLists = [[cycleA_output0,cycleA_output1,...],[cycleB_output0,cycleB_output1,...],...]
     '''
 
-    percentageDifferenceToBeConverged = 0.0001
-
-    for outInd in range(len(pt)):
+    percentageDifferenceToBeConverged = 0.001 #0.0001
+    for outInd in range(len(outputLists[0])):
         reorderedOutputs = []
-        for pt in outputList:
+        for pt in outputLists:
             reorderedOutputs.append(pt[outInd])
 
         minOut = min(reorderedOutputs)
-        maxOut = max(reordredOutput)
+        maxOut = max(reorderedOutputs)
         diff = maxOut-minOut
         if diff > (maxOut *percentageDifferenceToBeConverged):
             return False
@@ -213,16 +214,17 @@ def load_creature(fileName):
     fCreature.close()
     for n in range ( creat.neuronCount ):
         if n < creat.inputCount:
-            creat.neuronList[n] = creat.input[n]
+            creat.input[n] = creat.neuronList[n]
         if (creat.neuronCount - n-1) < creat.outputCount:
-            creat.neuronList[n] = creat.output[creat.neuronCount -n-1]
+            creat.output[creat.neuronCount -n-1] = creat.neuronList[n]
+
     #print 'Loaded Creatures outputs:'
 
     return creat
 
 
 def main():
-    neuronCount = 6
+    neuronCount = 21
     inputCount =2
     outputCount = 1
 
@@ -231,9 +233,9 @@ def main():
 
     runs =6
 
-    #demoCreature = Creature(neuronCount, inputCount, outputCount)
+    demoCreature = Creature(neuronCount, inputCount, outputCount)
 
-    filename = r'C:\Users\chris.nelson\Desktop\NNet\ExhaustiveTrainingPerGen\MaNigga2015_2_12_21_52_24'
+    filename = r'C:\Users\chris.nelson\Desktop\NNet\CreatureDebugging\bestie4lyfe_2015_2_17_12_17_35'
     demoCreature = load_creature(filename)
 
 
@@ -257,8 +259,7 @@ def main():
     testCreatureRepeatability(demoCreature,inputSets,runs,cycles)
 
 
-
-
+    seeCreature(demoCreature)
 
 if __name__ == '__main__':
     main()

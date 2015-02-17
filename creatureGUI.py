@@ -1,6 +1,6 @@
 #==========================
 #
-# VERSION A02 2_12_2015
+# VERSION A03 2_13_2015
 #
 # THIS IS A PRE-ALPHA VERSION FOR DEMO PURPOSES
 # NOT INTENDED FOR PRACTICAL APPLICATION YET
@@ -81,7 +81,7 @@ def seeCreature(creature):
     minA = 0
     for s in creature.synapseList:
         maxA = max(abs(s.a),maxA)
-        print maxA
+        #print maxA
         minA = 0
     for s in creature.synapseList:
         neuron1index=creature.neuronList.index(s.n1)
