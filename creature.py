@@ -15,6 +15,7 @@ class Creature:
         self.input = []
         self.output = []
         self.cycles=0
+        self.age = 0
 
         #Best parameters are used in the lessons to allow improvement only
 
@@ -114,7 +115,7 @@ class Creature:
 
             self.cycles+=1
 
-            if cycle <= self.neuronCount:
+            if cycle <= self.neuronCount*1.5:
                 outputTracker.append([])
                 for o in self.output:
                     outputTracker[-1].append(o.outbox)
@@ -131,16 +132,18 @@ class Creature:
 
 class Neuron:
     def __init__(self):
-        self.threshold = random()*randint(-1,1)
-        self.inbox = random()*randint(-1,1)
-        self.value = random()*randint(-1,1)
-        self.outbox = random()*randint(-1,1)
-        self.prevOutbox = random()*randint(-1,1)
+        minChoice = -0.5
+        maxChoice = 0.5
+        self.threshold = random()*choice([minChoice,maxChoice])
+        self.inbox = random()*choice([minChoice,maxChoice])
+        self.value = random()*choice([minChoice,maxChoice])
+        self.outbox = random()*choice([minChoice,maxChoice])
+        self.prevOutbox = random()*choice([minChoice,maxChoice])
 
     def run(self):
         self.prevOutbox = self.outbox
         #self.outbox = 0.0
-        self.value += self.inbox
+        self.value += min(1000000,self.inbox)
         if (self.value >= self.threshold):
             self.outbox = self.value
         self.value = 0.0
@@ -148,16 +151,22 @@ class Neuron:
 
 class Synapse:
     def __init__(self, n1, n2,neuronCount):
-        self.a = random()*randint(-1,1)
-        self.b = random()*randint(-1,1)*pi
-        self.c = random()*randint(-1,1)*pi
-        self.d = random()*randint(-1,1)/neuronCount
+        minChoice = -0.5
+        maxChoice = 0.5
+        self.a = random()*choice([-minChoice,maxChoice])
+        self.b = random()*choice([minChoice*pi,maxChoice*pi])
+        self.c = random()*choice([minChoice*pi,maxChoice*pi])
+        self.d = random()*choice([minChoice,maxChoice]) #/neuronCount
         self.n1 = n1
         self.n2 = n2
 
     def run(self):
+        if abs(self.a)+abs(self.d) < 0.0000000001:
+            print 'dead synapse: a = ',self.a,' d = ',self.d
+            #This synapses has been evolved/initialized to be not useful. Don't bother running.
+            return
         try:
-            self.n2.inbox += self.a * sin(self.b * self.n1.outbox + self.c) + self.d * (self.n1.prevOutbox - self.n1.outbox)
+            self.n2.inbox += min(1000000, self.a * sin(self.b * self.n1.outbox + self.c) + self.d * (self.n1.prevOutbox - self.n1.outbox))
         except:
             print'!!!!!! WARNING: Synapse broke math!!!!!!!'
             pass

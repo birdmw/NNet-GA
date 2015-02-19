@@ -21,6 +21,8 @@ class Population:
         self.inputSets = inputSets
         self.outputSets = outputSets
 
+        self.bestRepeatCreature = None
+
         #Create pseudo-creature data structures
         self.sigmaCreature = Creature( NeuronCount, InputCount, OutputCount )
         self.avgTopCreature = Creature( NeuronCount, InputCount, OutputCount  )
@@ -56,6 +58,19 @@ class Population:
                 child = mate( mother , father )
                 self.creatureList.append( child )
          #self.mutate()
+
+    def populate_randInjections( self ):
+         while (len(self.creatureList) < 2): #If there is less than two creatures left, create a random new creature.
+              self.creatureList.append(Creature(self.neuronCount,self.inputCount,self.outputCount))
+         while (len(self.creatureList) < self.creatureCount): #Breed until full population
+            if randint(1,25) == 1:
+                self.creatureList.append(Creature(self.neuronCount,self.inputCount,self.outputCount))
+            else:
+              mother = choice( self.creatureList )
+              father = choice( self.creatureList )
+              if not (mother == father):
+                child = mate( mother , father )
+                self.creatureList.append( child )
 
     def mutate_lesson(self):
         '''
@@ -208,9 +223,15 @@ class Population:
             if (creature == self.creatureList[0]):
                 #print "I'm the best! Suck it."
                 pass
+            elif (creature == self.creatureList[1]):
+                #print "I'm the first worst! Suck it."
+                pass
+            elif (creature == self.bestRepeatCreature):
+                #print "    If it works, don't fix it"
+                pass
             else:
                 #Calculate percentage of traits to mutate
-                percentageToMutate = random()/3
+                percentageToMutate = random()/1.5
                 #percentageToMutate = 1-(creature.fitness/self.creatureList[0].fitness)*(random())
 
                 creatNeuronCount = len(creature.neuronList)
@@ -434,14 +455,57 @@ class Population:
             outputSet.append(outp.outbox)
         '''
         for creature in self.creatureList:
-            #creature.run_untilConverged(inputSet,self.cycles)
-            #creature.fitness = fitness_similarity(creature,outputSet,self.MaxValue)
-            creature.fitness = fitness_repeatability(creature,self.inputSets,2,self.cycles,self.outputSets)
+            #creature.fitness = fitness_repeatability(creature,self.inputSets,2,self.cycles,self.outputSets)
+            creature.fitness = fitness_repeatability_withCyclePenalty(creature,self.inputSets,2,self.cycles,self.outputSets)
         #Sort creatures based on fitness
         self.creatureList.sort(key = lambda x: x.fitness, reverse=True)
         #self.creatureList.sort(key = lambda x: x.fitness, reverse=False)
         self.update_statsCreature()
 
+    def compete_similarity_runUntilConverged_randHybridFitness(self):
+        '''
+
+
+        Updates creatures fitness
+        Updates creatureList (sorts based on fitness)
+        Updates statsCreature
+        '''
+        '''
+        inputSet = []
+        for inp in self.trainingCreature.input:
+            inputSet.append(inp.inbox)
+
+        outputSet = []
+        for outp in self.trainingCreature.output:
+            outputSet.append(outp.outbox)
+        '''
+
+        #On average, only run repeatability test once every 10 generations. Otherwise use simple similarity
+        repVal = 5
+        repeatDecider = randint(1,repVal)
+        if repeatDecider == repVal:
+            print '      using repeatability fitness'
+            runs = 3
+            for creature in self.creatureList:
+                inSetCopy = deepcopy(self.inputSets)
+                outSetCopy = deepcopy(self.outputSets)
+            #creature.fitness = fitness_repeatability(creature,self.inputSets,2,self.cycles,self.outputSets)
+                creature.fitness = fitness_repeatability_withCyclePenalty(creature,inSetCopy,runs,self.cycles,outSetCopy)
+                creature.age+=1
+        else:
+            inputSet = choice(self.inputSets)
+            print '      using input set:',inputSet
+            for creature in self.creatureList:
+                creature.run_untilConverged(inputSet,self.cycles)
+                creature.fitness = fitness_similarity_withCyclePenalty(creature,self.outputSets[self.inputSets.index(inputSet)],self.cycles)
+                creature.age+=1
+
+        #Sort creatures based on fitness
+        self.creatureList.sort(key = lambda x: x.fitness, reverse=True)
+        #self.creatureList.sort(key = lambda x: x.fitness, reverse=False)
+        if repeatDecider == repVal:
+            self.bestRepeatCreature = self.creatureList[0]
+        self.update_statsCreature()
 
     def compete_lessons(self):
         '''
@@ -651,9 +715,12 @@ class Population:
                 print '!!!!! Creature has exceeded MaxValue. !!!!!'
                 #self.creatureList.remove(creature)
                 toBeRemoved.append(creature)
-            elif self.creatureList.index(creature)  > (startLen-1)/2:
-                #self.creatureList.remove(creature)
+            elif (creature.fitness < 0.01): #2e-6
+                #print '!!!!! Creature with fitness of ',creature.fitness,'will be removed !!!!!'
                 toBeRemoved.append(creature)
+            #elif self.creatureList.index(creature)  > (startLen-1)/2:
+                #self.creatureList.remove(creature)
+                #toBeRemoved.append(creature)
 
         for loser in toBeRemoved:
             self.creatureList.remove(loser)
@@ -705,7 +772,8 @@ class Population:
         self.inputSets = inputSets
         self.outputSets = outputSets
         self.populate()
-        self.mutate_generation_random()
+        #self.mutate_generation_random()
+        self.mutate_generation()
         '''
         if inputSets != None:
             inputSet = choice(inputSets)
@@ -717,6 +785,72 @@ class Population:
         self.compete_similarity_runUntilConverged_repeatabilityFitness()
         self.update_pseudoCreatures()
         self.prune()
+
+    def run_generation_runUntilConverged_randHybridFitness(self,inputSets,outputSets):
+        '''
+        Runs the population for one generation in the basic (populate)-(run)-(prune)-(mutate) sequence
+        '''
+
+        self.inputSets = inputSets
+        self.outputSets = outputSets
+        print '   populating...'
+        self.populate()
+        print '   mutating...'
+        self.mutate_generation_random()
+        #self.mutate_generation()
+        print '   competing...'
+        self.compete_similarity_runUntilConverged_randHybridFitness()
+        print '   updating pseudos...'
+        self.update_pseudoCreatures()
+        print '   pruning...'
+        self.prune()
+        print 'remaining creatures:',len(self.creatureList)
+        print "best creature's fitness:",self.creatureList[0].fitness
+        print "best creature's cycles:",self.creatureList[0].cycles
+
+    def run_generation_randHybridFitness_randCreatInjection(self,inputSets,outputSets):
+        '''
+        Runs the population for one generation in the basic (populate)-(run)-(prune)-(mutate) sequence
+        '''
+
+        self.inputSets = inputSets
+        self.outputSets = outputSets
+        print '   populating...'
+        self.populate_randInjections()
+        print '   mutating...'
+        self.mutate_generation_random()
+        #self.mutate_generation()
+        print '   competing...'
+        self.compete_similarity_runUntilConverged_randHybridFitness()
+        print '   updating pseudos...'
+        self.update_pseudoCreatures()
+        print '   pruning...'
+        self.prune()
+        print "best creature's age:",self.creatureList[0].age
+        print "best creature's fitness:",self.creatureList[0].fitness
+        print "best creature's cycles:",self.creatureList[0].cycles
+
+        for inputSet in inputSets:
+            print '   Input:',inputSet,'Expected Output:',outputSets[inputSets.index(inputSet)]
+            self.creatureList[0].run_untilConverged(inputSet,self.cycles)
+            simFit = fitness_similarity_withCyclePenalty(self.creatureList[0],outputSets[inputSets.index(inputSet)],self.cycles)
+            toPrint = []
+            for outp in self.creatureList[0].output:
+                toPrint.append(outp.outbox)
+            print '      Outputs: ',toPrint
+            print '      Fitness = ',simFit
+        brep = fitness_repeatability_printer(self.creatureList[0],inputSets,5,self.cycles,outputSets)
+        if brep > 10:
+            localtime = time.localtime(time.time())
+            Date = str(localtime[0])+'_'+str(localtime[1])+'_'+str(localtime[2])
+            Time = str(localtime[3])+'_'+str(localtime[4])+'_'+str(localtime[5])
+
+            fileName = r"C:\Users\chris.nelson\Desktop\NNet\CreatureDebugging\midEvolutionExcellent_"+str(brep)+"_"+Date+'_'+Time
+            save_creature(self.creatureList[0],fileName)
+            print '=====EXCELLENT CREATURE SAVED ======'
+
+        print 'remaining creatures:',len(self.creatureList)
+
 
     def run_generationLessons(self,inputSet = None,outputSet = None):
         '''
@@ -770,7 +904,7 @@ def fitness(creature,mus,sigmas,MaxValue):
 
 def fitness_repeatability(creature,inputSets,runs,maxCycles,outputSets):
     repDist = 0
-
+    shuffle(inputSets)
     for inputSet in inputSets:
         for r in range(runs):
             creature.run_untilConverged(inputSet,maxCycles)
@@ -781,26 +915,67 @@ def fitness_repeatability(creature,inputSets,runs,maxCycles,outputSets):
                 repDist+= abs(outputSets[inputSets.index(inputSet)][outInd]-outputs[-1])
 
 
-    normalizer = runs*len(outputSets)
+    normalizer = runs*len(outputSets) #Convert total distance to average distance per output set
     if repDist <= 0.0001:
         sim = 10000
     else:
         sim = normalizer/repDist
     return sim
 
+def fitness_repeatability_withCyclePenalty(creature,inputSets,runs,maxCycles,outputSets):
+    halfPenalty = 0.99
+    endPenalty = 0.7
+
+    mhalf = (1-halfPenalty)/(-maxCycles/2)
+    mend = (endPenalty-halfPenalty)/(maxCycles/2)
+    bhalf = 1
+    bend = -1*mend*maxCycles/2+halfPenalty
+
+    repDist = 0
+
+    for r in range(runs):
+        shuffle(inputSets)
+        runDist = 0
+        for inputSet in inputSets:
+            setDist = 0
+            creature.run_untilConverged(inputSet,maxCycles)
+            #creature.run(inputSet,cycles)
+            outputs = []
+            for outInd in range(len(creature.output)):
+                outputs.append(creature.output[outInd].outbox)
+                setDist+= abs(outputSets[inputSets.index(inputSet)][outInd]-outputs[-1])**2
+
+            if creature.cycles >= maxCycles/2:
+                cyclePen = creature.cycles*mend + bend
+            else:
+                cyclePen = creature.cycles*mhalf + bhalf
+
+            runDist += setDist/cyclePen
+
+        repDist+=runDist
+
+    normalizer = runs*len(outputSets) #Convert total distance to average distance per output set
+    if repDist <= 0.0001:
+        sim = 10000
+    else:
+        sim = normalizer/repDist
+
+    return sim
+
+
 def fitness_repeatability_printer(creature,inputSets,runs,maxCycles,outputSets):
     repDist = 0
 
     print 'Creature fitness = ',creature.fitness
     for inputSet in inputSets:
-        print 'Inputs: ',inputSet
+        print 'Inputs: ',inputSet,' Expected Outputs:',outputSets[inputSets.index(inputSet)]
         for r in range(runs):
             creature.run_untilConverged(inputSet,maxCycles)
             #creature.run(inputSet,cycles)
             outputs = []
             for outInd in range(len(creature.output)):
                 outputs.append(creature.output[outInd].outbox)
-                repDist+= abs(outputSets[inputSets.index(inputSet)][outInd]-outputs[-1])
+                repDist+= abs(outputSets[inputSets.index(inputSet)][outInd]-outputs[-1])**2
 
             print '  Run',r,' Outputs: ',outputs
 
@@ -812,6 +987,39 @@ def fitness_repeatability_printer(creature,inputSets,runs,maxCycles,outputSets):
     print 'Repeatability fitness = ',sim
     print ''
     return sim
+
+def fitness_similarity_withCyclePenalty(creature,targets,maxCycles):
+    '''
+    Calculates the fitness for a creature using similarity. (eg: 1/distance)
+    Parameters:
+        creature: The creature who's fitness is being calculated
+        targets: A list of target outputs (usually from training creature)
+    Returns:
+        fitness: Bounded between 0 and 10000 via hardcoded check
+    '''
+    halfPenalty = 0.99
+    endPenalty = 0.7
+
+    mhalf = (1-halfPenalty)/(-maxCycles/2)
+    mend = (endPenalty-halfPenalty)/(maxCycles/2)
+    bhalf = 1
+    bend = -1*mend*maxCycles/2+halfPenalty
+
+    distance = 0
+    for outInd in range(len(targets)):
+        creatOut = creature.output[outInd].outbox
+        distance+= abs(targets[outInd]-creatOut)
+
+    if creature.cycles >= maxCycles/2:
+        cyclePen = creature.cycles*mend + bend
+    else:
+        cyclePen = creature.cycles*mhalf + bhalf
+
+    #Put an upper cap on similarity
+    if distance/cyclePen <= 0.0001:
+        return 10000
+
+    return cyclePen/distance
 
 def fitness_similarity(creature,targets,MaxValue):
     '''
@@ -855,18 +1063,19 @@ def mate (mother, father):
     Pull out the wine, light some candles, and turn on the charm. Giggity giggity.
     '''
     child = deepcopy( mother )
+    child.age = 0
     for i in range(len(child.neuronList)):
         if getrandbits(1):
-            child.neuronList[i].threshold = father.neuronList[i].threshold
+            child.neuronList[i].threshold =  deepcopy(father.neuronList[i].threshold)
     for i in range(len(child.synapseList)):
         if getrandbits(1):
-            child.synapseList[i].a = father.synapseList[i].a
+            child.synapseList[i].a = deepcopy( father.synapseList[i].a)
         if getrandbits(1):
-            child.synapseList[i].b = father.synapseList[i].b
+            child.synapseList[i].b = deepcopy( father.synapseList[i].b)
         if getrandbits(1):
-            child.synapseList[i].c = father.synapseList[i].c
+            child.synapseList[i].c = deepcopy( father.synapseList[i].c)
         if getrandbits(1):
-            child.synapseList[i].d = father.synapseList[i].d
+            child.synapseList[i].d = deepcopy( father.synapseList[i].d)
     return child
 
 def myGauss(mu,sig,x):
@@ -888,47 +1097,68 @@ def myGauss(mu,sig,x):
 
 
 def main():
-    CreatureCount = 1000
-    NeuronCount = 7
+    CreatureCount = 1500
+    NeuronCount = 10
     InputCount = 2
     OutputCount = 2
-    MaxCycles = 150
+    MaxCycles = 500
     Lessons = 1
     LessonMutationDivider = 1
-    GenerationMutationDivider =3
-    MaxValue=35
+    GenerationMutationDivider =6
+    MaxValue=2000000
 
     runs = 5
 
-    trainingSetInputs = [[0,0],[0,1],[1,0],[1,1]]
-    trainingSetOutputs = [[0,0],[0,1],[1,0],[1,1]]
-    print "Population Description:"
+##    trainingSetInputs = [[0,0],[0,1],[1,0],[1,1]]
+##    trainingSetOutputs = [[0,0],[0,1],[1,0],[1,1]]
+    trainingSetInputs = [[0,0],[1,1]]
+    trainingSetOutputs = [[0,0],[1,1]]
 
-    demoPop =  Population(CreatureCount, NeuronCount, InputCount, OutputCount,MaxCycles, Lessons, LessonMutationDivider,GenerationMutationDivider,MaxValue)
+    inSetCopies = deepcopy(trainingSetInputs)
+    outSetCopies = deepcopy(trainingSetOutputs)
+
+    badStart = True
+    print 'Finding valid starting population...'
+    while(badStart):
+        demoPop =  Population(CreatureCount, NeuronCount, InputCount, OutputCount,MaxCycles, Lessons, LessonMutationDivider,GenerationMutationDivider,MaxValue)
+
+        #demoPop.run_generation_runUntilConverged_randHybridFitness(trainingSetInputs,trainingSetOutputs)
+        demoPop.run_generation_randHybridFitness_randCreatInjection(trainingSetInputs,trainingSetOutputs)
+
+        if demoPop.creatureList[0].fitness > 1e-5:
+            badStart = False
+        else:
+            print 'Failed. Retrying...'
+
+
     bRepFit = 0
-    genCount = 600
+    genCount = 650
     for g in range(genCount):
         #if ((g) % 10) == 0:
         print ""
         print ""
         print "GENERATION: ",g
 
-        demoPop.run_generation_runUntilConverged(trainingSetInputs,trainingSetOutputs)
-
+        #demoPop.run_generation_runUntilConverged(trainingSetInputs,trainingSetOutputs)
+        #demoPop.run_generation_runUntilConverged_repeatabilityFitness(trainingSetInputs,trainingSetOutputs)
+        #demoPop.run_generation_runUntilConverged_randHybridFitness(trainingSetInputs,trainingSetOutputs)
+        demoPop.run_generation_randHybridFitness_randCreatInjection(trainingSetInputs,trainingSetOutputs)
+        '''
         if ((g) % 10) == 0:
             print "Best Creature:"
             print "  Cycles:",demoPop.creatureList[0].cycles
             #testCreatureRepeatability(demoPop.creatureList[0],trainingSetInputs,runs,MaxCycles)
-            bRepFit = fitness_repeatability_printer(demoPop.creatureList[0],trainingSetInputs,runs,MaxCycles,trainingSetOutputs)
+            bRepFit = fitness_repeatability_printer(demoPop.creatureList[0],inSetCopies,runs,MaxCycles,outSetCopies)
             print ""
-            print "Worst Creature:"
+            print "Worst Creature (to survive pruning):"
             print "  Cycles:",demoPop.creatureList[-1].cycles
             #testCreatureRepeatability(demoPop.creatureList[-1],trainingSetInputs,runs,MaxCycles)
-            fitness_repeatability_printer(demoPop.creatureList[-1],trainingSetInputs,runs,MaxCycles,trainingSetOutputs)
+            fitness_repeatability_printer(demoPop.creatureList[-1],inSetCopies,runs,MaxCycles,outSetCopies)
 
-        if bRepFit > 20:
+        if bRepFit > 10:
             print "Found exceptional creature. Discontinuing evolution"
             break
+        '''
 
 
     localtime = time.localtime(time.time())
@@ -971,7 +1201,7 @@ def main():
         demoPop.populate()
 
     '''
-    seeCreature(demoPop, demoPop.creatureList[0] )
+    seeCreature(demoPop.creatureList[0] )
 
 
 if __name__ == '__main__':

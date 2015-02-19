@@ -394,6 +394,13 @@ def main():
                 Current sigmaCreature becomes covarianceCreature
                 sigmaCreature is still used for mutational sigmas, but they are NOT computed through covariance (See above)
 
+
+        PID each input set individually
+
+        To penalize long cycle count, integrate differences over cycles.
+
+
+
     '''
 
     #Relationships between inputs and outputs for this training set, only used in results file
