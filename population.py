@@ -17,7 +17,19 @@ class Population:
             out.outbox = gauss(0,1)
         self.synapseCount = len ( self.trainingCreature.synapseList )
         self.populate()
-        
+
+    def prune ( self ):
+        self.pruneByELO()
+
+    def mutate ( self ):
+        self.mutateBySigma()
+
+    def train ( self, TRAINING_SETS ):
+        for s in range(TRAINING_SETS):
+            self.setTrainingConstant()
+            self.setPuts()
+            self.randomTrials( len( self.creatureList ) )
+            
     def updateELO(self,  creature1, creature2 ):
       if creature1.fitness > creature2.fitness:
         creature1.ELO,creature2.ELO = rate_1vs1(creature1.ELO,creature2.ELO)
@@ -37,6 +49,7 @@ class Population:
                 self.creatureList.pop(-1-index)
             else:
                 index += 1
+                
     def randomTrials( self, TRIALS ):
         creatureList = self.creatureList
         p=Pool()
@@ -79,7 +92,7 @@ class Population:
                 s.c = max(min(gauss( s.c , creature.ELO.sigma*.12*self.rollingMaxOutput ),1000000),-1000000)
                 s.d = max(min(gauss( s.d , creature.ELO.sigma*.12*self.rollingMaxOutput ),1000000),-1000000)
 
-    def setTrainingConstant( self, const=1 ):
+    def setTrainingConstant( self, const=1.0 ):
         for i in self.trainingCreature.input:
             i.inbox = [const]
         for o in self.trainingCreature.output:

@@ -4,6 +4,7 @@ from trueskill import Rating, quality_1vs1, rate_1vs1
 import numpy as np
 
 class Creature:
+    from creature_extra import printMe
     def __init__(self , neuronCount, inputCount, outputCount):
         self.neuronCount, self.inputCount, self.outputCount = neuronCount, inputCount, outputCount
         self.neuronList, self.input, self.output, self.synapseList  = [], [], [], []
