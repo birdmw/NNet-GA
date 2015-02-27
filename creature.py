@@ -4,7 +4,6 @@ from trueskill import Rating, quality_1vs1, rate_1vs1
 import numpy as np
 
 class Creature:
-    from creature_extra import printMe
     def __init__(self , neuronCount, inputCount, outputCount):
         self.neuronCount, self.inputCount, self.outputCount = neuronCount, inputCount, outputCount
         self.neuronList, self.input, self.output, self.synapseList  = [], [], [], []
@@ -30,7 +29,8 @@ class Creature:
             tOut = self.expectedOutputs[Out]
             cOut = self.output[Out].outbox
             totalCreatureOutputDifference += abs(tOut-cOut)
-        self.fitness = self.myGauss(0,1,totalCreatureOutputDifference)
+        #print "topf", totalCreatureOutputDifference
+        self.fitness = ((self.cycles-1)*self.fitness + self.myGauss(0,1,totalCreatureOutputDifference) ) / self.cycles
 
     def myGauss(self, mu,sig,x):
         '''
@@ -56,8 +56,5 @@ class Creature:
                 n.run()
             for s in self.synapseList:
                 s.run()
-                
-def parallelCreatureRun( creature ):
-    creature.run()
-    return creature
+            self.setFitness()
 

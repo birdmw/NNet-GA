@@ -2,7 +2,7 @@ from creature import *
 from multiprocessing import Pool, cpu_count, Process
 
 class Population:
-    
+
     def __init__(self, CREATURE_COUNT, NEURON_COUNT, INPUT_COUNT, OUTPUT_COUNT, CYCLES_PER_RUN ):
         self.cycles = CYCLES_PER_RUN
         self.creatureList = []
@@ -19,24 +19,17 @@ class Population:
         self.populate()
 
     def prune ( self ):
-        self.pruneByELO()
+        #self.pruneByELO()
+        self.pruneByMu()
 
     def mutate ( self ):
         self.mutateBySigma()
 
     def train ( self, TRAINING_SETS ):
         for s in range(TRAINING_SETS):
-            self.setTrainingConstant()
+            self.setTrainingBools()
             self.setPuts()
-            self.randomTrials( len( self.creatureList ) )
-            
-    def updateELO(self,  creature1, creature2 ):
-      if creature1.fitness > creature2.fitness:
-        creature1.ELO,creature2.ELO = rate_1vs1(creature1.ELO,creature2.ELO)
-      elif creature2.fitness > creature1.fitness:
-        creature2.ELO,creature1.ELO = rate_1vs1(creature2.ELO,creature1.ELO)
-      else:
-        creature1.ELO, creature2.ELO = rate_1vs1(creature1.ELO,creature2.ELO, drawn=True)
+            self.randomTrials( len( self.creatureList )**2 )
 
     def pruneByELO ( self ):
         half = len(self.creatureList)/2
@@ -49,19 +42,41 @@ class Population:
                 self.creatureList.pop(-1-index)
             else:
                 index += 1
-                
+
+    def pruneByMu (self):
+        self.sortByMu()
+        half = len(self.creatureList)/2
+        for k in range(half):
+            self.creatureList.pop()
+
+
     def randomTrials( self, TRIALS ):
         creatureList = self.creatureList
+
+        #parallel code - broke for now
+        '''
         p=Pool()
-        creatureList = p.map(parallelCreatureRun, creatureList)
+        self.creatureList = p.map(parallelCreatureRun, creatureList)
+        '''
+        #serial code
+        
+        for c in self.creatureList:
+            parallelCreatureRun(c)
+        
         for T in range(TRIALS):
             creature1 = choice( creatureList )
             creature2 = choice( creatureList )
             while creature1 == creature2:
                 creature2 = choice( creatureList )
-            creature1.setFitness()
-            creature2.setFitness()
             self.updateELO(creature1, creature2)
+
+    def updateELO(self,  creature1, creature2 ):
+      if creature1.fitness > creature2.fitness:
+        creature1.ELO,creature2.ELO = rate_1vs1(creature1.ELO,creature2.ELO)
+      elif creature2.fitness > creature1.fitness:
+        creature2.ELO,creature1.ELO = rate_1vs1(creature2.ELO,creature1.ELO)
+      else:
+        creature1.ELO, creature2.ELO = rate_1vs1(creature1.ELO,creature2.ELO, drawn=True)
 
     def populate( self ):
          while (len(self.creatureList) < self.creatureCount):
@@ -78,21 +93,28 @@ class Population:
                 self.creatureList.append( child )
 
     def mutateBySigma( self ):
+        half = len(self.creatureList)/2
+
         maxOut = 0
         for i in range( len(self.trainingCreature.output)):
             maxOut = max(maxOut,self.trainingCreature.output[i].outbox, abs(self.trainingCreature.output[i].outbox))
 
-        self.rollingMaxOutput = ( 9 * self.rollingMaxOutput +  maxOut ) / 10
+        self.rollingMaxOutput = ( 2 * self.rollingMaxOutput +  maxOut ) / 3
+        #print " rolling max out", self.rollingMaxOutput
+        mutateAmount = 1.2*self.rollingMaxOutput
+        #print "mutating by:", mutateAmount
+
         for creature in self.creatureList:
             for n in creature.neuronList:
-                n.threshold = max(min(gauss( n.threshold , creature.ELO.sigma*.12*self.rollingMaxOutput),1000000),-1000000)
+                n.threshold = max(min(gauss( n.threshold , creature.ELO.sigma*mutateAmount),1000000),-1000000)
             for s in creature.synapseList:
-                s.a = max(min(gauss( s.a , creature.ELO.sigma*.12*self.rollingMaxOutput ),1000000),-1000000)
-                s.b = max(min(gauss( s.b , creature.ELO.sigma*.12*self.rollingMaxOutput ),1000000),-1000000)
-                s.c = max(min(gauss( s.c , creature.ELO.sigma*.12*self.rollingMaxOutput ),1000000),-1000000)
-                s.d = max(min(gauss( s.d , creature.ELO.sigma*.12*self.rollingMaxOutput ),1000000),-1000000)
+                #print "mutating synapse by:", creature.ELO.sigma*mutateAmount
+                s.a = max(min(gauss( s.a , creature.ELO.sigma*mutateAmount),1000000),-1000000)
+                s.b = max(min(gauss( s.b , creature.ELO.sigma*mutateAmount ),1000000),-1000000)
+                s.c = max(min(gauss( s.c , creature.ELO.sigma*mutateAmount ),1000000),-1000000)
+                s.d = max(min(gauss( s.d , creature.ELO.sigma*mutateAmount ),1000000),-1000000)
 
-    def setTrainingConstant( self, const=1.0 ):
+    def setTrainingConstant( self, const = 1.0 ):
         for i in self.trainingCreature.input:
             i.inbox = [const]
         for o in self.trainingCreature.output:
@@ -113,6 +135,7 @@ class Population:
 
     def setPuts ( self ):
         self.expectedOutputs = []
+        #print "expected:", self.expectedOutputs
         for c in self.creatureList:
             for i in range(len(c.input)):
                 c.input[i].inbox=self.trainingCreature.input[i].inbox
@@ -131,7 +154,7 @@ class Population:
     def sortBySigma( self ):
         self.creatureList.sort(key = lambda x: x.ELO.sigma, reverse=True)
         return self
-    
+
     def mate (self, mother, father):
      child = Creature( self.neuronCount, self.inputCount, self.outputCount  )
      for i in range(len(child.neuronList)):
@@ -157,3 +180,7 @@ class Population:
           else:
               child.synapseList[i].d = mother.synapseList[i].d
      return child
+
+def parallelCreatureRun( creature ):
+    creature.run()
+    return creature
