@@ -1,5 +1,7 @@
 from creature import *
 from multiprocessing import Pool, cpu_count, Process
+from math import *
+from random import *
 
 class Population:
 
@@ -19,17 +21,47 @@ class Population:
         self.populate()
 
     def prune ( self ):
-        #self.pruneByELO()
-        self.pruneByMu()
+        self.pruneByELO()
+        #self.pruneByMu()
 
     def mutate ( self ):
         self.mutateBySigma()
 
     def train ( self, TRAINING_SETS ):
+        creatureList = self.creatureList
         for s in range(TRAINING_SETS):
-            self.setTrainingBools()
+
+            #self.setTrainingConstant()
+            #self.setTrainingSin()
+            self.setTrainingTimes5()
             self.setPuts()
-            self.randomTrials( len( self.creatureList )**2 )
+            #parallel code - broke for now
+            '''
+            p=Pool()
+            self.creatureList = p.map(runCreature, creatureList)
+            '''
+            #serial code
+            for c in self.creatureList:
+                runCreature(c)
+        #self.avgFitness()
+        self.battle( len( self.creatureList ) )
+        
+    '''
+    def avgFitness(self):
+        for c in self.creatureList:
+            c.fitness = sum(c.fitnessList)/(float(len(c.fitnessList)))
+    '''
+    
+    def battle( self, pairings ):
+        print "battle"
+        creatureList = self.creatureList     
+        for T in range(pairings):
+            creature1 = choice( creatureList )
+            creature2 = choice( creatureList )
+            while creature1 == creature2:
+                creature2 = choice( creatureList )
+            self.updateELO(creature1, creature2)
+        print "battle - end"
 
     def pruneByELO ( self ):
         half = len(self.creatureList)/2
@@ -48,27 +80,6 @@ class Population:
         half = len(self.creatureList)/2
         for k in range(half):
             self.creatureList.pop()
-
-
-    def randomTrials( self, TRIALS ):
-        creatureList = self.creatureList
-
-        #parallel code - broke for now
-        '''
-        p=Pool()
-        self.creatureList = p.map(parallelCreatureRun, creatureList)
-        '''
-        #serial code
-        
-        for c in self.creatureList:
-            parallelCreatureRun(c)
-        
-        for T in range(TRIALS):
-            creature1 = choice( creatureList )
-            creature2 = choice( creatureList )
-            while creature1 == creature2:
-                creature2 = choice( creatureList )
-            self.updateELO(creature1, creature2)
 
     def updateELO(self,  creature1, creature2 ):
       if creature1.fitness > creature2.fitness:
@@ -99,7 +110,7 @@ class Population:
         for i in range( len(self.trainingCreature.output)):
             maxOut = max(maxOut,self.trainingCreature.output[i].outbox, abs(self.trainingCreature.output[i].outbox))
 
-        self.rollingMaxOutput = ( 2 * self.rollingMaxOutput +  maxOut ) / 3
+        self.rollingMaxOutput = ( self.rollingMaxOutput +  maxOut ) / 2
         #print " rolling max out", self.rollingMaxOutput
         mutateAmount = 1.2*self.rollingMaxOutput
         #print "mutating by:", mutateAmount
@@ -114,11 +125,25 @@ class Population:
                 s.c = max(min(gauss( s.c , creature.ELO.sigma*mutateAmount ),1000000),-1000000)
                 s.d = max(min(gauss( s.d , creature.ELO.sigma*mutateAmount ),1000000),-1000000)
 
+    def setTrainingTimes5( self ):
+        inVal=random()
+        for i in self.trainingCreature.input:
+            i.inbox = [inVal]
+        for o in self.trainingCreature.output:
+            o.outbox = inVal*5.0
+
     def setTrainingConstant( self, const = 1.0 ):
         for i in self.trainingCreature.input:
             i.inbox = [const]
         for o in self.trainingCreature.output:
             o.outbox = const
+
+    def setTrainingSin( self ):
+        randVal = 2*pi*random()
+        for i in self.trainingCreature.input:
+            i.inbox = [randVal]
+        for o in self.trainingCreature.output:
+            o.outbox = sin(randVal)
 
     def setTrainingBools ( self ):
         for i in self.trainingCreature.input:
@@ -156,31 +181,31 @@ class Population:
         return self
 
     def mate (self, mother, father):
-     child = Creature( self.neuronCount, self.inputCount, self.outputCount  )
-     for i in range(len(child.neuronList)):
-          if getrandbits(1):
-              child.neuronList[i].threshold = father.neuronList[i].threshold
-          else:
-              child.neuronList[i].threshold = mother.neuronList[i].threshold
-     for i in range(len(child.synapseList)):
-          if getrandbits(1):
-              child.synapseList[i].a = father.synapseList[i].a
-          else:
-              child.synapseList[i].a = mother.synapseList[i].a
-          if getrandbits(1):
-              child.synapseList[i].b = father.synapseList[i].b
-          else:
-              child.synapseList[i].b = mother.synapseList[i].b
-          if getrandbits(1):
-              child.synapseList[i].c = father.synapseList[i].c
-          else:
-              child.synapseList[i].c = mother.synapseList[i].c
-          if getrandbits(1):
-              child.synapseList[i].d = father.synapseList[i].d
-          else:
-              child.synapseList[i].d = mother.synapseList[i].d
-     return child
+         child = Creature( self.neuronCount, self.inputCount, self.outputCount  )
+         for i in range(len(child.neuronList)):
+              if getrandbits(1):
+                  child.neuronList[i].threshold = father.neuronList[i].threshold
+              else:
+                  child.neuronList[i].threshold = mother.neuronList[i].threshold
+         for i in range(len(child.synapseList)):
+              if getrandbits(1):
+                  child.synapseList[i].a = father.synapseList[i].a
+              else:
+                  child.synapseList[i].a = mother.synapseList[i].a
+              if getrandbits(1):
+                  child.synapseList[i].b = father.synapseList[i].b
+              else:
+                  child.synapseList[i].b = mother.synapseList[i].b
+              if getrandbits(1):
+                  child.synapseList[i].c = father.synapseList[i].c
+              else:
+                  child.synapseList[i].c = mother.synapseList[i].c
+              if getrandbits(1):
+                  child.synapseList[i].d = father.synapseList[i].d
+              else:
+                  child.synapseList[i].d = mother.synapseList[i].d
+         return child
 
-def parallelCreatureRun( creature ):
+def runCreature( creature ):
     creature.run()
     return creature

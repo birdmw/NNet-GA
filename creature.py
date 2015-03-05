@@ -23,15 +23,6 @@ class Creature:
                 self.synapseList.append( Synapse(n1, n2, len(self.neuronList) ) )
         self.ELO = Rating()
 
-    def setFitness( self ):
-        totalCreatureOutputDifference = 0.0
-        for Out in range(len(self.output)):
-            tOut = self.expectedOutputs[Out]
-            cOut = self.output[Out].outbox
-            totalCreatureOutputDifference += abs(tOut-cOut)
-        #print "topf", totalCreatureOutputDifference
-        self.fitness = ((self.cycles-1)*self.fitness + self.myGauss(0,1,totalCreatureOutputDifference) ) / self.cycles
-
     def myGauss(self, mu,sig,x):
         '''
         Uses mu and sig to create a gaussian, then uses x as an input to the gaussian, returning the probability that x would be seen in the gaussian
@@ -47,7 +38,9 @@ class Creature:
         return g
 
     def run( self ): #no cycles or population, that info is internal to creature now
+        runFitness = 0.0
         for r in range( self.cycles ):
+
             '''
             for i in range ( self.inputCount ):
                 self.input[i].inbox = population.trainingCreature.input[i].inbox
@@ -56,5 +49,11 @@ class Creature:
                 n.run()
             for s in self.synapseList:
                 s.run()
-            self.setFitness()
+            totalCreatureOutputDifference = 0.0
+            for Out in range(len(self.output)):
+                tOut = self.expectedOutputs[Out]
+                cOut = self.output[Out].outbox
+                totalCreatureOutputDifference += abs(tOut-cOut)
+            runFitness = (runFitness + self.myGauss(0,1,totalCreatureOutputDifference) ) / 2
+        self.fitness = (self.fitness + runFitness ) / 2
 

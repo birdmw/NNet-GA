@@ -12,20 +12,20 @@ def evolve():
         population.repopulate()
 
 if __name__ == "__main__":
-    CREATURE_COUNT = 50
-    NEURON_COUNT= 7
-    INPUT_COUNT = 2
+    CREATURE_COUNT = 100
+    NEURON_COUNT= 2
+    INPUT_COUNT = 1
     OUTPUT_COUNT = 1
-    CYCLES_PER_RUN = NEURON_COUNT*2
-    GENERATIONS = 20
-    TRAINING_SETS = 1
+    CYCLES_PER_RUN = NEURON_COUNT * 2
+    GENERATIONS = 10
+    TRAINING_SETS = 10
 
     population = Population ( CREATURE_COUNT, NEURON_COUNT, INPUT_COUNT, OUTPUT_COUNT, CYCLES_PER_RUN )
     evolve()
-
-    bestCreature = population.creatureList[0]
-    population.train(TRAINING_SETS)
-    bestCreature.run()
+    
     printFinalOuts(population)
-
+    population.train(TRAINING_SETS)
+    printFinalOuts(population)
+    population.train(TRAINING_SETS)
+    printFinalOuts(population)
 

@@ -6,6 +6,7 @@ class Neuron:
         self.isInput, self.isOutput = 0, 0
 
     def run(self):
+        '''
         self.prevOutbox = self.outbox
         if self.isOutput == 0:#If not an output neuron
             self.outbox = 0.0
@@ -15,3 +16,5 @@ class Neuron:
             self.value = 0.0
         if self.isInput == 0:#If not an input neuron
             self.inbox = [0.0]
+        '''
+        self.outbox += sum(self.inbox) / (float(len(self.inbox)))
