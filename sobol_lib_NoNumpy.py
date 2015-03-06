@@ -692,3 +692,36 @@ def isprime(n):
 
 	return True
 
+def generateSobolCharacterizationPoints(numDims,numPts,starts,stops,resolution,startSeed = 0):
+    dim_num = numDims
+
+    seed = 0
+    while seed < startSeed:
+        qs = prime_ge ( dim_num )
+
+        [ r, seed_out ] = i4_sobol ( dim_num, seed )
+        seed = seed_out
+
+
+    qs = prime_ge ( dim_num )
+    pts=[]
+    for pt in range( 0, numPts):
+        newPt = False
+        while newPt == False:
+
+            [ r, seed_out ] = i4_sobol ( dim_num, seed )
+            nxtPt = []
+            for i in range(len(r)):
+                rng = stops[i]-starts[i]
+
+
+                newVal = float(round(starts[i]+rng*r[i],resolution[i]))
+                #newVal = r[i]
+
+                nxtPt.append(newVal)
+            if nxtPt not in pts:
+                pts.append(nxtPt)
+                newPt = True
+            seed = seed_out
+
+    return pts

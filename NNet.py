@@ -399,7 +399,9 @@ def main():
 
         To penalize long cycle count, integrate differences over cycles.
 
+        Population fitness/fitnesSigma determined by all un-pruned creature's fitnesses
 
+        Prune more based on 'similarity of population'
 
     '''
 

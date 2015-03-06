@@ -41,7 +41,7 @@ class Creature:
             for n2 in self.neuronList:
                 self.synapseList.append(Synapse(n1, n2,self.neuronCount))
                 #self.propertyCount+=4
-        self.updateBest()
+        #self.updateBest()
 
 
     def evaluateBest(self):
@@ -79,12 +79,9 @@ class Creature:
         returns:
             none
         '''
-        for i in range ( self.inputCount ):
-            self.input[i].inbox = inputSet[i]
         for r in range( cycles ):
-            if r != 0:
-                for i in range ( self.inputCount ):
-                    self.input[i].inbox += inputSet[i]
+            for i in range ( self.inputCount ):
+                self.input[i].inbox.append(inputSet[i])
             for n in self.neuronList:
                 n.run()
             for s in self.synapseList:
@@ -101,12 +98,9 @@ class Creature:
         '''
         self.cycles = 0
         outputTracker = []
-        for i in range ( self.inputCount ):
-            self.input[i].inbox = inputSet[i]
         for cycle in range( maxCycles ):
-            if cycle != 0:
-                for i in range ( self.inputCount ):
-                    self.input[i].inbox += inputSet[i]
+            for i in range ( self.inputCount ):
+                self.input[i].inbox.append(inputSet[i])
             for n in self.neuronList:
                 n.run()
             for s in self.synapseList:
@@ -115,7 +109,7 @@ class Creature:
 
             self.cycles+=1
 
-            if cycle <= self.neuronCount*1.5:
+            if cycle <= (self.neuronCount**2+10):#*(2.0/3.0):
                 outputTracker.append([])
                 for o in self.output:
                     outputTracker[-1].append(o.outbox)
@@ -132,28 +126,30 @@ class Creature:
 
 class Neuron:
     def __init__(self):
-        minChoice = -0.5
-        maxChoice = 0.5
+        minChoice = -15 #-5
+        maxChoice = 15 #5
+        self.maxVal = 1000
         self.threshold = random()*choice([minChoice,maxChoice])
-        self.inbox = random()*choice([minChoice,maxChoice])
+        self.inbox = []
         self.value = random()*choice([minChoice,maxChoice])
         self.outbox = random()*choice([minChoice,maxChoice])
         self.prevOutbox = random()*choice([minChoice,maxChoice])
 
     def run(self):
         self.prevOutbox = self.outbox
-        #self.outbox = 0.0
-        self.value += min(1000000,self.inbox)
+        avgInput = sum(self.inbox)/float(len(self.inbox)+1)
+        self.value += min(self.maxVal,max(avgInput,-1*self.maxVal))
         if (self.value >= self.threshold):
             self.outbox = self.value
-        self.value = 0.0
-        self.inbox = 0.0
+            self.value = 0.0
+        self.inbox = []
 
 class Synapse:
     def __init__(self, n1, n2,neuronCount):
-        minChoice = -0.5
-        maxChoice = 0.5
-        self.a = random()*choice([-minChoice,maxChoice])
+        minChoice = -10 #-2
+        maxChoice = 10 #2
+        self.maxVal = 1000
+        self.a = random()*choice([minChoice,maxChoice])
         self.b = random()*choice([minChoice*pi,maxChoice*pi])
         self.c = random()*choice([minChoice*pi,maxChoice*pi])
         self.d = random()*choice([minChoice,maxChoice]) #/neuronCount
@@ -161,14 +157,15 @@ class Synapse:
         self.n2 = n2
 
     def run(self):
-        if abs(self.a)+abs(self.d) < 0.0000000001:
+        if abs(self.a)+abs(self.d) < 0.001:
             print 'dead synapse: a = ',self.a,' d = ',self.d
             #This synapses has been evolved/initialized to be not useful. Don't bother running.
             return
         try:
-            self.n2.inbox += min(1000000, self.a * sin(self.b * self.n1.outbox + self.c) + self.d * (self.n1.prevOutbox - self.n1.outbox))
-        except:
+            self.n2.inbox.append(min(self.maxVal, max(self.a * sin(self.b * self.n1.outbox + self.c) + self.d * (self.n1.prevOutbox - self.n1.outbox),-1*self.maxVal)))
+        except Exception as e:
             print'!!!!!! WARNING: Synapse broke math!!!!!!!'
+            print e
             pass
 
 
@@ -183,7 +180,7 @@ def checkConvergence(outputLists):
     outputLists = [[cycleA_output0,cycleA_output1,...],[cycleB_output0,cycleB_output1,...],...]
     '''
 
-    percentageDifferenceToBeConverged = 0.001 #0.0001
+    percentageDifferenceToBeConverged = 0.01 #0.0001
     for outInd in range(len(outputLists[0])):
         reorderedOutputs = []
         for pt in outputLists:
@@ -191,8 +188,8 @@ def checkConvergence(outputLists):
 
         minOut = min(reorderedOutputs)
         maxOut = max(reorderedOutputs)
-        diff = maxOut-minOut
-        if diff > (maxOut *percentageDifferenceToBeConverged):
+        diff = abs(maxOut)-abs(minOut)
+        if diff > abs(maxOut *percentageDifferenceToBeConverged):
             return False
 
     return True
