@@ -1,7 +1,7 @@
 from neuron import *
 from synapse import *
 from trueskill import Rating, quality_1vs1, rate_1vs1
-from NNetLibrary import *
+from creature_helper import *
 import numpy as np
 
 class Creature:

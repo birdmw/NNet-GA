@@ -45,16 +45,16 @@ class Population:
                 runCreature(c)
         #self.avgFitness()
         self.battle( len( self.creatureList ) )
-        
+
     '''
     def avgFitness(self):
         for c in self.creatureList:
             c.fitness = sum(c.fitnessList)/(float(len(c.fitnessList)))
     '''
-    
+
     def battle( self, pairings ):
         print "battle"
-        creatureList = self.creatureList     
+        creatureList = self.creatureList
         for T in range(pairings):
             creature1 = choice( creatureList )
             creature2 = choice( creatureList )
@@ -206,6 +206,129 @@ class Population:
                   child.synapseList[i].d = mother.synapseList[i].d
          return child
 
-def runCreature( creature ):
-    creature.run()
-    return creature
+    def runCreature( creature ):
+        creature.run()
+        return creature
+
+def main():
+    CreatureCount = 80000
+    NeuronCount = 3
+    MaxCycles = 600
+    Lessons = 1
+    LessonMutationDivider = 1
+    GenerationMutationDivider = 10
+    MaxValue=2000000
+
+    runs = 5
+
+##    trainingSetInputs = [[0,0],[0,1],[1,0],[1,1]]
+##    trainingSetOutputs = [[0,0],[0,1],[1,0],[1,1]]
+    trainingSetInputs = [[-2],[0],[2]]
+    trainingSetOutputs = [[-2],[0],[2]]
+
+
+    InputCount = len(trainingSetInputs[0])
+    OutputCount = len(trainingSetOutputs[0])
+
+    inSetCopies = deepcopy(trainingSetInputs)
+    outSetCopies = deepcopy(trainingSetOutputs)
+
+    demoPop =  Population(CreatureCount, NeuronCount, InputCount, OutputCount,MaxCycles, Lessons, LessonMutationDivider,GenerationMutationDivider,MaxValue)
+    '''
+    badStart = True
+    print 'Finding valid starting population...'
+    while(badStart):
+        demoPop =  Population(CreatureCount, NeuronCount, InputCount, OutputCount,MaxCycles, Lessons, LessonMutationDivider,GenerationMutationDivider,MaxValue)
+
+        #demoPop.run_generation_runUntilConverged_randHybridFitness(trainingSetInputs,trainingSetOutputs)
+        #demoPop.run_generation_randHybridFitness_randCreatInjection(trainingSetInputs,trainingSetOutputs)
+        demoPop.run_generation_gaussDistFitness_randCreatInjection(trainingSetInputs,trainingSetOutputs)
+
+
+
+        if (demoPop.fitness > 1e-5):
+            if (len(demoPop.creatureList) > CreatureCount/100):
+                badStart = False
+            else:
+                print 'Failed. Retrying...'
+        else:
+            print 'Failed. Retrying...'
+    '''
+
+    bRepFit = 0
+    genCount = 650
+    for g in range(genCount):
+        #if ((g) % 10) == 0:
+        print ""
+        print ""
+        print "GENERATION: ",g+1
+
+        #demoPop.run_generation_runUntilConverged(trainingSetInputs,trainingSetOutputs)
+        #demoPop.run_generation_runUntilConverged_repeatabilityFitness(trainingSetInputs,trainingSetOutputs)
+        #demoPop.run_generation_runUntilConverged_randHybridFitness(trainingSetInputs,trainingSetOutputs)
+        #demoPop.run_generation_randHybridFitness_randCreatInjection(trainingSetInputs,trainingSetOutputs)
+        #demoPop.run_generation_gaussDistFitness_randCreatInjection(trainingSetInputs,trainingSetOutputs)
+        demoPop.run_generation_randGDRepFitness_randCreatInjection(trainingSetInputs,trainingSetOutputs)
+        '''
+        if ((g) % 10) == 0:
+            print "Best Creature:"
+            print "  Cycles:",demoPop.creatureList[0].cycles
+            #testCreatureRepeatability(demoPop.creatureList[0],trainingSetInputs,runs,MaxCycles)
+            bRepFit = fitness_repeatability_printer(demoPop.creatureList[0],inSetCopies,runs,MaxCycles,outSetCopies)
+            print ""
+            print "Worst Creature (to survive pruning):"
+            print "  Cycles:",demoPop.creatureList[-1].cycles
+            #testCreatureRepeatability(demoPop.creatureList[-1],trainingSetInputs,runs,MaxCycles)
+            fitness_repeatability_printer(demoPop.creatureList[-1],inSetCopies,runs,MaxCycles,outSetCopies)
+
+        if bRepFit > 10:
+            print "Found exceptional creature. Discontinuing evolution"
+            break
+        '''
+
+
+    localtime = time.localtime(time.time())
+    Date = str(localtime[0])+'_'+str(localtime[1])+'_'+str(localtime[2])
+    Time = str(localtime[3])+'_'+str(localtime[4])+'_'+str(localtime[5])
+
+    filename = r"C:\Users\chris.nelson\Desktop\NNet\CreatureDebugging\bestie4lyfe_"+Date+'_'+Time
+    save_creature(demoPop.creatureList[0],filename)
+
+
+    print '--FINISHED--'
+    '''
+
+
+    print "  Number of creatures:",len(demoPop.creatureList)
+
+    for setInd in range(len(trainingSetInputs)):
+        demoPop.setTrainingCreature(trainingSetInputs[setInd],trainingSetOutputs[setInd])
+        demoPop.compete_run()
+        demoPop.prune()
+        demoPop.update_pseudoCreatures()
+        demoPop.mutate_generation()
+
+        printTrain = []
+        printDelta = []
+        printBest = []
+
+        for i in range(len(demoPop.trainingCreature.output)):
+            printTrain.append(demoPop.trainingCreature.output[i].outbox)
+            printDelta.append(demoPop.deltaCreature.output[i].outbox)
+            printBest.append(demoPop.creatureList[0].output[i].outbox)
+
+        print "Set ",setInd," Results:"
+        print "  Number of surviving creatures:",len(demoPop.creatureList)
+        print "  trainingCreature outputs:",printTrain
+        print "  deltaCreature outputs:",printDelta
+        print "  bestCreature outputs:",printBest
+        print "  bestCreature fitness:",demoPop.creatureList[0].fitness
+
+        demoPop.repopulate()
+
+    '''
+    seeCreature(demoPop.creatureList[0] )
+
+
+if __name__ == '__main__':
+    main()
