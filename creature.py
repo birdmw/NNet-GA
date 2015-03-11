@@ -2,12 +2,14 @@ from neuron import *
 from synapse import *
 from trueskill import Rating, quality_1vs1, rate_1vs1
 import numpy as np
+from random import *
 
 class Creature:
     def __init__(self , neuronCount, inputCount, outputCount):
         self.neuronCount, self.inputCount, self.outputCount = neuronCount, inputCount, outputCount
         self.neuronList, self.input, self.output, self.synapseList  = [], [], [], []
         self.fitness = 0.0
+        self.rank = random()
         self.expectedOutputs = []
         for n in range(self.neuronCount):
             self.neuronList.append(Neuron())
@@ -20,7 +22,8 @@ class Creature:
             self.output[-1].isOutput = 1
         for n1 in self.neuronList:
             for n2 in self.neuronList:
-                self.synapseList.append( Synapse(n1, n2, len(self.neuronList) ) )
+                if not n2 in self.output and not n1 in self.input and not n1==n2:
+                    self.synapseList.append( Synapse(n1, n2, len(self.neuronList) ) )
         self.ELO = Rating()
 
     def myGauss(self, mu,sig,x):
@@ -37,7 +40,7 @@ class Creature:
         g = np.exp(p1/p2)
         return g
 
-    def run( self ): #no cycles or population, that info is internal to creature now
+    def run( self ):
         runFitness = 0.0
         for r in range( self.cycles ):
 
@@ -54,6 +57,6 @@ class Creature:
                 tOut = self.expectedOutputs[Out]
                 cOut = self.output[Out].outbox
                 totalCreatureOutputDifference += abs(tOut-cOut)
-            runFitness = (runFitness + self.myGauss(0,1,totalCreatureOutputDifference) ) / 2
+            runFitness = (runFitness + self.myGauss(0,10,totalCreatureOutputDifference) ) / 2
         self.fitness = (self.fitness + runFitness ) / 2
 
