@@ -5,6 +5,7 @@ class Neuron:
         self.value, self.threshold, self.outbox, self.prevOutbox = gauss(0,1), gauss(0,1), gauss(0,1), gauss(0,1)
         self.isInput, self.isOutput = 0, 0
         self.maxVal = 10000
+        self.propertyList = [self.threshold]
     '''
     def run(self):
 
@@ -25,7 +26,7 @@ class Neuron:
         self.prevOutbox = self.outbox
         avgInput = sum(self.inbox)/float(len(self.inbox)+1)
         self.value += min(self.maxVal,max(avgInput,-1*self.maxVal))
-        if (self.value >= self.threshold):
+        if (self.value >= self.propertyList[0]):
             self.outbox = self.value
             self.value = 0.0
         self.inbox = []

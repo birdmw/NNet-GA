@@ -84,3 +84,42 @@ def createFig_DistHistogram(data,divisions,xtitle,ytitle):
     plt.title(r'$\mathrm{Histogram\ of\ IQ:}\ \mu='+str(mu)+',\ \sigma='+str(sigma)+'$')
     plt.axis([mini, maxi, 0, max(n)*1.2])
     plt.grid(True)
+
+    
+def createSobolFiles(fileLoc,fileName, gens, creats, inCount, outCount,outputRelations=None):
+    localtime = time.localtime(time.time())
+    Date = str(localtime[0])+'_'+str(localtime[1])+'_'+str(localtime[2])
+    Time = str(localtime[3])+'_'+str(localtime[4])+'_'+str(localtime[5])
+
+
+    file_name=fileLoc+'\\'+fileName+'_'+str(Date)+'_'+str(Time)+'.csv'
+    fdata = open(file_name,'wb')
+    scribe= csv.writer(fdata, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+
+    scribe.writerow(["Sobol Characterization of NNet"])
+    scribe.writerow(["Generations:",GENERATIONS])
+    scribe.writerow(["Creatures:",CREATURE_COUNT])
+    scribe.writerow(["Inputs:",INPUT_COUNT,"Outputs:",OUTPUT_COUNT])
+    if outputRelations !=None:
+        for o in range(OUTPUT_COUNT):
+            scribe.writerow(["Out["+str(o)+"]=",outputRelations[o]])
+    scribe.writerow([])
+    scribe.writerow([])
+    fdata.close()
+
+    return file_name
+
+def writeSobolFileRow(fname,data):
+    fdata = open(fname,'ab')
+    scribe= csv.writer(fdata, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+    scribe.writerow(data)
+    fdata.close()
+    return
+
+def writeSobolFileMultiRows(fname,data):
+    fdata = open(fname,'ab')
+    scribe= csv.writer(fdata, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+    for row in data:
+        scribe.writerow(row)
+    fdata.close()
+    return

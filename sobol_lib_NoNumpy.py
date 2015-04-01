@@ -724,4 +724,5 @@ def generateSobolCharacterizationPoints(numDims,numPts,starts,stops,resolution,s
                 newPt = True
             seed = seed_out
 
-    return pts
+    return pts,seed
+

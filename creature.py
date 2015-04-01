@@ -29,19 +29,7 @@ class Creature:
                 if not n1 in self.output and not n2 in self.input and not n1==n2:
                     self.synapseList.append( Synapse(n1, n2, len(self.neuronList) ) )
 
-    def myGauss(self, mu,sig,x):
-        '''
-        Uses mu and sig to create a gaussian, then uses x as an input to the gaussian, returning the probability that x would be seen in the gaussian
-        '''
-        if sig == 0.0:
-            if x==mu:
-                return 1.0
-            else:
-                return 0.0
-        p1 = -np.power(x-mu,2.)
-        p2 = 2*np.power(sig,2.)
-        g = np.exp(p1/p2)
-        return g
+
 
     def run( self ): #no cycles or population, that info is internal to creature now
         runFitness = 0.0
@@ -66,7 +54,7 @@ class Creature:
 
 
             #10 is a magic number. Determine experimentally
-            runFitness = (runFitness + self.myGauss(0,10,totalCreatureOutputDifference) ) / 2
+            runFitness = (runFitness + myGauss(0,10,totalCreatureOutputDifference) ) / 2
 
             #Number of starting cycles is magic number. Determine experimentally
             if cyc <= (self.neuronCount**2+10):#*(2.0/3.0):

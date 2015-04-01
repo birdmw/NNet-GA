@@ -164,7 +164,8 @@ class Population:
 
             #self.setTrainingConstant()
             #self.setTrainingSin()
-            self.setTrainingTimes5()
+            #self.setTrainingTimes5()
+            self.setTrainingTimes1()
             self.setPuts()
             #parallel code - broke for now
             '''
@@ -172,8 +173,9 @@ class Population:
             self.creatureList = p.map(runCreature, creatureList)
             '''
             #serial code
-            for c in self.creatureList:
-                self.runCreature(c)
+            self.runPopulation()
+            #for c in self.creatureList:
+            #    self.runCreature(c)
 
             self.battle( battles )
 
@@ -230,18 +232,18 @@ class Population:
                 self.trainingCreature.output[3].outbox = float(~(bool(self.trainingCreature.input[0].inbox[0]) & bool(self.trainingCreature.input[1].inbox[0])))##<---nand for inputs 0 and 1
 
     def setPuts ( self ):
-        self.expectedOutputs = []
         #print "expected:", self.expectedOutputs
         for c in self.creatureList:
+            c.expectedOutputs = []
             for i in range(len(c.input)):
                 c.input[i].inbox=self.trainingCreature.input[i].inbox
             for j in range(len(c.output)):
                 c.expectedOutputs.append(self.trainingCreature.output[j].outbox)
             c.cycles = self.cycles
 
-    def runPopulation( self, CYCLES_PER_RUN ):
+    def runPopulation( self):
         for creature in self.creatureList:
-            creature.run(self, CYCLES_PER_RUN)
+            creature.run(self, self.cycles)
 
     def sortByFitness( self ):
         self.creatureList.sort(key = lambda x: x.fitness, reverse=True)
@@ -256,30 +258,22 @@ class Population:
         return self
 
     def mate (self, mother, father):
-         child = Creature( self.neuronCount, self.inputCount, self.outputCount  )
-         for i in range(len(child.neuronList)):
-              if getrandbits(1):
-                  child.neuronList[i].threshold = father.neuronList[i].threshold
-              else:
-                  child.neuronList[i].threshold = mother.neuronList[i].threshold
-         for i in range(len(child.synapseList)):
-              if getrandbits(1):
-                  child.synapseList[i].a = father.synapseList[i].a
-              else:
-                  child.synapseList[i].a = mother.synapseList[i].a
-              if getrandbits(1):
-                  child.synapseList[i].b = father.synapseList[i].b
-              else:
-                  child.synapseList[i].b = mother.synapseList[i].b
-              if getrandbits(1):
-                  child.synapseList[i].c = father.synapseList[i].c
-              else:
-                  child.synapseList[i].c = mother.synapseList[i].c
-              if getrandbits(1):
-                  child.synapseList[i].d = father.synapseList[i].d
-              else:
-                  child.synapseList[i].d = mother.synapseList[i].d
-         return child
+        child = Creature( self.neuronCount, self.inputCount, self.outputCount  )
+        for nInd in range(len(child.neuronList)):
+            for propInd in range(len(child.neuronList[nInd].propertyList)):
+                if getrandbits(1):
+                    child.neuronList[nInd].propertyList[propInd] = father.neuronList[nInd].propertyList[propInd]
+                else:
+                    child.neuronList[nInd].propertyList[propInd] = mother.neuronList[nInd].propertyList[propInd]
+        
+        for sInd in range(len(child.synapseList)):
+            for propInd in range(len(child.synapseList[sInd].propertyList)):
+                if getrandbits(1):
+                    child.synapseList[sInd].propertyList[propInd] = father.synapseList[sInd].propertyList[propInd]
+                else:
+                    child.synapseList[sInd].propertyList[propInd] = mother.synapseList[sInd].propertyList[propInd]
+
+        return child
 
     def runCreature(self, creature ):
         creature.run()

@@ -1,3 +1,19 @@
+import numpy as np
+
+def myGauss(self, mu,sig,x):
+    '''
+    Uses mu and sig to create a gaussian, then uses x as an input to the gaussian, returning the probability that x would be seen in the gaussian
+    '''
+    if sig == 0.0:
+        if x==mu:
+            return 1.0
+        else:
+            return 0.0
+    p1 = -np.power(x-mu,2.)
+    p2 = 2*np.power(sig,2.)
+    g = np.exp(p1/p2)
+    return g
+
 def checkConvergence(outputLists):
     '''
     Takes the given list of output lists, finds the min and max value for each output
