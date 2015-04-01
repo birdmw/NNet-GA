@@ -5,64 +5,80 @@ from random import *
 
 class Population:
 
-    def __init__(self, CREATURE_COUNT, NEURON_COUNT, INPUT_COUNT, OUTPUT_COUNT, CYCLES_PER_RUN ):
-        self.cycles = CYCLES_PER_RUN
+    def __init__(self, CreatureCount, NeuronCount, InputCount, OutputCount,Cycles):
+        self.cycles = Cycles
         self.creatureList = []
-        self.creatureCount = CREATURE_COUNT
-        self.neuronCount = NEURON_COUNT
-        self.inputCount = INPUT_COUNT
-        self.outputCount = OUTPUT_COUNT
-        self.trainingCreature = Creature( NEURON_COUNT, INPUT_COUNT, OUTPUT_COUNT )
-        self.trainingCreature.cycles = CYCLES_PER_RUN
+        self.creatureCount = CreatureCount
+        self.neuronCount = NeuronCount
+        self.inputCount = InputCount
+        self.outputCount = OutputCount
+        self.speciesFitness = 0
         self.rollingMaxOutput = 0.0
+
+        #Creature pseudo-creature data structures
+        self.trainingCreature = Creature( self.neuronCount, self.inputCount , self.outputCount )      
+        self.trainingCreature.cycles = self.cycles
         for out in self.trainingCreature.output:
             out.outbox = gauss(0,1)
         self.synapseCount = len ( self.trainingCreature.synapseList )
+
+        self.statsCreature = Creature( self.neuronCount, self.inputCount , self.outputCount  )
+        for inIndex in range(InputCount):
+            self.statsCreature.input[inIndex].inbox = []
+
+        self.statsCreature.fitness = []
+        
+        #once we start adding/deleting synapses/neurons, these two will either need to be updated with changes, or removed from the code:
+        self.synapseCount = len ( self.trainingCreature.synapseList )
+        self.neuronCount = NeuronCount
+
+
+        #Generate the seed population
         self.populate()
+         
 
     def prune ( self ):
         self.pruneByELO()
         #self.pruneByMu()
+        #self.pruneByFitness
+
 
     def mutate ( self ):
         self.mutateBySigma()
 
-    def train ( self, TRAINING_SETS ):
-        creatureList = self.creatureList
-        for s in range(TRAINING_SETS):
+    def train ( self, args ):
+        self.trainByELO(args[0],args[1])
 
-            #self.setTrainingConstant()
-            #self.setTrainingSin()
-            self.setTrainingTimes5()
-            self.setPuts()
-            #parallel code - broke for now
-            '''
-            p=Pool()
-            self.creatureList = p.map(runCreature, creatureList)
-            '''
-            #serial code
-            for c in self.creatureList:
-                runCreature(c)
+    def populate( self ):
+         while (len(self.creatureList) < self.creatureCount):
+              self.creatureList.append(Creature(self.neuronCount,self.inputCount,self.outputCount))
 
-            self.battle( BATTLES )
+    def repopulate( self ):
+         self.repopulateSimple()
+         #self.repopulateRandomInjections()
 
-    '''
-    def avgFitness(self):
-        for c in self.creatureList:
-            c.fitness = sum(c.fitnessList)/(float(len(c.fitnessList)))
-    '''
+    def repopulateSimple(self):
+         while (len(self.creatureList) < 2):
+              self.creatureList.append(Creature(self.neuronCount,self.inputCount,self.outputCount))
+         while (len(self.creatureList) < self.creatureCount):
+              mother = choice( self.creatureList )
+              father = choice( self.creatureList )
+              if not(mother == father):
+                child = self.mate( mother , father )
+                self.creatureList.append( child )
 
-    def battle( self, pairings ):
-        #print "battle"
-        creatureList = self.creatureList
-        for p in range(pairings):
-            creature1 = choice( creatureList )
-            creature2 = choice( creatureList )
-            while creature1 == creature2:
-                creature2 = choice( creatureList )
-
-            self.updateELO(creature1, creature2)
-        #print "battle - end"
+    def repopulateRandomInjections( self ):
+        while (len(self.creatureList) < 2): #If there is less than two creatures left, create a random new creature.
+            self.creatureList.append(Creature(self.neuronCount,self.inputCount,self.outputCount))
+        while (len(self.creatureList) < self.creatureCount): #Breed until full population
+            if randint(1,50) == 1:
+                self.creatureList.append(Creature(self.neuronCount,self.inputCount,self.outputCount))
+            else:
+                mother = choice( self.creatureList )
+                father = choice( self.creatureList )
+                if not (mother == father):
+                    child = mate( mother , father )
+                    self.creatureList.append( child )
 
     def pruneByELO ( self ):
         avgRank=0.0
@@ -87,6 +103,23 @@ class Population:
         for k in range(half):
             self.creatureList.pop()
 
+    def pruneByFitness(self):
+        '''
+        Will delete bottom half of creature list. And any creatures with extremely low fitness
+        '''
+        self.sortByFitness()
+        startLen = len(self.creatureList)
+        toBeRemoved = []
+        percentToPrune = 0.5 #Can be adjusted to kill more or less creatures
+
+        self.creatureList = self.creatureList[:int(percentToPrune*(startLen))]
+
+
+        if len(self.creatureList)==0:
+            print '======== WARNING: ALL CREATURES DIED ========'
+            self.populate()
+            print '======== !!RANDOMLY REPOPULATED!! ========'
+
     def updateELO(self,  creature1, creature2 ):
       if creature1.fitness > creature2.fitness:
         creature1.ELO,creature2.ELO = rate_1vs1(creature1.ELO,creature2.ELO)
@@ -95,19 +128,6 @@ class Population:
       else:
         creature1.ELO, creature2.ELO = rate_1vs1(creature1.ELO,creature2.ELO, drawn=True)
 
-    def populate( self ):
-         while (len(self.creatureList) < self.creatureCount):
-              self.creatureList.append(Creature(self.neuronCount,self.inputCount,self.outputCount))
-
-    def repopulate( self ):
-         while (len(self.creatureList) < 2):
-              self.creatureList.append(Creature(self.neuronCount,self.inputCount,self.outputCount))
-         while (len(self.creatureList) < self.creatureCount):
-              mother = choice( self.creatureList )
-              father = choice( self.creatureList )
-              if not(mother == father):
-                child = self.mate( mother , father )
-                self.creatureList.append( child )
 
     def mutateBySigma( self ):
         half = len(self.creatureList)/2
@@ -137,6 +157,37 @@ class Population:
                 s.b = max(min(gauss( s.b , creature.ELO.sigma*mutateAmount ),1000000),-1000000)
                 s.c = max(min(gauss( s.c , creature.ELO.sigma*mutateAmount ),1000000),-1000000)
                 s.d = max(min(gauss( s.d , creature.ELO.sigma*mutateAmount ),1000000),-1000000)
+
+    def trainByELO(self,rounds,battles):
+        creatureList = self.creatureList
+        for s in range(rounds):
+
+            #self.setTrainingConstant()
+            #self.setTrainingSin()
+            self.setTrainingTimes5()
+            self.setPuts()
+            #parallel code - broke for now
+            '''
+            p=Pool()
+            self.creatureList = p.map(runCreature, creatureList)
+            '''
+            #serial code
+            for c in self.creatureList:
+                self.runCreature(c)
+
+            self.battle( battles )
+
+    def battle( self, pairings ):
+        #print "battle"
+        creatureList = self.creatureList
+        for p in range(pairings):
+            creature1 = choice( creatureList )
+            creature2 = choice( creatureList )
+            while creature1 == creature2:
+                creature2 = choice( creatureList )
+
+            self.updateELO(creature1, creature2)
+        #print "battle - end"
 
     def setTrainingTimes5( self ):
         inVal=random()
@@ -192,6 +243,10 @@ class Population:
         for creature in self.creatureList:
             creature.run(self, CYCLES_PER_RUN)
 
+    def sortByFitness( self ):
+        self.creatureList.sort(key = lambda x: x.fitness, reverse=True)
+        return self
+
     def sortByMu( self ):
         self.creatureList.sort(key = lambda x: x.ELO.mu, reverse=True)
         return self
@@ -226,21 +281,25 @@ class Population:
                   child.synapseList[i].d = mother.synapseList[i].d
          return child
 
-    def runCreature( creature ):
+    def runCreature(self, creature ):
         creature.run()
         return creature
 
 def main():
-    CreatureCount = 80000
+    CreatureCount = 50
     NeuronCount = 3
     MaxCycles = 600
+    TrainingSets = 2
+    Battle = CreatureCount**2
+    '''
     Lessons = 1
     LessonMutationDivider = 1
     GenerationMutationDivider = 10
     MaxValue=2000000
 
     runs = 5
-
+    '''
+    
 ##    trainingSetInputs = [[0,0],[0,1],[1,0],[1,1]]
 ##    trainingSetOutputs = [[0,0],[0,1],[1,0],[1,1]]
     trainingSetInputs = [[-2],[0],[2]]
@@ -250,10 +309,43 @@ def main():
     InputCount = len(trainingSetInputs[0])
     OutputCount = len(trainingSetOutputs[0])
 
-    inSetCopies = deepcopy(trainingSetInputs)
-    outSetCopies = deepcopy(trainingSetOutputs)
+    #inSetCopies = deepcopy(trainingSetInputs)
+    #outSetCopies = deepcopy(trainingSetOutputs)
+    
+    print 'Creating population...'
+    demoPop =  Population(CreatureCount, NeuronCount, InputCount, OutputCount,MaxCycles) #, Lessons, LessonMutationDivider,GenerationMutationDivider,MaxValue)
+    
+    print 'Population information:'
+    print '  Number of creatures:',demoPop.creatureCount
+    print "  Top MU: ",demoPop.creatureList[0].ELO.mu
+    print "  Top sigma: ",demoPop.creatureList[0].ELO.sigma
+    print "  Top fitness: ",demoPop.creatureList[0].fitness
 
-    demoPop =  Population(CreatureCount, NeuronCount, InputCount, OutputCount,MaxCycles, Lessons, LessonMutationDivider,GenerationMutationDivider,MaxValue)
+    print 'Training...'
+    demoPop.train([TrainingSets, Battle])
+    print 'Training Complete!'
+    print 'Population information:'
+    print '  Number of creatures:',demoPop.creatureCount
+    print "  Top MU: ",demoPop.creatureList[0].ELO.mu
+    print "  Top sigma: ",demoPop.creatureList[0].ELO.sigma
+    print "  Top fitness: ",demoPop.creatureList[0].fitness
+    print 'Pruning...'
+    demoPop.prune()
+    print 'Population information:'
+    print '  Number of creatures:',demoPop.creatureCount
+    print "  Top MU: ",demoPop.creatureList[0].ELO.mu
+    print "  Top sigma: ",demoPop.creatureList[0].ELO.sigma
+    print "  Top fitness: ",demoPop.creatureList[0].fitness
+    print 'Repopulating...'
+    demoPop.repopulate()
+    print 'Population information:'
+    print '  Number of creatures:',demoPop.creatureCount
+    print "  Top MU: ",demoPop.creatureList[0].ELO.mu
+    print "  Top sigma: ",demoPop.creatureList[0].ELO.sigma
+    print "  Top fitness: ",demoPop.creatureList[0].fitness
+    
+    print '--FINISHED--'
+
     '''
     badStart = True
     print 'Finding valid starting population...'
@@ -275,38 +367,8 @@ def main():
             print 'Failed. Retrying...'
     '''
 
-    bRepFit = 0
-    genCount = 650
-    for g in range(genCount):
-        #if ((g) % 10) == 0:
-        print ""
-        print ""
-        print "GENERATION: ",g+1
 
-        #demoPop.run_generation_runUntilConverged(trainingSetInputs,trainingSetOutputs)
-        #demoPop.run_generation_runUntilConverged_repeatabilityFitness(trainingSetInputs,trainingSetOutputs)
-        #demoPop.run_generation_runUntilConverged_randHybridFitness(trainingSetInputs,trainingSetOutputs)
-        #demoPop.run_generation_randHybridFitness_randCreatInjection(trainingSetInputs,trainingSetOutputs)
-        #demoPop.run_generation_gaussDistFitness_randCreatInjection(trainingSetInputs,trainingSetOutputs)
-        demoPop.run_generation_randGDRepFitness_randCreatInjection(trainingSetInputs,trainingSetOutputs)
-        '''
-        if ((g) % 10) == 0:
-            print "Best Creature:"
-            print "  Cycles:",demoPop.creatureList[0].cycles
-            #testCreatureRepeatability(demoPop.creatureList[0],trainingSetInputs,runs,MaxCycles)
-            bRepFit = fitness_repeatability_printer(demoPop.creatureList[0],inSetCopies,runs,MaxCycles,outSetCopies)
-            print ""
-            print "Worst Creature (to survive pruning):"
-            print "  Cycles:",demoPop.creatureList[-1].cycles
-            #testCreatureRepeatability(demoPop.creatureList[-1],trainingSetInputs,runs,MaxCycles)
-            fitness_repeatability_printer(demoPop.creatureList[-1],inSetCopies,runs,MaxCycles,outSetCopies)
-
-        if bRepFit > 10:
-            print "Found exceptional creature. Discontinuing evolution"
-            break
-        '''
-
-
+    '''
     localtime = time.localtime(time.time())
     Date = str(localtime[0])+'_'+str(localtime[1])+'_'+str(localtime[2])
     Time = str(localtime[3])+'_'+str(localtime[4])+'_'+str(localtime[5])
@@ -315,40 +377,8 @@ def main():
     save_creature(demoPop.creatureList[0],filename)
 
 
-    print '--FINISHED--'
-    '''
-
-
-    print "  Number of creatures:",len(demoPop.creatureList)
-
-    for setInd in range(len(trainingSetInputs)):
-        demoPop.setTrainingCreature(trainingSetInputs[setInd],trainingSetOutputs[setInd])
-        demoPop.compete_run()
-        demoPop.prune()
-        demoPop.update_pseudoCreatures()
-        demoPop.mutate_generation()
-
-        printTrain = []
-        printDelta = []
-        printBest = []
-
-        for i in range(len(demoPop.trainingCreature.output)):
-            printTrain.append(demoPop.trainingCreature.output[i].outbox)
-            printDelta.append(demoPop.deltaCreature.output[i].outbox)
-            printBest.append(demoPop.creatureList[0].output[i].outbox)
-
-        print "Set ",setInd," Results:"
-        print "  Number of surviving creatures:",len(demoPop.creatureList)
-        print "  trainingCreature outputs:",printTrain
-        print "  deltaCreature outputs:",printDelta
-        print "  bestCreature outputs:",printBest
-        print "  bestCreature fitness:",demoPop.creatureList[0].fitness
-
-        demoPop.repopulate()
-
-    '''
     seeCreature(demoPop.creatureList[0] )
-
+    '''
 
 if __name__ == '__main__':
     main()

@@ -48,6 +48,8 @@ class Creature:
         outputTracker = []
         self.cycles = 0
 
+        
+
         for cyc in range( self.maxCycles):
             for n in self.neuronList:
                 n.run()
@@ -57,9 +59,9 @@ class Creature:
             self.cycles +=1
 
             totalCreatureOutputDifference = 0.0
-            for Out in range(len(self.output)):
-                tOut = self.expectedOutputs[Out]
-                cOut = self.output[Out].outbox
+            for OutInd in range(len(self.output)):
+                tOut = self.expectedOutputs[OutInd]
+                cOut = self.output[OutInd].outbox
                 totalCreatureOutputDifference += abs(tOut-cOut)
 
 

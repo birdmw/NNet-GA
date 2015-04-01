@@ -1,8 +1,8 @@
 from population import *
 from multiprocessing import Pool, cpu_count, Process
-from geneticTrainer_extra import *
+from geneticTrainerHelper import *
 
-def evolve():
+def evolve(population):
     for G in range (GENERATIONS):
         print "GENERATION: ",G
         print "Top MU: ",population.creatureList[0].ELO.mu,"Top sigma: ",population.creatureList[0].ELO.sigma, "Top fitness: ",population.creatureList[0].fitness
@@ -22,7 +22,7 @@ if __name__ == "__main__":
     BATTLES = CREATURE_COUNT**2
 
     population = Population ( CREATURE_COUNT, NEURON_COUNT, INPUT_COUNT, OUTPUT_COUNT, CYCLES_PER_RUN )
-    evolve()
+    evolve(population)
     
     printFinalOuts(population)
     population.train(TRAINING_SETS, BATTLES)
