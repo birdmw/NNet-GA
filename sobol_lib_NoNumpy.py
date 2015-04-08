@@ -715,7 +715,8 @@ def generateSobolCharacterizationPoints(numDims,numPts,starts,stops,resolution,s
                 rng = stops[i]-starts[i]
 
 
-                newVal = float(round(starts[i]+rng*r[i],resolution[i]))
+                #newVal = float(round(starts[i]+rng*r[i],resolution[i]))
+                newVal = float(round(starts[i]+rng*r[i],resolution))
                 #newVal = r[i]
 
                 nxtPt.append(newVal)

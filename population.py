@@ -2,6 +2,9 @@ from creature import *
 from multiprocessing import Pool, cpu_count, Process
 from math import *
 from random import *
+import populationHelper as pHelp
+from copy import *
+from trueskill import *
 
 class Population:
 
@@ -14,6 +17,13 @@ class Population:
         self.outputCount = OutputCount
         self.speciesFitness = 0
         self.rollingMaxOutput = 0.0
+
+        if self.creatureCount < 400:
+            self.hiSigmaThreshold = 3
+            self.loSigmaThreshold = 0.9
+        else:
+            self.hiSigmaThreshold = 4.5
+            self.loSigmaThreshold = 1.4
 
         #Creature pseudo-creature data structures
         self.trainingCreature = Creature( self.neuronCount, self.inputCount , self.outputCount )      
@@ -38,7 +48,8 @@ class Population:
          
 
     def prune ( self ):
-        self.pruneByELO()
+        self.pruneByLowSigLowMu()
+        #self.pruneByRank()
         #self.pruneByMu()
         #self.pruneByFitness
 
@@ -51,7 +62,8 @@ class Population:
 
     def populate( self ):
          while (len(self.creatureList) < self.creatureCount):
-              self.creatureList.append(Creature(self.neuronCount,self.inputCount,self.outputCount))
+              self.creatureList.append(Creature(self.neuronCount,self.inputCount,self.outputCount,self.cycles))
+              self.creatureList[-1].ID = len(self.creatureList)-1
 
     def repopulate( self ):
          self.repopulateSimple()
@@ -80,7 +92,7 @@ class Population:
                     child = mate( mother , father )
                     self.creatureList.append( child )
 
-    def pruneByELO ( self ):
+    def pruneByRank ( self ):
         avgRank=0.0
         for c in self.creatureList:
             c.rank = c.ELO.mu / c.ELO.sigma
@@ -97,28 +109,40 @@ class Population:
                 index += 1
         self.sortByMu()
 
-    def pruneByMu (self):
-        self.sortByMu()
-        half = len(self.creatureList)/2
-        for k in range(half):
-            self.creatureList.pop()
+    def pruneByLowSigLowMu ( self ):
+        avgMu=0.0
+        avgSig=0
 
-    def pruneByFitness(self):
-        '''
-        Will delete bottom half of creature list. And any creatures with extremely low fitness
-        '''
-        self.sortByFitness()
-        startLen = len(self.creatureList)
-        toBeRemoved = []
-        percentToPrune = 0.5 #Can be adjusted to kill more or less creatures
+        for c in self.creatureList:
+            avgMu+=c.ELO.mu
+            avgSig+=c.ELO.sigma
 
-        self.creatureList = self.creatureList[:int(percentToPrune*(startLen))]
+        avgMu = avgMu / float(len(self.creatureList))
+        avgSig = avgSig / float(len(self.creatureList))
+        maxSig = max(c.ELO.sigma for c in self.creatureList)
+
+        if avgSig > self.hiSigmaThreshold:#Enforces somesort of basic confidence of the creature
+            avgSig = self.hiSigmaThreshold
+
+        print '   Max sigma = ',maxSig
+        pruneCandidates = []
+        for c in self.creatureList:
+            if maxSig < self.loSigmaThreshold: #If below this threshold, all creatures become prune candidates
+                if c.ELO.mu < avgMu: #Creature is relatively 'worse'
+                    print '   Pruning creature:', c.ID
+                    print '   average: sig=',avgSig,' mu=',avgMu
+                    print '   creature: sig=',c.ELO.sigma ,' mu=',c.ELO.mu
+                    self.creatureList.pop(self.creatureList.index(c))
+
+            elif c.ELO.sigma < avgSig: #If we are confident about the creature (relative to other creatures)
+                if c.ELO.mu < avgMu: #Creature is relatively 'worse'
+                    print '   Pruning creature: ', c.ID
+                    print '   average: sig=',avgSig,' mu=',avgMu
+                    print '   creature: sig=',c.ELO.sigma ,' mu=',c.ELO.mu
+                    self.creatureList.pop(self.creatureList.index(c))
 
 
-        if len(self.creatureList)==0:
-            print '======== WARNING: ALL CREATURES DIED ========'
-            self.populate()
-            print '======== !!RANDOMLY REPOPULATED!! ========'
+
 
     def updateELO(self,  creature1, creature2 ):
       if creature1.fitness > creature2.fitness:
@@ -165,19 +189,24 @@ class Population:
             #self.setTrainingConstant()
             #self.setTrainingSin()
             #self.setTrainingTimes5()
-            self.setTrainingTimes1()
-            self.setPuts()
+            #pHelp.setTrainingTimes1(self)
+            pHelp.setTrainingTimes1Negative(self)
+            pHelp.setTrainingMinus1(self)
+            pHelp.setPuts(self)
             #parallel code - broke for now
             '''
             p=Pool()
             self.creatureList = p.map(runCreature, creatureList)
             '''
             #serial code
+            print '   Round: ',s
+            print '   Running...'
             self.runPopulation()
             #for c in self.creatureList:
             #    self.runCreature(c)
-
+            print '   Battling...'
             self.battle( battles )
+            #self.battle_ffa()
 
     def battle( self, pairings ):
         #print "battle"
@@ -191,59 +220,31 @@ class Population:
             self.updateELO(creature1, creature2)
         #print "battle - end"
 
-    def setTrainingTimes5( self ):
-        inVal=random()
-        for i in self.trainingCreature.input:
-            i.inbox = [inVal]
-        for o in self.trainingCreature.output:
-            o.outbox = inVal*5.0
-
-    def setTrainingTimes1( self ):
-        inVal=random()
-        for i in self.trainingCreature.input:
-            i.inbox = [inVal]
-        for o in self.trainingCreature.output:
-            o.outbox = inVal
-
-    def setTrainingConstant( self, const = 1.0 ):
-        for i in self.trainingCreature.input:
-            i.inbox = [const]
-        for o in self.trainingCreature.output:
-            o.outbox = const
-
-    def setTrainingSin( self ):
-        randVal = 2*pi*random()
-        for i in self.trainingCreature.input:
-            i.inbox = [randVal]
-        for o in self.trainingCreature.output:
-            o.outbox = sin(randVal)
-
-    def setTrainingBools ( self ):
-        for i in self.trainingCreature.input:
-            i.inbox = [float(bool(getrandbits(1)))]
-        for o in self.trainingCreature.output:
-            if self.trainingCreature.output.index(o)%4==0:
-                self.trainingCreature.output[0].outbox = float(  bool(self.trainingCreature.input[0].inbox[0]) ^ bool(self.trainingCreature.input[1].inbox[0]))##<---xor for inputs 0 and 1
-            elif self.trainingCreature.output.index(o)%4==1:
-                self.trainingCreature.output[1].outbox = float(  bool(self.trainingCreature.input[0].inbox[0]) & bool(self.trainingCreature.input[1].inbox[0]))##<---and for inputs 0 and 1
-            elif self.trainingCreature.output.index(o)%4==2:
-                self.trainingCreature.output[2].outbox = float(  bool(self.trainingCreature.input[0].inbox[0]) or bool(self.trainingCreature.input[1].inbox[0]))##<---or for inputs 0 and 1
-            elif self.trainingCreature.output.index(o)%4==3:
-                self.trainingCreature.output[3].outbox = float(~(bool(self.trainingCreature.input[0].inbox[0]) & bool(self.trainingCreature.input[1].inbox[0])))##<---nand for inputs 0 and 1
-
-    def setPuts ( self ):
-        #print "expected:", self.expectedOutputs
+   
+    def battle_ffa( self ):
+        #self.creatureList.sort(key = lambda x: x.fitness, reverse=True)
+        fits = []
+        CreatELO_ffaList=[]
+        #TrueSkill(backend="scipy")
         for c in self.creatureList:
-            c.expectedOutputs = []
-            for i in range(len(c.input)):
-                c.input[i].inbox=self.trainingCreature.input[i].inbox
-            for j in range(len(c.output)):
-                c.expectedOutputs.append(self.trainingCreature.output[j].outbox)
-            c.cycles = self.cycles
+            fits.append(round((1-c.fitness)*10,2)) #For TrueSkill, 0 is the best.    #Yes, 'magic numbers' but all they change is the scale and resolution of fitness (11 digits)
+            CreatELO_ffaList.append([c.ELO])
+
+        try:
+            newELO = rate(CreatELO_ffaList,fits) #Perform a ffa update on all creatures' ELO
+        except:
+            setup(backend="mpmath") #Increase calculation resolution. Errors occur with large populations
+            newELO = rate(CreatELO_ffaList,fits) #Perform a ffa update on all creatures' ELO
+
+        for c in self.creatureList:
+            c.ELO = newELO[self.creatureList.index(c)][0]  #TrueSkill spits answers out in lenth (team size, so ffa = 1) tuples, needs to not be a tuple.
+
+        #self.creatureList.sort(key = lambda x: x.ID, reverse=False)
+
 
     def runPopulation( self):
         for creature in self.creatureList:
-            creature.run(self, self.cycles)
+            creature.run()
 
     def sortByFitness( self ):
         self.creatureList.sort(key = lambda x: x.fitness, reverse=True)

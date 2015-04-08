@@ -260,18 +260,32 @@ class MutationArchive:
                             creature.synapseList[synInd].d = gauss(mu,sigma)
 
 class PruneArchive:
-    def pruneByMu ( self ):
-        lowMuCreatureList = []
-        half = len(self.creatureList)/2
+    
+    def pruneByMu (self):
+        print '======== WARNING: CREATURE LIST BEING SORTED  ========'
         self.sortByMu()
+        half = len(self.creatureList)/2
         for k in range(half):
             self.creatureList.pop()
+            
+    def pruneByFitness(self):
+        '''
+        Will delete bottom half of creature list. And any creatures with extremely low fitness
+        '''
+        print '======== WARNING: CREATURE LIST BEING SORTED  ========'
+        self.sortByFitness()
+        startLen = len(self.creatureList)
+        toBeRemoved = []
+        percentToPrune = 0.5 #Can be adjusted to kill more or less creatures
 
-    def pruneByFitness ( self ):
-        population.sortByFitness()
-        creatureCount = len(self.creatureList)
-        for i in range (creatureCount/4):
-            self.creatureList.pop()
+        self.creatureList = self.creatureList[:int(percentToPrune*(startLen))]
+
+
+        if len(self.creatureList)==0:
+            print '======== WARNING: ALL CREATURES DIED ========'
+            self.populate()
+            print '======== !!RANDOMLY REPOPULATED!! ========'
+
 
 class TrainingArchive:
     def trainBySimpleRun(self):

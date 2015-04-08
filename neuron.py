@@ -24,9 +24,15 @@ class Neuron:
     '''
     def run(self):
         self.prevOutbox = self.outbox
-        avgInput = sum(self.inbox)/float(len(self.inbox)+1)
-        self.value += min(self.maxVal,max(avgInput,-1*self.maxVal))
+        if len(self.inbox) == 0:
+            self.value = 0.0
+        else:
+            avgInput = sum(self.inbox)/float(len(self.inbox))
+            self.value = min(self.maxVal,max(avgInput,-1*self.maxVal))
+
         if (self.value >= self.propertyList[0]):
             self.outbox = self.value
             self.value = 0.0
-        self.inbox = []
+
+        if not self.isInput:
+            self.inbox = []

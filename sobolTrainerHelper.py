@@ -6,7 +6,7 @@ def assignCreatureProps(Creature,newValues):
         Creature.neuronList[neurInd] = assignNeurSynProps(Creature.neuronList[neurInd],newValues[0])
 
     for synInd in range(len(Creature.synapseList)):
-        Creature.synapseList[synapseList] = assignNeurSynProps(Creature.synapseList[synapseList],newValues[1])
+        Creature.synapseList[synInd] = assignNeurSynProps(Creature.synapseList[synInd],newValues[1])
 
     return Creature
 
@@ -15,7 +15,7 @@ def assignNeurSynProps(Object,newValues):
         Object.propertyList[propInd] = newValues[propInd]
     return Object
 
-def generatePopulationSobolPoints(PopSize,NeurCount,SynCount,NeurPropCount,SynPropCount,minVal=-1E3,maxVal=1E3,resolution=1E-10,startSeed=0):
+def generatePopulationSobolPoints(PopSize,NeurCount,SynCount,NeurPropCount,SynPropCount,minVal=-1E3,maxVal=1E3,resolution=10,startSeed=0):
     numNeurDims = NeurPropCount*NeurCount
     numSynDims = SynPropCount*SynCount
     numDims = numNeurDims+numSynDims

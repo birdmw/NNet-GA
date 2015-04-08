@@ -1,18 +1,6 @@
 import numpy as np
+#import populationHelper as pHelp
 
-def myGauss(self, mu,sig,x):
-    '''
-    Uses mu and sig to create a gaussian, then uses x as an input to the gaussian, returning the probability that x would be seen in the gaussian
-    '''
-    if sig == 0.0:
-        if x==mu:
-            return 1.0
-        else:
-            return 0.0
-    p1 = -np.power(x-mu,2.)
-    p2 = 2*np.power(sig,2.)
-    g = np.exp(p1/p2)
-    return g
 
 def checkConvergence(outputLists):
     '''
@@ -59,22 +47,9 @@ def load_creature(fileName):
 
     return creat
 
-def testCreatureRepeatability(creature,inputSets,runs):
-    print 'Creature fitness = ',creature.fitness
-    for inputSet in inputSets:
-        print 'Inputs: ',inputSet
-        for i in range(len(inputSet)):
-            creature.input[0].inbox = [inputSet[i]]
-        for r in range(runs):
-            creature.run()
-            outputs = []
-            for outp in creature.output:
-                outputs.append(outp.outbox)
-
-            print '  Run',r,' Outputs: ',outputs
 
 
-def myGauss(self, mu,sig,x):
+def myGauss(mu,sig,x):
     '''
     Uses mu and sig to create a gaussian, then uses x as an input to the gaussian, returning the probability that x would be seen in the gaussian
     '''

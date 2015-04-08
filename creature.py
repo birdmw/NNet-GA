@@ -1,7 +1,7 @@
 from neuron import *
 from synapse import *
 from trueskill import Rating, quality_1vs1, rate_1vs1
-from creature_helper import *
+import creatureHelper as cHelp
 import numpy as np
 
 class Creature:
@@ -14,19 +14,24 @@ class Creature:
         self.rank = random()
         self.ELO = Rating()
         self.expectedOutputs = []
+        self.ID = ''
 
         for n in range(self.neuronCount):
             self.neuronList.append(Neuron())
+
         for i in range (self.inputCount):
             self.input.append(self.neuronList[i])
             self.input[-1].isInput = 1
+
         for o in range (self.outputCount):
             index = self.neuronCount - self.outputCount + o
             self.output.append(self.neuronList[index])
             self.output[-1].isOutput = 1
+            self.expectedOutputs.append('')
+
         for n1 in self.neuronList:
             for n2 in self.neuronList:
-                if not n1 in self.output and not n2 in self.input and not n1==n2:
+                if not n1 in self.output and not n2 in self.input and not n1==n2: #No feedback
                     self.synapseList.append( Synapse(n1, n2, len(self.neuronList) ) )
 
 
@@ -35,8 +40,6 @@ class Creature:
         runFitness = 0.0
         outputTracker = []
         self.cycles = 0
-
-        
 
         for cyc in range( self.maxCycles):
             for n in self.neuronList:
@@ -53,8 +56,11 @@ class Creature:
                 totalCreatureOutputDifference += abs(tOut-cOut)
 
 
-            #10 is a magic number. Determine experimentally
-            runFitness = (runFitness + myGauss(0,10,totalCreatureOutputDifference) ) / 2
+            #10 is a magic number. Determine experimentally  THIS IS THE PID ALTERNATIVE TO PLAY WITH!!!
+            #runFitness = (runFitness + cHelp.myGauss(0,10,totalCreatureOutputDifference) ) / 2
+            mu=0
+            stdev = 1
+            self.fitness = cHelp.myGauss(mu,stdev,totalCreatureOutputDifference)
 
             #Number of starting cycles is magic number. Determine experimentally
             if cyc <= (self.neuronCount**2+10):#*(2.0/3.0):
@@ -68,10 +74,10 @@ class Creature:
                 outputTracker = outputTracker[1:]+outputTracker[:1]
                 outputTracker[-1] = newVal
 
-                if checkConvergence(outputTracker):
+                if cHelp.checkConvergence(outputTracker):
                     break
-
-        self.fitness = (self.fitness + runFitness ) / 2
+        # THIS IS THE PID ALTERNATIVE TO PLAY WITH!!!
+        #self.fitness = (self.fitness + runFitness ) / 2
 
 
 
@@ -114,10 +120,10 @@ def main():
     print '  Cycles ran: ',demoCreature.cycles
 
 
-    print ''
-    print 'Repeatability test:'
-    inputSets = [[0],[1]]
-    testCreatureRepeatability(demoCreature,inputSets,runs)
+    #print ''
+    #print 'Repeatability test:'
+    #inputSets = [[0],[1]]
+    #testCreatureRepeatability(demoCreature,inputSets,runs)
 
 
     #seeCreature(demoCreature)
