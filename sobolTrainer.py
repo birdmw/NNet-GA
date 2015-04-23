@@ -7,7 +7,7 @@ import populationHelper as pHelp
 #only used in repeatability:
 import time
 import csv
-
+from math import *
 
 class sobolTrainer(object):
     """description of class"""
@@ -61,38 +61,85 @@ class sobolTrainer(object):
         print '   New pop size: ', len(self.population.creatureList)
         print testList
 
+    def purifyPopulation(self,inputSets,outputSets):
+        for c in self.population.creatureList:
+            if not sHelp.doesCreatureChange(c,inputSets,outputSets):                   
+                print '   Culling creature:', c.ID
+                print '   creature: sig=',c.ELO.sigma ,' mu=',c.ELO.mu
+                self.population.creatureList.pop(self.population.creatureList.index(c))
+                #sobTrain.population.removeCreature(c)
+
+    def sobolEugenicRepopulate(self,inputSets,outputSets):
+        newCount = self.popSize - len(self.population.creatureList)
+        newCList=[]
+        print '  repopulating starting at seed:',self.nextSeed
+        while len(newCList) < (newCount - 4):
+            thisSeed = self.nextSeed
+            newPoints, self.nextSeed = sHelp.generatePopulationSobolPoints(newCount,self.neuronCount,self.synCount,self.neurPropCount ,self.synPropCount,self.minPropertyValue,self.maxPropertyValue,startSeed=self.nextSeed )
+        
+            for newC in range(newCount):
+                newCList.append(sHelp.assignCreatureProps(Creature(self.neuronCount,self.inputCount,self.outputCount),newPoints[newC]))
+                newCList[-1].ID = thisSeed+newC
+                c=newCList[-1]
+                if not sHelp.doesCreatureChange(c,inputSets,outputSets):                   
+                    print '   Culling creature:', c.ID
+                    #print '   creature: sig=',c.ELO.sigma ,' mu=',c.ELO.mu
+                    newCList.pop(-1)
+        print '  ending at seed:',self.nextSeed-1
+        #while self.popSize > len(self.population.creatureList)+5: 
+        #    self.sobolRepopulate()
+        #    self.purifyPopulation(inputSets,outputSets)
+
+
 def main():
     
-    folder=r'C:\Users\chris.nelson\Desktop\NNet\SobolStructureCharacterizations\6N'
+    neuronCount = 7
+    folder=r'C:\Users\chris.nelson\Desktop\NNet\SobolStructureCharacterizations\7N'
 
-    neuronCount = 6
     inputCount = 1
     outputCount = 1
     MaxCycles = 100
 
-    creatureCount = 400
+    creatureCount = 1000
 
-    Generations= 100
+    Generations= 20
 
     trainingSets = 25#50
 
-    test_num = 2
+    test_num = 11 #Don't forget to change the population trainer.
 
-    battles = creatureCount*2
+    battles = creatureCount*3#2
+    
+    
+    #Used for repeatability test and ZE CULLING
+    inputSets = [[-pi],[-pi/2],[0],[pi],[pi]]
+    expectedOutputSets=[[-4],[1],[0],[1],[4]]
+    
+    for index in range(len(inputSets)):
+        for index2 in range(len(inputSets[index])):
+            if test_num == 11:
+                expectedOutputSets[index][index2]=sin(inputSets[index][index2])
+
+
+
     print 'Battles = ',battles
 
-    
     t_start = time.time()
-
 
     print 'Creating sobol population...'
     sobTrain = sobolTrainer(creatureCount, neuronCount, inputCount, outputCount,MaxCycles,trainingSets)
+    
+    sobTrain.purifyPopulation(inputSets,expectedOutputSets)
+    sobTrain.sobolEugenicRepopulate(inputSets,expectedOutputSets)
+
     for g in range(Generations):
-        print 'Generation: ',g
+        print 'Generation: ',g+1
         print 'Training...'
         sobTrain.testPopulation(battles) #trains and prunes
+
         print 'Repopulating...'
-        sobTrain.sobolRepopulate()
+        #sobTrain.sobolRepopulate()
+        sobTrain.sobolEugenicRepopulate(inputSets,expectedOutputSets)
 
     print 'Training...' #One more for the road
     sobTrain.testPopulation(battles) #trains and prunes
@@ -132,8 +179,8 @@ def main():
     #print '  Last Inputs: ',c_ins
     #print '  Last Outputs: ',c_outs
     
-    inputSets = [[-1],[-0.5],[0],[0.5],[1]]
-    expectedOutputSets=[[-2],[-1.5],[-1],[-0.5],[0]]
+    inputSets = [[-2],[-1],[0],[1],[2]]
+    expectedOutputSets=[[4],[1],[0],[1],[4]]
 
 
     

@@ -56,7 +56,7 @@ def setTrainingConstant( self, const = 1.0 ):
         o.outbox = const
 
 def setTrainingSin( self ):
-    randVal = 2*pi*random()
+    randVal = 2*pi*(random()-0.5)
     for i in self.trainingCreature.input:
         i.inbox = [randVal]
     for o in self.trainingCreature.output:
@@ -78,12 +78,10 @@ def setTrainingBools ( self ):
 def setPuts ( self ):
     #print "expected:", self.expectedOutputs
     for c in self.creatureList:
-        #c.expectedOutputs = []
         for i in range(len(c.input)):
             c.input[i].inbox=self.trainingCreature.input[i].inbox
         for j in range(len(c.output)):
             c.expectedOutputs[j]=(self.trainingCreature.output[j].outbox)
-        c.cycles = self.cycles
 
 def testCreatureRepeatability(creature,inputSets,outputSets,runs,saveData=0,scribe='', verbosity=0):
     if verbosity:

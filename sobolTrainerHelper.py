@@ -36,3 +36,23 @@ def generatePopulationSobolPoints(PopSize,NeurCount,SynCount,NeurPropCount,SynPr
             processedPoints[-1][1].append(rawPoints[c][numNeurDims+s])
 
     return processedPoints, endSeed
+
+
+def doesCreatureChange(creature,inSets,outSets):
+    outs = []
+    for inSet in inSets:
+        outs.append([])
+        for i in range(len(creature.input)):
+            creature.input[i].inbox=[inSet[i]]
+        for j in range(len(creature.output)):
+            creature.expectedOutputs[j]=outSets[inSets.index(inSet)][i]
+        creature.run()
+        for j in range(len(creature.output)):
+            outs[-1].append(creature.output[j].outbox)
+
+
+    for out1 in outs:
+        for out2 in outs:
+            if out1 != out2:
+                return True
+    return False

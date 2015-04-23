@@ -19,11 +19,14 @@ class Population:
         self.rollingMaxOutput = 0.0
 
         if self.creatureCount < 400:
-            self.hiSigmaThreshold = 3
-            self.loSigmaThreshold = 0.9
+            self.hiSigmaThreshold = 4
+            self.loSigmaThresholdReset = 1.15
         else:
             self.hiSigmaThreshold = 4.5
-            self.loSigmaThreshold = 1.4
+            self.loSigmaThresholdReset = 1.45
+
+        self.loSigmaThreshold = self.loSigmaThresholdReset
+        self.avgMaxSigma = 10
 
         #Creature pseudo-creature data structures
         self.trainingCreature = Creature( self.neuronCount, self.inputCount , self.outputCount )      
@@ -48,7 +51,8 @@ class Population:
          
 
     def prune ( self ):
-        self.pruneByLowSigLowMu()
+        self.pruneByMaxSigLowMu()
+        #self.pruneByLowSigLowMu()
         #self.pruneByRank()
         #self.pruneByMu()
         #self.pruneByFitness
@@ -124,6 +128,12 @@ class Population:
         if avgSig > self.hiSigmaThreshold:#Enforces somesort of basic confidence of the creature
             avgSig = self.hiSigmaThreshold
 
+
+        self.avgMaxSigma = (self.avgMaxSigma+2*maxSig)/3 #Weighted rolling average
+        if round(self.avgMaxSigma,1)==round(maxSig,1): #If max sigma is not changing ( Your least certain creature is not getting more confident)
+            self.loSigmaThreshold = maxSig + 1 #Force the prune condition
+            
+        print '   Avg Max sigma = ',self.avgMaxSigma
         print '   Max sigma = ',maxSig
         pruneCandidates = []
         for c in self.creatureList:
@@ -133,6 +143,8 @@ class Population:
                     print '   average: sig=',avgSig,' mu=',avgMu
                     print '   creature: sig=',c.ELO.sigma ,' mu=',c.ELO.mu
                     self.creatureList.pop(self.creatureList.index(c))
+                    self.avgMaxSigma = 10 # Just a reset value for the rolling average
+                    self.loSigmaThreshold = self.loSigmaThresholdReset
 
             elif c.ELO.sigma < avgSig: #If we are confident about the creature (relative to other creatures)
                 if c.ELO.mu < avgMu: #Creature is relatively 'worse'
@@ -140,7 +152,47 @@ class Population:
                     print '   average: sig=',avgSig,' mu=',avgMu
                     print '   creature: sig=',c.ELO.sigma ,' mu=',c.ELO.mu
                     self.creatureList.pop(self.creatureList.index(c))
+                    self.avgMaxSigma = 10 # Reset value of the rolling average since new creatures have been added, and we are no longer confident of the entire population
+                    self.loSigmaThreshold = self.loSigmaThresholdReset #Just incase, but this shouldn't be needed
 
+
+    def pruneByMaxSigLowMu ( self ):
+        avgMu=0.0
+        avgSig=0
+
+        for c in self.creatureList:
+            avgMu+=c.ELO.mu
+            avgSig+=c.ELO.sigma
+
+        avgMu = avgMu / float(len(self.creatureList))
+        avgSig = avgSig / float(len(self.creatureList))
+        maxSig = max(c.ELO.sigma for c in self.creatureList)
+
+        self.avgMaxSigma = (self.avgMaxSigma+3*maxSig)/4 #Weighted rolling average: If population is not progressing, start killing punks
+        if round(self.avgMaxSigma,1)==round(maxSig,1): #If max sigma is not changing ( Your least certain creature is not getting more confident) (Think weakest link)
+            self.loSigmaThreshold = maxSig + 1 #Force the prune condition
+            
+        print '   Avg Max sigma = ',self.avgMaxSigma
+        print '   Max sigma = ',maxSig
+
+        if maxSig < self.loSigmaThreshold: 
+            for c in self.creatureList:
+                if c.ELO.mu < avgMu: #Creature is relatively 'worse'
+                    print '   Pruning creature:', c.ID
+                    print '   average: sig=',avgSig,' mu=',avgMu
+                    print '   creature: sig=',c.ELO.sigma ,' mu=',c.ELO.mu
+                    self.creatureList.pop(self.creatureList.index(c))
+                    self.avgMaxSigma = 10 # Just a reset value for the rolling average.
+                    self.loSigmaThreshold = self.loSigmaThresholdReset
+
+            #elif c.ELO.sigma < avgSig: #If we are confident about the creature (relative to other creatures)
+            #    if c.ELO.mu < avgMu: #Creature is relatively 'worse'
+            #        print '   Pruning creature: ', c.ID
+            #        print '   average: sig=',avgSig,' mu=',avgMu
+            #        print '   creature: sig=',c.ELO.sigma ,' mu=',c.ELO.mu
+            #        self.creatureList.pop(self.creatureList.index(c))
+            #        self.avgMaxSigma = 10 # Reset value of the rolling average since new creatures have been added, and we are no longer confident of the entire population
+            #        sel
 
 
 
@@ -187,11 +239,11 @@ class Population:
         for s in range(rounds):
 
             #self.setTrainingConstant()
-            #self.setTrainingSin()
+            pHelp.setTrainingSin(self)
             #self.setTrainingTimes5()
             #pHelp.setTrainingTimes1(self)
-            pHelp.setTrainingTimes1Negative(self)
-            pHelp.setTrainingMinus1(self)
+            #pHelp.setTrainingTimes1Negative(self)
+            #pHelp.setTrainingMinus1(self)
             pHelp.setPuts(self)
             #parallel code - broke for now
             '''
@@ -279,6 +331,9 @@ class Population:
     def runCreature(self, creature ):
         creature.run()
         return creature
+
+    def removeCreature(self, creature ):
+        self.creatureList.pop(creature)
 
 def main():
     CreatureCount = 50
