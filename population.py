@@ -59,7 +59,8 @@ class Population:
 
 
     def mutate ( self ):
-        self.mutateBySigma()
+        self.mutateByConstant()
+        #self.mutateBySigma()
 
     def train ( self, args ):
         self.trainByELO(args[0],args[1])
@@ -204,6 +205,18 @@ class Population:
       else:
         creature1.ELO, creature2.ELO = rate_1vs1(creature1.ELO,creature2.ELO, drawn=True)
 
+    def mutateByConstant ( self, const = 1.0):
+        mutateAmount = .012*const
+        for creature in self.creatureList:
+            #print "mutating by:", creature.ELO.sigma*mutateAmount
+            for n in creature.neuronList:
+                for p in n.propertyList:
+                    p = max(min(gauss( p , mutateAmount),1000),-1000)
+            for s in creature.synapseList:
+                for p in s.propertyList:
+                    #print "mutating synapse by:", creature.ELO.sigma*mutateAmount
+                    p = max(min(gauss( p , mutateAmount),1000),-1000)
+    
 
     def mutateBySigma( self ):
         half = len(self.creatureList)/2
@@ -226,20 +239,19 @@ class Population:
         for creature in self.creatureList:
             #print "mutating by:", creature.ELO.sigma*mutateAmount
             for n in creature.neuronList:
-                n.threshold = max(min(gauss( n.threshold , creature.ELO.sigma*mutateAmount),1000000),-1000000)
+                for p in n.propertyList:
+                    p = max(min(gauss( p , creature.ELO.sigma*mutateAmount),1000),-1000)
             for s in creature.synapseList:
-                #print "mutating synapse by:", creature.ELO.sigma*mutateAmount
-                s.a = max(min(gauss( s.a , creature.ELO.sigma*mutateAmount),1000000),-1000000)
-                s.b = max(min(gauss( s.b , creature.ELO.sigma*mutateAmount ),1000000),-1000000)
-                s.c = max(min(gauss( s.c , creature.ELO.sigma*mutateAmount ),1000000),-1000000)
-                s.d = max(min(gauss( s.d , creature.ELO.sigma*mutateAmount ),1000000),-1000000)
+                for p in s.propertyList:
+                    #print "mutating synapse by:", creature.ELO.sigma*mutateAmount
+                    p = max(min(gauss( p , creature.ELO.sigma*mutateAmount),1000),-1000)
 
     def trainByELO(self,rounds,battles):
         creatureList = self.creatureList
         for s in range(rounds):
 
-            #self.setTrainingConstant()
-            pHelp.setTrainingSin(self)
+            pHelp.setTrainingConstant(self, 1.0)
+            #pHelp.setTrainingSin(self)
             #self.setTrainingTimes5()
             #pHelp.setTrainingTimes1(self)
             #pHelp.setTrainingTimes1Negative(self)
