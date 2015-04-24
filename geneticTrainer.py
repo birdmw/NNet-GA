@@ -6,7 +6,7 @@ def evolve(population):
     for G in range (GENERATIONS):
         print "GENERATION: ",G
         printFinalOuts(population)
-        population.mutate()
+        #population.mutate()
         population.train([WARS, BATTLES])
         population.prune()
         population.repopulate()

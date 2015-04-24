@@ -51,7 +51,8 @@ class Population:
          
 
     def prune ( self ):
-        self.pruneByMaxSigLowMu()
+        self.pruneByELO()
+        #self.pruneByMaxSigLowMu()
         #self.pruneByLowSigLowMu()
         #self.pruneByRank()
         #self.pruneByMu()
@@ -82,6 +83,7 @@ class Population:
               father = choice( self.creatureList )
               if not(mother == father):
                 child = self.mate( mother , father )
+                child.ID = self.creatureList[-1].ID+1
                 self.creatureList.append( child )
 
     def repopulateRandomInjections( self ):
@@ -96,6 +98,44 @@ class Population:
                 if not (mother == father):
                     child = mate( mother , father )
                     self.creatureList.append( child )
+
+    def pruneByELO ( self, killPercent = .50 ):
+        print "before prune"
+        for c in self.creatureList:
+            print c.ID, "id   ", round(c.ELO.mu,1), "mu   ", round(c.ELO.sigma,2), "sigma"
+               
+        #print "creatureCount =", len ( self.creatureList )
+        pruneIDs = list()
+        creatureCount = len ( self.creatureList )
+        saveCount = creatureCount * max(min(1.0-killPercent,1.0),0.0)
+        #print "savecount", saveCount
+        pruneCandidates = self.creatureList
+        while len(pruneIDs) < (creatureCount - saveCount):
+            pruneCandidates.sort(key = lambda x: x.ELO.mu, reverse=False)
+            i=0
+            while (pruneCandidates[i].ID in pruneIDs):
+                i+=1
+            pruneIDs.append(pruneCandidates[i].ID)
+            if len(pruneIDs) > (creatureCount - saveCount):
+                pruneCandidates.sort(key = lambda x: x.ELO.sigma, reverse=False)
+                i=0
+                while (pruneCandidates[i].ID in pruneIDs):
+                    i+=1
+                pruneIDs.append(pruneCandidates[i].ID)
+        #print pruneIDs
+        for idNo in pruneIDs:
+            for creature in self.creatureList:
+                if creature.ID == idNo:
+                    #print "removing, ", creature.ID
+                    self.creatureList.remove(creature)
+        #print "creatureCount =", len ( self.creatureList )
+        #print "--------------------"
+        #for c in self.creatureList:
+            #print c.ID, "id"
+        self.sortByID()
+        print "after prune"
+        for c in self.creatureList:
+            print c.ID, "id   ", round(c.ELO.mu,1), "mu   ", round(c.ELO.sigma,2), "sigma"
 
     def pruneByRank ( self ):
         avgRank=0.0
@@ -318,6 +358,10 @@ class Population:
         self.creatureList.sort(key = lambda x: x.ELO.mu, reverse=True)
         return self
 
+    def sortByID( self ):
+        self.creatureList.sort(key = lambda x: x.ID, reverse=False)
+        return self
+                            
     def sortBySigma( self ):
         self.creatureList.sort(key = lambda x: x.ELO.sigma, reverse=True)
         return self
