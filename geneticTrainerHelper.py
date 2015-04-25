@@ -1,9 +1,6 @@
 from copy import *
 
-def printFinalOuts( population ):
-    print "training outs:"
-    for o in range (len(population.trainingCreature.output)):
-        print population.trainingCreature.output[o].outbox
+def findBestId(population):
     populationCopy = deepcopy(population)
     while len (populationCopy.creatureList) > 1:
         populationCopy.sortByMu()
@@ -12,9 +9,20 @@ def printFinalOuts( population ):
             populationCopy.sortBySigma()
             populationCopy.creatureList.reverse()
             populationCopy.creatureList.pop()
-    print "best creature outs: "
-    for o in range ( len ( populationCopy.creatureList[0].output ) ): 
-        print populationCopy.creatureList[0].output[o].outbox
+    return populationCopy.creatureList[0].ID      
+  
 
-    print "MU: ",populationCopy.creatureList[0].ELO.mu,"Sigma: ",populationCopy.creatureList[0].ELO.sigma, "fitness: ",populationCopy.creatureList[0].fitness
+
+def printFinalOuts( population, ID ):
+    print "training outs:"
+    for o in range (len(population.trainingCreature.output)):
+        print population.trainingCreature.output[o].outbox
+    for c in population.creatureList:
+        if c.ID == ID:
+            index = population.creatureList.index(c)
+    print "best creature outs: "
+    for o in range ( len ( population.creatureList[index].output ) ): 
+        print population.creatureList[index].output[o].outbox
+
+    print "ID", population.creatureList[index].ID  ,"MU: ",population.creatureList[index].ELO.mu,"Sigma: ",population.creatureList[index].ELO.sigma, "fitness: ",population.creatureList[index].fitness
     

@@ -81,10 +81,9 @@ class Population:
          while (len(self.creatureList) < self.creatureCount):
               mother = choice( self.creatureList )
               father = choice( self.creatureList )
-              if not(mother == father):
-                child = self.mate( mother , father )
-                child.ID = self.creatureList[-1].ID+1
-                self.creatureList.append( child )
+              child = self.mate( mother , father )
+              child.ID = self.creatureList[-1].ID+1
+              self.creatureList.append( child )
 
     def repopulateRandomInjections( self ):
         while (len(self.creatureList) < 2): #If there is less than two creatures left, create a random new creature.
@@ -100,32 +99,27 @@ class Population:
                     self.creatureList.append( child )
 
     def pruneByELO ( self, killPercent = .50 ):
-        print "before prune"
-        for c in self.creatureList:
-            print c.ID, "id   ", round(c.ELO.mu,1), "mu   ", round(c.ELO.sigma,2), "sigma"
-               
+        copyCreatureList = deepcopy(self.creatureList)
         #print "creatureCount =", len ( self.creatureList )
-        pruneIDs = list()
+        saveIDs = list()
         creatureCount = len ( self.creatureList )
         saveCount = creatureCount * max(min(1.0-killPercent,1.0),0.0)
         #print "savecount", saveCount
-        pruneCandidates = self.creatureList
-        while len(pruneIDs) < (creatureCount - saveCount):
-            pruneCandidates.sort(key = lambda x: x.ELO.mu, reverse=False)
+        while len(saveIDs) < (saveCount):
+            self.creatureList.sort(key = lambda x: x.ELO.mu, reverse=True)
             i=0
-            while (pruneCandidates[i].ID in pruneIDs):
+            while (self.creatureList[i].ID in saveIDs):
                 i+=1
-            pruneIDs.append(pruneCandidates[i].ID)
-            if len(pruneIDs) > (creatureCount - saveCount):
-                pruneCandidates.sort(key = lambda x: x.ELO.sigma, reverse=False)
+            saveIDs.append(self.creatureList[i].ID)
+            if len(saveIDs) < (saveCount):
+                self.creatureList.sort(key = lambda x: x.ELO.sigma, reverse=True)
                 i=0
-                while (pruneCandidates[i].ID in pruneIDs):
+                while (self.creatureList[i].ID in saveIDs):
                     i+=1
-                pruneIDs.append(pruneCandidates[i].ID)
+                saveIDs.append(self.creatureList[i].ID)
         #print pruneIDs
-        for idNo in pruneIDs:
-            for creature in self.creatureList:
-                if creature.ID == idNo:
+        for creature in self.creatureList:
+                if not (creature.ID in saveIDs):
                     #print "removing, ", creature.ID
                     self.creatureList.remove(creature)
         #print "creatureCount =", len ( self.creatureList )
@@ -133,9 +127,13 @@ class Population:
         #for c in self.creatureList:
             #print c.ID, "id"
         self.sortByID()
-        print "after prune"
-        for c in self.creatureList:
-            print c.ID, "id   ", round(c.ELO.mu,1), "mu   ", round(c.ELO.sigma,2), "sigma"
+        
+        for c in copyCreatureList:
+            if not (c.ID in saveIDs):
+                print c.ID, "id ", round(c.ELO.mu,1), "mu  ", round(c.ELO.sigma,2), "sigma", "--PRUNED--"
+            else:
+                print c.ID, "id ", round(c.ELO.mu,1), "mu  ", round(c.ELO.sigma,2), "sigma"
+                
 
     def pruneByRank ( self ):
         avgRank=0.0
@@ -290,8 +288,8 @@ class Population:
         creatureList = self.creatureList
         for s in range(rounds):
 
-            pHelp.setTrainingConstant(self, 1.0)
-            #pHelp.setTrainingSin(self)
+            #pHelp.setTrainingConstant(self, 1.0)
+            pHelp.setTrainingSin(self)
             #self.setTrainingTimes5()
             #pHelp.setTrainingTimes1(self)
             #pHelp.setTrainingTimes1Negative(self)
