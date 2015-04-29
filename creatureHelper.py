@@ -62,3 +62,6 @@ def myGauss(mu,sig,x):
     p2 = 2*np.power(sig,2.)
     g = np.exp(p1/p2)
     return g
+
+
+        

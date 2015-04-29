@@ -62,6 +62,13 @@ def setTrainingSin( self ):
     for o in self.trainingCreature.output:
         o.outbox = sin(randVal)
 
+def setTraining_sineGenerator( self , x):
+    pattVal = sin(2*pi*x/50.0)
+    for i in self.trainingCreature.input:
+        i.inbox = [0]
+    for o in self.trainingCreature.output:
+        o.outbox = pattVal
+
 def setTrainingBools ( self ):
     for i in self.trainingCreature.input:
         i.inbox = [float(bool(getrandbits(1)))]

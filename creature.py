@@ -37,6 +37,27 @@ class Creature:
 
 
     def run( self ): #no cycles or population, that info is internal to creature now
+        #self.run_until_converged()
+        self.run_maxCycles()
+
+    def run_maxCycles(self):
+        for cyc in range( self.maxCycles):
+            for n in self.neuronList:
+                n.run()
+            for s in self.synapseList:
+                s.run()
+
+        totalCreatureOutputDifference=0
+        for OutInd in range(len(self.output)):
+                tOut = self.expectedOutputs[OutInd]
+                cOut = self.output[OutInd].outbox
+                totalCreatureOutputDifference += abs(tOut-cOut)
+
+        mu=0
+        stdev = 1
+        self.fitness = (self.fitness + cHelp.myGauss(mu,stdev,totalCreatureOutputDifference) ) / 2
+
+    def run_until_converged(self):
         runFitness = 0.0
         outputTracker = []
         self.cycles = 0

@@ -62,7 +62,8 @@ class Population:
         self.mutateBySigma()
 
     def train ( self, args ):
-        self.trainByELO(args[0],args[1])
+        #self.trainByELO(args[0],args[1])
+        self.trainByELO_patterns(args[0],args[1],args[2])
 
     def populate( self ):
          while (len(self.creatureList) < self.creatureCount):
@@ -254,6 +255,26 @@ class Population:
             print '   Round: ',s
             print '   Running...'
             self.runPopulation()
+            #for c in self.creatureList:
+            #    self.runCreature(c)
+            print '   Battling...'
+            self.battle( battles )
+            #self.battle_ffa()
+
+    def trainByELO_patterns(self,rounds,battles,patternLength):
+        creatureList = self.creatureList
+        for s in range(rounds):
+            print '   Round: ',s
+            print '   Running...'
+
+            for cInd in range(len(self.creatureList)):
+                self.creatureList[cInd].fitness = 0
+
+            for pattPosition in range(patternLength):
+                pHelp.setTraining_sineGenerator(self, pattPosition)
+                pHelp.setPuts(self)
+                self.runPopulation()
+
             #for c in self.creatureList:
             #    self.runCreature(c)
             print '   Battling...'

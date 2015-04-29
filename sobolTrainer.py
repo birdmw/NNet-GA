@@ -93,14 +93,14 @@ class sobolTrainer(object):
 
 def main():
     
-    neuronCount = 7
+    neuronCount = 10
     folder=r'C:\Users\chris.nelson\Desktop\NNet\SobolStructureCharacterizations\7N'
 
     inputCount = 1
     outputCount = 1
-    MaxCycles = 100
+    MaxCycles = 1
 
-    creatureCount = 1000
+    creatureCount = 200
 
     Generations= 20
 
