@@ -50,8 +50,8 @@ class Population:
         self.populate()
          
 
-    def prune ( self ):
-        self.pruneByELO()
+    def prune ( self , killPercent = .50 ):
+        self.pruneByELO(killPercent)
         #self.pruneByMaxSigLowMu()
         #self.pruneByLowSigLowMu()
         #self.pruneByRank()
@@ -59,8 +59,8 @@ class Population:
         #self.pruneByFitness
 
 
-    def mutate ( self ):
-        self.mutateByConstant()
+    def mutate ( self, constant = 1.0 ):
+        self.mutateByConstant(constant)
         #self.mutateBySigma()
 
     def train ( self, args ):
@@ -71,9 +71,57 @@ class Population:
               self.creatureList.append(Creature(self.neuronCount,self.inputCount,self.outputCount,self.cycles))
               self.creatureList[-1].ID = len(self.creatureList)-1
 
-    def repopulate( self ):
-         self.repopulateSimple()
+    def repopulate( self, matePercent = .25, mutateAmount = .01 ):
+         self.repopulateByElo(matePercent, mutateAmount)
+         #self.repopulateSimple()
          #self.repopulateRandomInjections()
+
+    def repopulateByElo(self, matePercent, mutateAmount):
+        print "repopulatebyelo", matePercent
+        copyCreatureList = deepcopy(self.creatureList)#for print
+        nonBreederIDs = []
+        creatureCount = len ( self.creatureList )
+        nonBreederCount = creatureCount * int(max(min(1-matePercent,1.0),0.0))
+        #print "nonBreederCount: ", nonBreederCount
+        #print "len(self.creatureList)", len(self.creatureList)
+        #print "len(nonBreederIDs)", len(nonBreederIDs)
+        
+        while len(nonBreederIDs) < (nonBreederCount):
+            self.creatureList.sort(key = lambda x: x.ELO.mu, reverse=False)
+            for c in self.creatureList:
+                if not (c.ID in nonBreederIDs):
+                    nonBreederIDs.append(self.creatureList[i].ID)
+                    break
+            if len(nonBreederIDs) < (nonBreederCount):
+                self.creatureList.sort(key = lambda x: x.ELO.sigma, reverse=True)
+                for c in self.creatureList:
+                    if not (c.ID in nonBreederIDs):
+                        nonBreederIDs.append(self.creatureList[i].ID)
+                        break
+
+        print "nonBreederIDs: ", len(nonBreederIDs)
+        while (len(self.creatureList) < self.creatureCount):
+            motherID,fatherID,father,mother = None, None, None, None
+            while mother == None or father == None:
+                for creature in self.creatureList:
+                        if not(creature.ID in nonBreederIDs): #is a breeder
+                            if ( random() < ( 1.0 / float( len( self.creatureList ) - nonBreederCount ) ) ) and mother==None: #random chance
+                                mother = creature
+                            if ( random() < ( 1.0 / float( len( self.creatureList ) - nonBreederCount ) ) ) and father==None: #random chance
+                                father = creature        
+            child = self.mate( mother , father )
+            if mother == father:
+                self.mutateCreatureByConstant(child, mutateAmount)
+            child.ID = self.creatureList[-1].ID+1
+            self.creatureList.append( child )
+        self.sortByID()
+        '''
+        for c in copyCreatureList:
+            if not (c.ID in nonBreederIDs):
+                print c.ID, "id ", round(c.ELO.mu,1), "mu  ", round(c.ELO.sigma,2), "sigma", "--CANDIDATE BREEDER--"
+            else:
+                print c.ID, "id ", round(c.ELO.mu,1), "mu  ", round(c.ELO.sigma,2), "sigma"
+        '''
 
     def repopulateSimple(self):
          while (len(self.creatureList) < 2):
@@ -98,13 +146,12 @@ class Population:
                     child = mate( mother , father )
                     self.creatureList.append( child )
 
-    def pruneByELO ( self, killPercent = .50 ):
+    def pruneByELO ( self, killPercent ):
+        print "prunebyelo", killPercent
         copyCreatureList = deepcopy(self.creatureList)
-        #print "creatureCount =", len ( self.creatureList )
         saveIDs = list()
         creatureCount = len ( self.creatureList )
         saveCount = creatureCount * max(min(1.0-killPercent,1.0),0.0)
-        #print "savecount", saveCount
         while len(saveIDs) < (saveCount):
             self.creatureList.sort(key = lambda x: x.ELO.mu, reverse=True)
             i=0
@@ -117,24 +164,18 @@ class Population:
                 while (self.creatureList[i].ID in saveIDs):
                     i+=1
                 saveIDs.append(self.creatureList[i].ID)
-        #print pruneIDs
         for creature in self.creatureList:
                 if not (creature.ID in saveIDs):
-                    #print "removing, ", creature.ID
                     self.creatureList.remove(creature)
-        #print "creatureCount =", len ( self.creatureList )
-        #print "--------------------"
-        #for c in self.creatureList:
-            #print c.ID, "id"
         self.sortByID()
-        
+        '''
         for c in copyCreatureList:
             if not (c.ID in saveIDs):
                 print c.ID, "id ", round(c.ELO.mu,1), "mu  ", round(c.ELO.sigma,2), "sigma", "--PRUNED--"
             else:
                 print c.ID, "id ", round(c.ELO.mu,1), "mu  ", round(c.ELO.sigma,2), "sigma"
+        '''
                 
-
     def pruneByRank ( self ):
         avgRank=0.0
         for c in self.creatureList:
@@ -236,72 +277,56 @@ class Population:
 
 
     def updateELO(self,  creature1, creature2 ):
-      if creature1.fitness > creature2.fitness:
+      if creature1.averageFitness > creature2.averageFitness:
         creature1.ELO,creature2.ELO = rate_1vs1(creature1.ELO,creature2.ELO)
-      elif creature2.fitness > creature1.fitness:
+      elif creature2.averageFitness > creature1.averageFitness:
         creature2.ELO,creature1.ELO = rate_1vs1(creature2.ELO,creature1.ELO)
       else:
         creature1.ELO, creature2.ELO = rate_1vs1(creature1.ELO,creature2.ELO, drawn=True)
 
-    def mutateByConstant ( self, const = 1.0):
-        mutateAmount = .012*const
-        for creature in self.creatureList:
-            #print "mutating by:", creature.ELO.sigma*mutateAmount
-            for n in creature.neuronList:
-                for p in n.propertyList:
-                    p = max(min(gauss( p , mutateAmount),1000),-1000)
-            for s in creature.synapseList:
-                for p in s.propertyList:
-                    #print "mutating synapse by:", creature.ELO.sigma*mutateAmount
-                    p = max(min(gauss( p , mutateAmount),1000),-1000)
-    
+    def mutateByConstant ( self, constant):
+        mutateAmount = constant
+        print "mutateAmount", mutateAmount
+        print "before", self.creatureList[0].neuronList[0].propertyList[0]
+        for creature in range(len(self.creatureList)):
+            for s in range(len(self.creatureList[creature].synapseList)):
+                for p in range(len(self.creatureList[creature].synapseList[s].propertyList)):
+                    self.creatureList[creature].synapseList[s].propertyList[p] = max(min(gauss( self.creatureList[creature].synapseList[s].propertyList[p] , mutateAmount),1000),-1000)
+            for n in range(len(self.creatureList[creature].neuronList)):
+                for p in range(len(self.creatureList[creature].neuronList[n].propertyList)):
+                    self.creatureList[creature].neuronList[n].propertyList[p] = max(min(gauss( self.creatureList[creature].neuronList[n].propertyList[p] , mutateAmount),1000),-1000)
+        print "final", self.creatureList[0].neuronList[0].propertyList[0]
 
-    def mutateBySigma( self ):
-        half = len(self.creatureList)/2
-
-        maxOut = 0
-        for i in range( len(self.trainingCreature.output)):
-            maxOut = max(maxOut,self.trainingCreature.output[i].outbox, abs(self.trainingCreature.output[i].outbox))
-
-        self.rollingMaxOutput = ( self.rollingMaxOutput +  maxOut ) / 2
-        #print " rolling max out", self.rollingMaxOutput
-        
-        
-        
-        #0.0012 is magic number. Evaluate
-        mutateAmount = .0012*self.rollingMaxOutput
+    def mutateCreatureByConstant ( self, creature, constant = 1.0):
+        mutateAmount = constant
+        print "mutateAmount", mutateAmount
+        for s in range(len(creature.synapseList)):
+            for p in range(len(creature.synapseList[s].propertyList)):
+                creature.synapseList[s].propertyList[p] = max(min(gauss( creature.synapseList[s].propertyList[p] , mutateAmount),1000),-1000)
+        for n in range(len(creature.neuronList)):
+            for p in range(len(creature.neuronList[n].propertyList)):
+                creature.neuronList[n].propertyList[p] = max(min(gauss( creature.neuronList[n].propertyList[p] , mutateAmount),1000),-1000)
+        #print "final", self.creatureList[0].neuronList[0].propertyList[0]
 
 
-
-
-        for creature in self.creatureList:
-            #print "mutating by:", creature.ELO.sigma*mutateAmount
-            for n in creature.neuronList:
-                for p in n.propertyList:
-                    p = max(min(gauss( p , creature.ELO.sigma*mutateAmount),1000),-1000)
-            for s in creature.synapseList:
-                for p in s.propertyList:
-                    #print "mutating synapse by:", creature.ELO.sigma*mutateAmount
-                    p = max(min(gauss( p , creature.ELO.sigma*mutateAmount),1000),-1000)
-
-    def trainByELO(self,rounds,battles):
+    def trainByELO(self,wars,battles):
         creatureList = self.creatureList
-        for s in range(rounds):
-
-            #pHelp.setTrainingConstant(self, 1.0)
-            pHelp.setTrainingSin(self)
-            #self.setTrainingTimes5()
-            #pHelp.setTrainingTimes1(self)
-            #pHelp.setTrainingTimes1Negative(self)
-            #pHelp.setTrainingMinus1(self)
-            pHelp.setPuts(self)
+        for s in range(wars):
+            for i in range ( len ( self.creatureList ) ):
+                #pHelp.setTrainingConstant(self, 1.0)
+                pHelp.setTrainingSin(self)
+                #pHelp.setTrainingTimes5(self)
+                #pHelp.setTrainingTimes1(self)
+                #pHelp.setTrainingTimes1Negative(self)
+                #pHelp.setTrainingMinus1(self)
+                pHelp.setCreaturePuts(self,i)
             #parallel code - broke for now
             '''
             p=Pool()
             self.creatureList = p.map(runCreature, creatureList)
             '''
             #serial code
-            print '   Round: ',s
+            print '   War: ',s
             print '   Running...'
             self.runPopulation()
             #for c in self.creatureList:
@@ -316,8 +341,6 @@ class Population:
         for p in range(pairings):
             creature1 = choice( creatureList )
             creature2 = choice( creatureList )
-            while creature1 == creature2:
-                creature2 = choice( creatureList )
 
             self.updateELO(creature1, creature2)
         #print "battle - end"
@@ -344,9 +367,11 @@ class Population:
         #self.creatureList.sort(key = lambda x: x.ID, reverse=False)
 
 
-    def runPopulation( self):
+    def runPopulation( self, ):
         for creature in self.creatureList:
             creature.run()
+        for creature in self.creatureList:
+            creature.averageFitness = sum(creature.fitnessList)/float(len(creature.fitnessList))
 
     def sortByFitness( self ):
         self.creatureList.sort(key = lambda x: x.fitness, reverse=True)
