@@ -31,8 +31,8 @@ class Population:
         #Creature pseudo-creature data structures
         self.trainingCreature = Creature( self.neuronCount, self.inputCount , self.outputCount )      
         self.trainingCreature.cycles = self.cycles
-        for out in self.trainingCreature.output:
-            out.outbox = gauss(0,1)
+        for out in range(len(self.trainingCreature.output)):
+            self.trainingCreature.output[out].outbox = gauss(0,1)
         self.synapseCount = len ( self.trainingCreature.synapseList )
 
         self.statsCreature = Creature( self.neuronCount, self.inputCount , self.outputCount  )

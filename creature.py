@@ -36,9 +36,26 @@ class Creature:
                 if not(n1 in self.output) and not(n2 in self.input ): # and not n1==n2: #No feedback
                     self.synapseList.append( Synapse(n1, n2, len(self.neuronList) ) )
 
+    def run(self)
+        runCycles(self):
 
+    def runCycles(self):
+        for cyc in range( self.maxCycles):
+            for n in self.neuronList:
+                n.run()
+            for s in self.synapseList:
+                s.run()     
+        creatureOutputDifference = 0.0
+        for OutInd in range(len(self.output)):
+            eOut = self.expectedOutputs[OutInd]
+            cOut = self.output[OutInd].outbox
+            creatureOutputDifference += abs(eOut-cOut)
+        mu=0.0
+        stdev = 2.5
+        self.fitness = cHelp.myGauss(mu,stdev,creatureOutputDifference)
+        self.fitnessList.append(self.fitness)
 
-    def run( self,): #no cycles or population, that info is internal to creature now
+    def run_untilConverged( self,): #no cycles or population, that info is internal to creature now
         runFitness = 0.0
         outputTracker = []
         self.cycles = 0
@@ -50,8 +67,9 @@ class Creature:
                 s.run()
 
             self.cycles +=1
-
+        
         creatureOutputDifference = 0.0
+        
         for OutInd in range(len(self.output)):
             tOut = self.expectedOutputs[OutInd]
             cOut = self.output[OutInd].outbox
@@ -65,7 +83,7 @@ class Creature:
         self.fitness = cHelp.myGauss(mu,stdev,round(creatureOutputDifference,4))
         self.fitnessList.append(self.fitness)
 
-        '''
+
             #Number of starting cycles is magic number. Determine experimentally
             if cyc <= (self.neuronCount**2+10):#*(2.0/3.0):
                 outputTracker.append([])
@@ -82,7 +100,7 @@ class Creature:
                     break
         # THIS IS THE PID ALTERNATIVE TO PLAY WITH!!!
         #self.fitness = (self.fitness + runFitness ) / 2
-        '''
+
 
 
 
