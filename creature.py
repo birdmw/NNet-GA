@@ -13,11 +13,11 @@ class Creature:
         self.fitness = 0.0
         self.rank = random()
         self.ELO = Rating()
-        self.expectedOutputs = []
+        self.expectedOutputs = None
         self.ID = ''
 
         for n in range(self.neuronCount):
-            self.neuronList.append(Neuron())
+            self.neuronList.append(Neuron(n))
 
         for i in range (self.inputCount):
             self.input.append(self.neuronList[i])
@@ -27,13 +27,16 @@ class Creature:
             index = self.neuronCount - self.outputCount + o
             self.output.append(self.neuronList[index])
             self.output[-1].isOutput = 1
-            self.expectedOutputs.append('')
+            #self.expectedOutputs.append('')
 
+        createdSynapses = 0
         for n1 in self.neuronList:
             for n2 in self.neuronList:
-                if not n1 in self.output and not n2 in self.input and not n1==n2: #No feedback
-                    self.synapseList.append( Synapse(n1, n2, len(self.neuronList) ) )
-
+                if not n1 in self.output and not n2 in self.input:# and not n1==n2: #No feedback
+                    self.synapseList.append( Synapse(n1, n2, len(self.neuronList),createdSynapses ) )
+                    n2.inputSynapseCount+=1
+                    n2.synapseList.append(self.synapseList[-1])
+                    createdSynapses+=1
 
 
     def run( self ): #no cycles or population, that info is internal to creature now
@@ -41,6 +44,24 @@ class Creature:
         self.run_maxCycles()
 
     def run_maxCycles(self):
+        for cyc in range( self.maxCycles):
+            for n in self.neuronList:
+                n.run()
+            for s in self.synapseList:
+                s.run()
+
+        if self.expectedOutputs != None:
+            totalCreatureOutputDifference=0
+            for OutInd in range(len(self.output)):
+                    tOut = self.expectedOutputs[OutInd]
+                    cOut = self.output[OutInd].outbox
+                    totalCreatureOutputDifference += abs(tOut-cOut)
+
+            mu=0
+            stdev = 1
+            self.fitness = (self.fitness + cHelp.myGauss(mu,stdev,totalCreatureOutputDifference) ) / 2
+
+    def run_pattern_1cycle(self):
         for cyc in range( self.maxCycles):
             for n in self.neuronList:
                 n.run()
@@ -103,21 +124,20 @@ class Creature:
 
 
 def main():
-    neuronCount = 2
-    inputCount =1
-    outputCount = 1
-    MaxCycles = 45
-
-    inputSet = [0]
-    expOut = [0]
-
-    runs =6
+    neuronCount = 17
+    inputCount =3
+    outputCount = 5
+    MaxCycles = 6
+    inputSet=[]
+##    expOut=[]
+    for i in range(inputCount):
+        inputSet.append(randint(0,10))
 
     demoCreature = Creature(neuronCount, inputCount, outputCount,MaxCycles)
     for i in range(len(inputSet)):
         demoCreature.input[i].inbox = [inputSet[i]]
 
-    demoCreature.expectedOutputs = expOut
+    demoCreature.ID = randint(0,1000)
 ##    filename = r'C:\Users\chris.nelson\Desktop\NNet\CreatureDebugging\bestie4lyfe_2015_2_17_12_17_35'
 ##    demoCreature = load_creature(filename)
 
@@ -146,6 +166,9 @@ def main():
     #inputSets = [[0],[1]]
     #testCreatureRepeatability(demoCreature,inputSets,runs)
 
+    fileLoc = "C:\Users\chris.nelson\Desktop\NNet\DemoCreatures_5_14_2015\\"+"DemoCreature_"+str(neuronCount)+"N_ID"+str(demoCreature.ID)
+
+    cHelp.save_creature(demoCreature,fileLoc)
 
     #seeCreature(demoCreature)
 

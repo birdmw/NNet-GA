@@ -1,6 +1,7 @@
 import numpy as np
 #import populationHelper as pHelp
-
+from pickle import *
+import sys
 
 def checkConvergence(outputLists):
     '''
@@ -29,6 +30,7 @@ def checkConvergence(outputLists):
 
 
 def save_creature(creature,fileName):
+    sys.path.append(fileName)
     fCreature = open(fileName,'wb')
     dump(creature,fCreature)
     fCreature.close()
@@ -36,6 +38,7 @@ def save_creature(creature,fileName):
 
 
 def load_creature(fileName):
+    sys.path.append(fileName)
     fCreature = open(fileName,'r')
     creat = load(fCreature)
     fCreature.close()
@@ -64,4 +67,3 @@ def myGauss(mu,sig,x):
     return g
 
 
-        

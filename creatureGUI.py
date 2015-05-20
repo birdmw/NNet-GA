@@ -25,7 +25,7 @@ class CreatureGUI:
     def __init__(self ,creature):
         self.creature = creature
 
-    def seeCreature():
+    def seeCreature(self):
         w = Canvas(master, width=screenWidth*.75, height=screenHeight*.75)
         canvasWidth = int(w.cget("width"))
         canvasHeight = int(w.cget("height"))
@@ -36,10 +36,10 @@ class CreatureGUI:
         neuronRadius=1.5 * circleRadius / neuronCount
         neuronOval = []
         neuronCenter = []
-        entry = []
+        self.entry = []
         neuronLabel = []
         outputLabel = []
-        outStringVar = []
+        self.outStringVar = []
 
         for n in range ( neuronCount ):
 
@@ -52,13 +52,13 @@ class CreatureGUI:
             neuronOval.append((x0,y0,x1,y1))
 
             if self.creature.neuronList[n] in self.creature.input:
-                entry.append(Entry(master))
+                self.entry.append(Entry(master))
                 neuronLabel.append(Label(master,text = "input " + str(n)))
                 entryX=(x0+x1)/2
                 entryY=(y0+y1)/2
                 labelX=neuronCenter[n][0]+neuronRadius*cos(n*2*pi/neuronCount)+30*cos(n*2*pi/neuronCount)
                 labelY=neuronCenter[n][1]+neuronRadius*sin(n*2*pi/neuronCount)+30*sin(n*2*pi/neuronCount)
-                entry[n].place(x=entryX,y=entryY, anchor = CENTER, width = min(max((x1-x0)/2,20),100))
+                self.entry[n].place(x=entryX,y=entryY, anchor = CENTER, width = min(max((x1-x0)/2,20),100))
                 neuronLabel[n].place(x=labelX,y=labelY, anchor = CENTER)
                 outX=neuronCenter[n][0]
                 outY=neuronCenter[n][1]
@@ -66,9 +66,9 @@ class CreatureGUI:
                 neuronLabel.append(Label(master,text = "output " + str(self.creature.output.index(self.creature.neuronList[n]))))
                 labelX=neuronCenter[n][0]+neuronRadius*cos(n*2*pi/neuronCount)+30*cos(n*2*pi/neuronCount)
                 labelY=neuronCenter[n][1]+neuronRadius*sin(n*2*pi/neuronCount)+30*sin(n*2*pi/neuronCount)
-                outStringVar.append(StringVar())
-                outStringVar[-1].set(str(round(self.creature.neuronList[n].outbox,2)))
-                outputLabel.append(Label(master,textvariable = outStringVar[-1]))
+                self.outStringVar.append(StringVar())
+                self.outStringVar[-1].set(str(round(self.creature.neuronList[n].outbox,2)))
+                outputLabel.append(Label(master,textvariable = self.outStringVar[-1]))
                 outX=neuronCenter[n][0]
                 outY=neuronCenter[n][1]
                 outputLabel[n-(len(self.creature.neuronList)-len(self.creature.output))].place(x=outX,y=outY,anchor=CENTER)
@@ -107,28 +107,27 @@ class CreatureGUI:
         scaleAvar.set(str(round(maxA,2)))
 
 
-        step = Button(master, text="Step", command=callback)
+        step = Button(master, text="Step", command=self.callback)
         step.place(x=canvasCenter[0],y=0,anchor=N)
         mainloop()
 
 
-    def callback():
+    def callback(self):
         inlist = []
         outlist = self.creature.output
-        for i in range(len(entry)):
+        for i in range(len(self.entry)):
             try:
-                inlist.append( float(entry[i].get()) )
+                inlist.append( float(self.entry[i].get()) )
             except:
                 inlist.append(0.0)
                 print "input strange or empty - using 0.0"
-##        local_setTrainingCreature(population,inList=inlist, outList = outlist)
 ##        local_run(inlist,creature,1)
         self.creature.run()
-        updateGraph()
+        #self.updateGraph()
         for o in range(len(self.creature.output)):
-            outStringVar[o].set(str(round(self.creature.output[o].outbox,2)))
+            self.outStringVar[o].set(str(round(self.creature.output[o].outbox,2)))
 
-    def local_run( cycles ):
+    def local_run( self, cycles ):
         for r in range( cycles ):
             for i in range ( self.creature.inputCount ):
                 self.creature.input[i].inbox += population.trainingCreature.input[i].inbox
@@ -136,18 +135,12 @@ class CreatureGUI:
                 n.run()
             for s in self.creature.synapseList:
                 s.run()
-        updateGraph(  )
+        #self.updateGraph(  )
 
-    def local_setTrainingCreature( population, inList = None, outList = None ):
-        for i in range(len(inList)):
-            population.trainingCreature.input[i].inbox = inList[i]
-        for i in range(len(outList)):
-            population.trainingCreature.output[i].outbox = outList[i]
+    def updateGraph(self):
+        self.findMaxValues()
 
-    def updateGraph():
-        findMaxValues()
-
-    def findMaxValues():
+    def findMaxValues(self):
 
         maxNeuronProps = []
         maxSynapseProps = []
@@ -177,7 +170,7 @@ class CreatureGUI:
 
 def main():
 
-    neuronCount =3
+    neuronCount =16
 
     inputCount = 1
     outputCount = 1
@@ -187,8 +180,8 @@ def main():
     demoCreature = Creature(neuronCount, inputCount, outputCount,MaxCycles)
     demoCreature.expectedOutputs = [1]
 
-    seeCreature(demoCreature)
-
+    CGUI = CreatureGUI(demoCreature)
+    CGUI.seeCreature()
 
 if __name__ == '__main__':
     main()
