@@ -9,7 +9,7 @@ import csv
 
 
 def setTrainingTimes5( self ):
-    inVal=random()
+    inVal=5*random()
     for i in self.trainingCreature.input:
         i.inbox = [inVal]
     for o in self.trainingCreature.output:
@@ -89,6 +89,13 @@ def setPuts ( self ):
             c.input[i].inbox=self.trainingCreature.input[i].inbox
         for j in range(len(c.output)):
             c.expectedOutputs[j]=(self.trainingCreature.output[j].outbox)
+
+def setCreaturePuts ( self, i ):
+    c = self.creatureList[i]
+    for j in range(len(c.input)):
+        c.input[j].inbox = self.trainingCreature.input[j].inbox
+    for k in range(len(c.output)):
+        c.expectedOutputs[k] = (self.trainingCreature.output[k].outbox)
 
 def testCreatureRepeatability(creature,inputSets,outputSets,runs,saveData=0,scribe='', verbosity=0):
     if verbosity:

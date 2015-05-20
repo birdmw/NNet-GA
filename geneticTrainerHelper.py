@@ -1,7 +1,55 @@
-def printFinalOuts( population ):
-    print "training outs:"
-    for o in range (len(population.trainingCreature.output)):
-        print population.trainingCreature.output[o].outbox
-    print "best creature outs:"
-    for c in range (len(population.creatureList[0].output)):
-        print population.creatureList[0].output[c].outbox
+from copy import *
+import numpy as np
+from math import *
+
+def findBestId(population):
+    populationCopy = deepcopy(population)
+    while len (populationCopy.creatureList) > 1:
+        populationCopy.sortByMu()
+        populationCopy.creatureList.pop()
+        if len ( populationCopy.creatureList ) > 1:
+            populationCopy.sortBySigma()
+            populationCopy.creatureList.reverse()
+            populationCopy.creatureList.pop()
+    return populationCopy.creatureList[0].ID      
+  
+
+
+def printFinalOuts( population, ID ):
+    tempList2 = []
+    tempList3 = []
+    for p in range ( len ( population.creatureList[0].synapseList[0].propertyList ) ):
+        for s in range ( len ( population.creatureList[0].synapseList ) ):
+            tempList3 = []
+            for c in range ( len ( population.creatureList ) ):
+                tempList3.append(population.creatureList[c].synapseList[s].propertyList[p])
+            a = np.array(tempList3)
+            std3 = np.std(a)
+            tempList2.append(std3)
+
+    for p in range ( len ( population.creatureList[0].neuronList[0].propertyList ) ):
+        for n in range ( len ( population.creatureList[0].neuronList ) ):
+            tempList3 = []
+            for c in range ( len ( population.creatureList ) ):
+                tempList3.append(population.creatureList[c].neuronList[n].propertyList[p])
+            a = np.array(tempList3)
+            std3 = np.std(a)
+            tempList2.append(std3)
+    print "standard deviation of creature properties is: ", sum(tempList2) / float(len(tempList2))
+            
+
+    for c in population.creatureList:
+        if c.ID == ID:
+            index = population.creatureList.index(c)
+            break
+    
+    print "exected outs:"
+    for o in range (len(population.creatureList[index].expectedOutputs)):
+        print population.creatureList[index].expectedOutputs[o]
+
+    print "best creature outs: "
+    for o in range ( len ( population.creatureList[index].output ) ): 
+        print population.creatureList[index].output[o].outbox
+
+    print "ID", population.creatureList[index].ID  ,"MU: ",population.creatureList[index].ELO.mu,"Sigma: ",population.creatureList[index].ELO.sigma, "fitness: ",population.creatureList[index].fitness
+    
