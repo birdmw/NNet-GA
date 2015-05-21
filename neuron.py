@@ -39,7 +39,7 @@ class Neuron:
 
         if (self.value >= self.propertyList[0]):
             self.prevOutbox = self.outbox
-            self.outbox = self.value
+            self.outbox = self.value - self.propertyList[0]
             if len(self.propertyList)==2:
                 self.value = self.propertyList[1]
             else:
@@ -49,7 +49,7 @@ class Neuron:
         elif len(self.propertyList)==2:
             if (self.value <= self.propertyList[1]):
                 self.prevOutbox = self.outbox
-                self.outbox = self.value
+                self.outbox = self.value - self.propertyList[1]
                 self.value = self.propertyList[0]
                 self.fired = 1
             else:

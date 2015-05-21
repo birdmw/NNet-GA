@@ -15,8 +15,8 @@ from sobol_lib_NoNumpy import *
 import creatureHelper as chelp
 from creature import *
 import time
-import ScrollBarClass
-from PIL import Image, ImageTk
+#import ScrollBarClass
+#from PIL import Image, ImageTk
 
 from numpy import arange, sin, pi, fft,asarray
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
