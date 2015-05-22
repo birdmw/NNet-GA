@@ -10,29 +10,29 @@ class docy:
     def __init__(self, data=[], huntWindow = 4): #for now it will only work with a hunt window, working on phase shift
         #docy.data[set][io][put][cycle]
         self.data = data
+
         #cycleWindow is the window in which outputs are allowed to hunt for a best result
         self.huntWindow = huntWindow
-        self.maxCycleShift = maxCycleShift
         
-    def addSet(tset):
+    def addSet(self, tset):
         #[io][put][cycle]
         data.append(tset)
         
-    def removeSet( index = -1 ):
+    def removeSet(self, index = -1 ):
         #index
         if (abs(index) > len(self.data)):
             print "set does not exist, cannot remove"
         else:
             data.pop(index)
-    def randomSet():
+    def randomSet(self):
         return choice(self.data)
     
-    def generateSin(inputCount, outputCount, cycleCount=360, a=1, b=1, c=1, reps=1):
+    def generateSin(self, inputCount, outputCount, cycleCount=2, a=1, b=1, c=1, reps=1):
         inputList, outputList = [] , []
         inputs , outputs = [] , []
         for x in range(int(cycleCount * reps)):
                 inputs.append(x*pi/180)
-                outputs.append(a*sin(b*x+c))
+                outputs.append(a*sin(b*inputs[-1]+c))
         for y in range(inputCount):
                 inputList.append(inputs)
                 outputList.append(outputs)
@@ -46,7 +46,7 @@ def trainCreature(creature, docy, tSetIndex = None):
         tSet = docy.data.randomSet()
         tSetIndex = docy.data.index(tset)
     else:
-        tSet = docy.data[tSetIndex]
+        tSet = docy.data+[tSetIndex]
     cycleFitnessList = []
     creatureOutputArray = []
     cycles = len(docy.data[0][1][0])
