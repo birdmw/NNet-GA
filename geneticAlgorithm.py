@@ -1,6 +1,6 @@
 from population import *
 from multiprocessing import Pool, cpu_count, Process
-from geneticTrainerHelper import *
+from geneticHelper import *
 
 def evolve(population, generations, trainSets, battles, pattLength=0,killPercent=0.5,matePerc,maxMutate):
     for G in range (generations):
