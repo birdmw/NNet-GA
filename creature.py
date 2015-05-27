@@ -2,48 +2,41 @@ from neuron import *
 from synapse import *
 from trueskill import Rating, quality_1vs1, rate_1vs1
 import creatureHelper as cHelp
-import numpy as np
 
 class Creature:
-    def __init__(self , neuronCount, inputCount, outputCount,maxCycles=50):
+    def __init__(self , neuronCount=7, inputCount=1, outputCount=1):
         self.neuronCount, self.inputCount, self.outputCount = neuronCount, inputCount, outputCount
-        self.maxCycles = maxCycles
-        self.cycles = 0
         self.neuronList, self.input, self.output, self.synapseList  = [], [], [], []
         self.fitness = 0.0
-        self.avgerageFitness = 0.0
-        self.fitnessList = [0.0]
-        self.rank = random()
         self.ELO = Rating()
-        self.expectedOutputs = None
         self.ID = ''
 
+        #MAKE NEURONS
         for n in range(self.neuronCount):
             self.neuronList.append(Neuron(n))
-
         for i in range (self.inputCount):
             self.input.append(self.neuronList[i])
             self.input[-1].isInput = 1
-
         for o in range (self.outputCount):
-            index = self.neuronCount - self.outputCount + o
-            self.output.append(self.neuronList[index])
+            self.output.append(self.neuronList[self.neuronCount - self.outputCount + o])
             self.output[-1].isOutput = 1
-            #self.expectedOutputs.append('')
 
+        #MAKE SYNAPSES
         createdSynapses = 0
         for n1 in self.neuronList:
             for n2 in self.neuronList:
-                if not(n1 in self.output) and not(n2 in self.input ):# and not n1==n2: #No feedback
+                if not(n1 in self.output) and not(n2 in self.input ):
                     self.synapseList.append( Synapse(n1, n2, len(self.neuronList),createdSynapses ) )
-                    n2.inputSynapseCount+=1
                     n2.synapseList.append(self.synapseList[-1])
                     createdSynapses+=1
 
-    def run( self ): #no cycles or population, that info is internal to creature now
-        #self.run_until_converged()
-        self.run_maxCycles()
-
+    def run( self, cycles = 1 ): #no cycles or population, that info is internal to creature now
+        for c in range( cycles ):
+            for n in self.neuronList:
+                n.run()
+            for s in self.synapseList:
+                s.run()
+'''
     def run_maxCycles(self):
         for cyc in range( self.maxCycles):
             for n in self.neuronList:
@@ -180,3 +173,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+'''
