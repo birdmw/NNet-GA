@@ -13,11 +13,11 @@ class docy:
 
         #cycleWindow is the window in which outputs are allowed to hunt for a best result
         self.huntWindow = huntWindow
-        
+
     def addSet(self, tset):
         #[io][put][cycle]
-        data.append(tset)
-        
+        self.data.append(tset)
+
     def removeSet(self, index = -1 ):
         #index
         if (abs(index) > len(self.data)):
@@ -26,7 +26,7 @@ class docy:
             data.pop(index)
     def randomSet(self):
         return choice(self.data)
-    
+
     def generateSin(self, inputCount, outputCount, cycleCount=2, a=1, b=1, c=1, reps=1):
         inputList, outputList = [] , []
         inputs , outputs = [] , []
@@ -89,11 +89,11 @@ def judgeFitnessWithCycleShift(outputArray, docy, tSetIndex):
             if cycleShift<0:
                 Overflow = outputArray[neuronIndex][len(outputArray)-abs(
             else:
-            
+
             cycleShift +=1
 '''
-            
-            
+
+
 def arrayAbsSum(array):
     total = 0.0
     for a in array:
@@ -119,4 +119,4 @@ def myGauss(x,mu=1.0,sig=1.0):
     p2 = 2*np.power(sig,2.)
     g = np.exp(p1/p2)
     return g
-    
+
