@@ -3,13 +3,14 @@ from geneticHelper import *
 from environment import *
 from random import *
 
-def evolve(population, trainData, generations = 10):#
-    for G in range (generations):#one training set per generation
-        print "GENERATION: ",G#
-        trainPopulation(population, trainData)#
-        battle(population)#
-        prune(population)#
-        mutate(population, population.repopulate())#
+def evolve(population, trainData, generations = 10, setsPerGen=1):
+    for G in range (generations):
+        print "GENERATION: ",G
+        for t in range(setsPerGen):
+            trainPopulation(population, trainData, setsPerGen)
+            battle(population)
+        prune(population)
+        mutate(population, population.repopulate())
 
 def prune ( pop , killPercent = .50 ):
     saveIDs = list()
@@ -43,9 +44,9 @@ def mutate (pop, mutateIDs, mutateAmount = .01):
             for p in range(len(pop.creatureList[index].neuronList[n].propertyList)):
                 pop.creatureList[index].neuronList[n].propertyList[p] = max(min(gauss( pop.creatureList[index].neuronList[n].propertyList[p] , mutateAmount),1000),-1000)
 
-def battle( pop, battles = None ):
-    if battles == None:
-        battles = int(random()*len(pop.creatureList)**2)
+def battle( pop, battles = "Random" ):
+    if battles == "Random":
+        battles = min(int(random()*len(pop.creatureList)**2),10000)
     for b in range(battles):
         creature1 = choice( pop.creatureList )
         creature2 = choice( pop.creatureList )
@@ -59,13 +60,78 @@ def updateELO( creature1, creature2 ):
     else:
         creature1.ELO, creature2.ELO = rate_1vs1(creature1.ELO,creature2.ELO, drawn=True)
 
+
+def trainPopulation(pop, trainData, setsPerGen, tSetIndex = None):
+    for c in pop.creatureList:
+        trainCreature(c, trainData, setsPerGen)
+
+def trainCreature(creature, trainData, setsPerGen, tSetIndex = None, huntWindow = 2):
+    #accepts a creature and a training set
+    #runs the creature for the length of the dataset
+    #sets the creatures fitness using hunt
+    if tSetIndex == None:
+        tSet = trainData.randomSet()
+        tSetIndex = trainData.data.index(tSet)
+    else:
+        tSet = trainData.data[tSetIndex]
+    cycleFitnessList = []
+    creatureOutputArray = []
+    for cyc in range(len(tSet[1][0])): #for each cycle
+        for inp in range(len(tSet[0])): #set the inputs
+            creature.input[inp].inbox = [tSet[0][inp][cyc]]
+        creature.run(1)
+        cycleFitnessList.append( judgeFitnessWithHunt( creature, trainData, cyc, tSetIndex, huntWindow ) ) #judge
+    newAvgFit = sum(cycleFitnessList)/float(len(cycleFitnessList)) #then average all together for the creature
+    creature.fitness = ( ( setsPerGen - 1 ) * creature.fitness + newAvgFit) / setsPerGen
+
+def judgeFitnessWithHunt(creature, trainData, cyc, tSetIndex, huntWindow):
+    neuronDiffList = []
+    for outputIndex in range(len(creature.output)): #for each output
+        windowIndex = 0
+        minDiff = abs(creature.output[outputIndex].outbox - trainData.data[tSetIndex][1][outputIndex][cyc])#initialize minDiff to prevent calling something that doesnt exist
+        while windowIndex <= abs(huntWindow): #for each window
+            if cyc+windowIndex < len(trainData.data[tSetIndex][1][outputIndex]):# if it didnt roll off either end
+                minDiff = min( minDiff, abs(creature.output[outputIndex].outbox - trainData.data[tSetIndex][1][outputIndex][cyc+windowIndex])) #find the minimum
+            if cyc-windowIndex >= 0:
+                minDiff = min( minDiff, abs(creature.output[outputIndex].outbox - trainData.data[tSetIndex][1][outputIndex][cyc-windowIndex]))
+            windowIndex+=1
+        neuronDiffList.append(minDiff)
+    avgDiff = sum(neuronDiffList)/float(len(neuronDiffList)) #and average
+    return myGauss(avgDiff)
+            
+def arrayAbsSum(array):
+    total = 0.0
+    for a in array:
+        total += abs(array)
+    return total
+
+def arrayAbsDifference (arrayOne,arrayTwo):
+    array=[]
+    for i in range( len(arrayTwo) ):
+        array.append( abs(arrayOne[i] - arrayTwo[i]) )
+    return array
+
+def myGauss(x,mu=0.0,sig=1.0):
+    '''
+    Uses mu and sig to create a gaussian, then uses x as an input to the gaussian, returning the probability that x would be seen in the gaussian
+    '''
+    if sig == 0.0:
+        if x==mu:
+            return 1.0
+        else:
+            return 0.0
+    p1 = -np.power(x-mu,2.)
+    p2 = 2*np.power(sig,2.)
+    g = np.exp(p1/p2)
+    return g
+
 def main(population = None, trainData = None): #trainData is docy() type
     if population == None:
         population = Population()
     if trainData == None:
         trainData = docy()
         trainData.generateSin(len(population.creatureList[0].input), len(population.creatureList[0].output))
-    evolve(population, trainData)
+    evolve(population, trainData, setsPerGen=1)
 
 if __name__ == "__main__":
     main()

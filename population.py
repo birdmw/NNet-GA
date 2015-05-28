@@ -46,21 +46,27 @@ class Population:
                 nonBreederIDs.append(self.creatureList[i].ID)
 
         #FIND PARENTS FROM BREEDERS
+
+        #LOOP OVER THIS##################################################
         breederIDs = []
         for creature in self.creatureList:
             if not (creature.ID in nonBreederIDs):
                 breederIDs.append(creature.ID)
-        motherID = choice(breederIDs)
-        fatherID = choice(breederIDs)
-        for creature in self.creatureList:
-            if creature.ID == motherID:
-                mother = creature
-            if creature.ID == fatherID:
-                father = creature
-        
-        #BREED PARENTS
+
+
+        #PICK PARENTS
         asexualOffspringList = []
-        while (len(self.creatureList) < self.creatureCount):     
+        while (len(self.creatureList) < self.creatureCount):    
+            motherID = choice(breederIDs)
+            fatherID = choice(breederIDs)
+            for creature in self.creatureList:
+                if creature.ID == motherID:
+                    mother = creature
+                if creature.ID == fatherID:
+                    father = creature
+        
+            #can be optimized for asexual breeding
+        
             child = self.mate( mother , father )
             child.ID = self.issueID
             self.issueID += 1
@@ -86,20 +92,17 @@ class Population:
 
     def sortByFitness( self ):
         self.creatureList.sort(key = lambda x: x.fitness, reverse=True)
-        return self
 
     def sortByMu( self ):
         self.creatureList.sort(key = lambda x: x.ELO.mu, reverse=True)
-        return self
 
     def sortBySigma( self ):
         self.creatureList.sort(key = lambda x: x.ELO.sigma, reverse=True)
-        return self
 
     def sortByID( self ):
         self.creatureList.sort(key = lambda x: x.ID, reverse=False)
-        return self
 
+    #MAKE DICTIONARY FOR ID VS INDEX
     def IDToIndex (self, ID):
         for creature in self.creatureList:
             if creature.ID == ID:
