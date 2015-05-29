@@ -2,16 +2,17 @@ from copy import *
 import numpy as np
 from math import *
 
-def findBestId(population):
+def findBestCreature(population):
     populationCopy = deepcopy(population)
     while len (populationCopy.creatureList) > 1:
         populationCopy.sortByMu()
+        populationCopy.creatureList.sort(key = lambda x: x.ELO.mu, reverse=True)
         populationCopy.creatureList.pop()
         if len ( populationCopy.creatureList ) > 1:
             populationCopy.sortBySigma()
-            populationCopy.creatureList.reverse()
+            populationCopy.creatureList.sort(key = lambda x: x.ELO.sigma, reverse=False)
             populationCopy.creatureList.pop()
-    return populationCopy.creatureList[0].ID      
+    return populationCopy.creatureList[0]    
   
 
 

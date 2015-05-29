@@ -3,7 +3,7 @@ from geneticHelper import *
 from environment import *
 from random import *
 
-def evolve(population, trainData, generations = 10, setsPerGen=1):
+def evolve(population, trainData, generations = 4, setsPerGen=1):
     for G in range (generations):
         print "GENERATION: ",G
         for t in range(setsPerGen):
@@ -59,7 +59,6 @@ def updateELO( creature1, creature2 ):
         creature2.ELO,creature1.ELO = rate_1vs1(creature2.ELO,creature1.ELO)
     else:
         creature1.ELO, creature2.ELO = rate_1vs1(creature1.ELO,creature2.ELO, drawn=True)
-
 
 def trainPopulation(pop, trainData, setsPerGen, tSetIndex = None):
     for c in pop.creatureList:
@@ -132,6 +131,7 @@ def main(population = None, trainData = None): #trainData is docy() type
         trainData = docy()
         trainData.generateSin(len(population.creatureList[0].input), len(population.creatureList[0].output))
     evolve(population, trainData, setsPerGen=1)
+    bestCreature = findBestCreature(population)
 
 if __name__ == "__main__":
     main()

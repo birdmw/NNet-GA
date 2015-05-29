@@ -1347,7 +1347,7 @@ class NeuroloScope(Frame):
             newColor = "#"+newColor
             self.myColorDict[str(self.myCreature.neuronList[i].ID)]=(newColor)
 
-def main():
+def main(population = None, trainData = None):
 ##    neuronCount =100
 ##    inputCount =20
 ##    outputCount = 10
