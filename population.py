@@ -7,7 +7,7 @@ from trueskill import *
 
 class Population:
 
-    def __init__(self, CreatureCount=100, NeuronCount=7, InputCount=1, OutputCount=1):
+    def __init__(self, CreatureCount=50, NeuronCount=50, InputCount=1, OutputCount=1):
         self.creatureList = []
         self.creatureCount = CreatureCount
         self.neuronCount = NeuronCount
@@ -25,7 +25,6 @@ class Population:
 
     def repopulate(self, matePercent = .25):#returns a list of IDs for children spawned asexually
         newCreatureIDList = []
-        copyCreatureList = deepcopy(self.creatureList)#for print
         nonBreederIDs = []
         creatureCount = len ( self.creatureList )
         nonBreederCount = creatureCount * int(max(min(1-matePercent,1.0),0.0))

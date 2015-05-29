@@ -3,16 +3,8 @@ import numpy as np
 from math import *
 
 def findBestCreature(population):
-    populationCopy = deepcopy(population)
-    while len (populationCopy.creatureList) > 1:
-        populationCopy.sortByMu()
-        populationCopy.creatureList.sort(key = lambda x: x.ELO.mu, reverse=True)
-        populationCopy.creatureList.pop()
-        if len ( populationCopy.creatureList ) > 1:
-            populationCopy.sortBySigma()
-            populationCopy.creatureList.sort(key = lambda x: x.ELO.sigma, reverse=False)
-            populationCopy.creatureList.pop()
-    return populationCopy.creatureList[0]    
+    population.creatureList.sort(key = lambda x: x.ELO.mu, reverse=True)
+    return population.creatureList[0]
   
 
 

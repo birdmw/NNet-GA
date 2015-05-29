@@ -4,7 +4,7 @@ from trueskill import Rating, quality_1vs1, rate_1vs1
 import creatureHelper as cHelp
 
 class Creature:
-    def __init__(self , neuronCount=7, inputCount=1, outputCount=1):
+    def __init__(self , neuronCount=100, inputCount=1, outputCount=1):
         self.neuronCount, self.inputCount, self.outputCount = neuronCount, inputCount, outputCount
         self.neuronList, self.input, self.output, self.synapseList  = [], [], [], []
         self.fitness = 0.0
@@ -28,6 +28,7 @@ class Creature:
                 if not(n1 in self.output) and not(n2 in self.input ):
                     self.synapseList.append( Synapse(n1, n2, len(self.neuronList),createdSynapses ) )
                     n2.synapseList.append(self.synapseList[-1])
+                    n2.inputSynapseCount += 1
                     createdSynapses+=1
 
     def run( self, cycles = 1 ): #no cycles or population, that info is internal to creature now

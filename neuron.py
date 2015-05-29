@@ -15,6 +15,7 @@ class Neuron:
         self.synapseList=[]
         self.ID = ID
         self.fired = randint(0,1)
+        self.inputSynapseCount = 0
 
     def run(self):
         if self.propertyList[0]<self.propertyList[1]:
@@ -41,12 +42,10 @@ class Neuron:
                 self.fired = 1
             else:
                 self.fired = 0
-                if self.isOutput == 0:
-                    self.outbox = 0 
+                self.outbox = 0
         else:
             self.fired = 0
-            if self.isOutput == 0:
-                self.outbox = 0
+            self.outbox = 0
 
         if not self.isInput:
             self.inbox = []

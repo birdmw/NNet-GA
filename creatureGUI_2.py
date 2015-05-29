@@ -14,6 +14,7 @@ sys.path.append(r'C:\Users\chris.nelson\Desktop\NNet\NNet-GA')
 from sobol_lib_NoNumpy import *
 import creatureHelper as chelp
 from creature import *
+from trainer import *
 import time
 #import ScrollBarClass
 #from PIL import Image, ImageTk
@@ -1321,6 +1322,8 @@ class NeuroloScope(Frame):
         percVal=percVal*100
         return percVal
 
+#by limiting yourself to doing only that which you can understand, you necessarily excuse yourself from the discussion of the greatest possibilities
+#This simple epigram lies at the heart of every artist, poet, and musician, but is terminally complex to the typical scientist
 
     def scopeGenerateColors(self):
         starts=[]
@@ -1345,42 +1348,25 @@ class NeuroloScope(Frame):
                 newColor += tempNewColor
 
             newColor = "#"+newColor
-            self.myColorDict[str(self.myCreature.neuronList[i].ID)]=(newColor)
+            self.myColorDict[str(self.myCreature.neuronList[i].ID)] = (newColor)
 
-def main(population = None, trainData = None):
-##    neuronCount =100
-##    inputCount =20
-##    outputCount = 10
-    neuronCount =100
-    inputCount =10
-    outputCount = 10
-    MaxCycles = 1
-    patternLength=10
-    inputSet=[]
-##    expOut=[]
-    for i in range(inputCount):
-        inputSet.append([])
-        amp = randint(1,10)
-        for j in range(patternLength):
-            #inputSet[-1].append(randint(0,10))
-            inputSet[-1].append(sin((pi*j)/patternLength)*amp)
-            #inputSet[-1].append(0)
-##
-##    for o in range(outputCount):
-##        expOut.append(randint(0,10))
+def main(creature = None, trainData = None):
+    if creature == None:
+        creature = Creature(neuronCount=45)
+    if trainData == None:
+        trainData = docy()
+        trainData.generateSin(len(creature.input), len(creature.output))
 
-    demoCreature = Creature(neuronCount, inputCount, outputCount,MaxCycles)
+    inputCount = len(trainData.data[0][0])  # trainingSet 0 input
+    patternLength = len(trainData.data[0][0][0])
+    inputSet=trainData.data[0][0]
 
     for i in range(len(inputSet)):
-        demoCreature.input[i].inbox = [inputSet[i][0]]
-
-##    demoCreature.expectedOutputs = expOut
+        creature.input[i].inbox = [inputSet[i][0]]
 
     root = Tk()
 
-    #newScope = NeuroloScope(root,demoCreature,inputSet)
-
-    ex = CreatureGUI_Beta(root,demoCreature,inputSet)
+    ex = CreatureGUI_Beta(root,creature,inputSet)
 
 
     root.geometry("900x500+300+300")

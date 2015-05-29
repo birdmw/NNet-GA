@@ -2,8 +2,9 @@ from population import *
 from geneticHelper import *
 from environment import *
 from random import *
+import creatureGUI_2 as cg2
 
-def evolve(population, trainData, generations = 4, setsPerGen=1):
+def evolve(population, trainData, generations=200, setsPerGen=1):
     for G in range (generations):
         print "GENERATION: ",G
         for t in range(setsPerGen):
@@ -64,7 +65,7 @@ def trainPopulation(pop, trainData, setsPerGen, tSetIndex = None):
     for c in pop.creatureList:
         trainCreature(c, trainData, setsPerGen)
 
-def trainCreature(creature, trainData, setsPerGen, tSetIndex = None, huntWindow = 2):
+def trainCreature(creature, trainData, setsPerGen, tSetIndex = None, huntWindow = 4):
     #accepts a creature and a training set
     #runs the creature for the length of the dataset
     #sets the creatures fitness using hunt
@@ -132,6 +133,8 @@ def main(population = None, trainData = None): #trainData is docy() type
         trainData.generateSin(len(population.creatureList[0].input), len(population.creatureList[0].output))
     evolve(population, trainData, setsPerGen=1)
     bestCreature = findBestCreature(population)
+    cg2.main(bestCreature, trainData)
+
 
 if __name__ == "__main__":
     main()
