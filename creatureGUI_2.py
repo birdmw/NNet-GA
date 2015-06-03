@@ -1360,6 +1360,7 @@ def main(creature = None, trainData = None):
     inputCount = len(trainData.data[0][0])  # trainingSet 0 input
     patternLength = len(trainData.data[0][0][0])
     inputSet=trainData.data[0][0]
+    print inputSet
 
     for i in range(len(inputSet)):
         creature.input[i].inbox = [inputSet[i][0]]

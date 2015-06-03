@@ -4,7 +4,7 @@ from environment import *
 from random import *
 import creatureGUI_2 as cg2
 
-def evolve(population, trainData, generations=200, setsPerGen=1):
+def evolve(population, trainData, generations=3, setsPerGen=1):
     for G in range (generations):
         print "GENERATION: ",G
         for t in range(setsPerGen):
