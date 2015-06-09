@@ -23,18 +23,20 @@ class docy:
         if (abs(index) > len(self.data)):
             print "set does not exist, cannot remove"
         else:
-            data.pop(index)
+            self.data.pop(index)
     def randomSet(self):
         return choice(self.data)
 
-    def generateSin(self, inputCount, outputCount, cycleCount=2, a=1, b=1, c=1, reps=1):
+    def generateSinTracker(self, inputCount, outputCount, cycleCount=360, a=1, b=1, c=1, reps=1):
         inputList, outputList = [] , []
         inputs , outputs = [] , []
         for x in range(int(cycleCount * reps)):
-                inputs.append(x*pi/180)
-                outputs.append(a*sin(b*inputs[-1]+c))
+                val = a*sin(b*(x*pi/180)+c)
+                inputs.append(val)
+                outputs.append(val)
         for y in range(inputCount):
                 inputList.append(inputs)
+        for z in range(outputCount):
                 outputList.append(outputs)
         self.data = [[inputList, outputList]]
 
@@ -44,7 +46,7 @@ def trainCreature(creature, docy, tSetIndex = None):
     #sets the creatures fitness using "forgiveness" tricks
     if tSetIndex == None:
         tSet = docy.data.randomSet()
-        tSetIndex = docy.data.index(tset)
+        tSetIndex = docy.data.index(tSet)
     else:
         tSet = docy.data+[tSetIndex]
     cycleFitnessList = []
@@ -64,7 +66,8 @@ def trainCreature(creature, docy, tSetIndex = None):
     if docy.huntWindow != 0:
         creature.fitness = sum(cycleFitnessList)/float(len(cycleFitnessList))
     else:
-        creature.fitness = judgeFitnessWithCycleShift(zip(creatureOutputArray), docy, tSetIndex)
+        pass
+        #creature.fitness = judgeFitnessWithCycleShift(zip(creatureOutputArray), docy, tSetIndex)
 
 def judgeFitnessWithHunt(creature, docy, cyc, tSetIndex):
     neuronDiffList = []
