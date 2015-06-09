@@ -27,14 +27,16 @@ class docy:
     def randomSet(self):
         return choice(self.data)
 
-    def generateSin(self, inputCount, outputCount, cycleCount=2, a=1, b=1, c=1, reps=1):
+    def generateSinTracker(self, inputCount, outputCount, cycleCount=360, a=1, b=1, c=1, reps=1):
         inputList, outputList = [] , []
         inputs , outputs = [] , []
         for x in range(int(cycleCount * reps)):
-                inputs.append(x*pi/180)
-                outputs.append(a*sin(b*inputs[-1]+c))
+                val = a*sin(b*(x*pi/180)+c)
+                inputs.append(val)
+                outputs.append(val)
         for y in range(inputCount):
                 inputList.append(inputs)
+        for z in range(outputCount):
                 outputList.append(outputs)
         self.data = [[inputList, outputList]]
 

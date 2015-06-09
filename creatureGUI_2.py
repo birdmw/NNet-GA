@@ -40,6 +40,7 @@ class CreatureGUI_Beta(Frame):
         self.parent = parent
         self.myCreature = Creature
         self.inputPatterns = inputPatterns
+        print self.inputPatterns
         self.patternPosition = []
         for i in range(len(self.inputPatterns)):
             self.patternPosition.append(0)
@@ -299,6 +300,7 @@ class CreatureGUI_Beta(Frame):
         for i in range(len(self.inputPatterns)):
             if self.patternPosition[i] >= len(self.inputPatterns[i]):
                 self.patternPosition[i] = 0
+            print [self.inputPatterns[i][self.patternPosition[i]]]
             self.myCreature.input[i].inbox = [self.inputPatterns[i][self.patternPosition[i]]]
             self.patternPosition[i] += 1
 
@@ -1350,6 +1352,43 @@ class NeuroloScope(Frame):
             newColor = "#"+newColor
             self.myColorDict[str(self.myCreature.neuronList[i].ID)] = (newColor)
 
+def main():
+##    neuronCount =100
+##    inputCount =20
+##    outputCount = 10
+    neuronCount =100
+    inputCount =10
+    outputCount = 10
+    MaxCycles = 1
+    patternLength=10
+    inputSet=[]
+##    expOut=[]
+    for i in range(inputCount):
+        inputSet.append([])
+        amp = randint(1,10)
+        for j in range(patternLength):
+            #inputSet[-1].append(randint(0,10))
+            inputSet[-1].append(sin((pi*j)/patternLength)*amp)
+            #inputSet[-1].append(0)
+##
+##    for o in range(outputCount):
+##        expOut.append(randint(0,10))
+
+    demoCreature = Creature(neuronCount, inputCount, outputCount)#,MaxCycles)
+
+    for i in range(len(inputSet)):
+        demoCreature.input[i].inbox = [inputSet[i][0]]
+
+##    demoCreature.expectedOutputs = expOut
+
+    root = Tk()
+    #newScope = NeuroloScope(root,demoCreature,inputSet)
+    ex = CreatureGUI_Beta(root,demoCreature,inputSet)
+
+    root.geometry("900x500+300+300")
+    root.mainloop()
+
+'''
 def main(creature = None, trainData = None):
     if creature == None:
         creature = Creature(neuronCount=45)
@@ -1372,7 +1411,7 @@ def main(creature = None, trainData = None):
 
     root.geometry("900x500+300+300")
     root.mainloop()
-
+'''
 
 if __name__ == '__main__':
     main()

@@ -23,7 +23,7 @@ class Population:
               self.creatureList[-1].ID = self.issueID
               self.issueID += 1
 
-    def repopulate(self, matePercent = .25):#returns a list of IDs for children spawned asexually
+    def repopulate(self, matePercent = .25, asexualChance = 0.1):#returns a list of IDs for children spawned asexually
         newCreatureIDList = []
         nonBreederIDs = []
         creatureCount = len ( self.creatureList )
@@ -55,17 +55,20 @@ class Population:
 
         #PICK PARENTS
         asexualOffspringList = []
-        while (len(self.creatureList) < self.creatureCount):    
+        while (len(self.creatureList) < self.creatureCount):
             motherID = choice(breederIDs)
             fatherID = choice(breederIDs)
+            if random() < asexualChance:
+                fatherID = motherID
+
             for creature in self.creatureList:
                 if creature.ID == motherID:
                     mother = creature
                 if creature.ID == fatherID:
                     father = creature
-        
+
             #can be optimized for asexual breeding
-        
+
             child = self.mate( mother , father )
             child.ID = self.issueID
             self.issueID += 1

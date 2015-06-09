@@ -20,7 +20,7 @@ class Neuron:
     def run(self):
         if self.propertyList[0]<self.propertyList[1]:
             self.propertyList[0],self.propertyList[1] = self.propertyList[1],self.propertyList[0]
-            
+
         if len(self.inbox) != 0:
             self.avgInput = sum(self.inbox)/float(len(self.inbox))
             self.value = min(self.maxVal,max(self.avgInput+self.value,-1*self.maxVal))
@@ -42,7 +42,8 @@ class Neuron:
                 self.fired = 1
             else:
                 self.fired = 0
-                self.outbox = 0
+                if not self.isOutput:
+                    self.outbox = 0
         else:
             self.fired = 0
             self.outbox = 0

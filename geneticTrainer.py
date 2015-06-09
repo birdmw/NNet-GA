@@ -1,7 +1,8 @@
 from population import *
 from geneticHelper import *
-from environment import *
+from trainer import *
 from random import *
+from Tkinter import *
 import creatureGUI_2 as cg2
 
 def evolve(population, trainData, generations=3, setsPerGen=1):
@@ -11,7 +12,8 @@ def evolve(population, trainData, generations=3, setsPerGen=1):
             trainPopulation(population, trainData, setsPerGen)
             battle(population)
         prune(population)
-        mutate(population, population.repopulate())
+        mutateIDs = population.repopulate()
+        mutate(population, mutateIDs)
 
 def prune ( pop , killPercent = .50 ):
     saveIDs = list()
@@ -98,7 +100,7 @@ def judgeFitnessWithHunt(creature, trainData, cyc, tSetIndex, huntWindow):
         neuronDiffList.append(minDiff)
     avgDiff = sum(neuronDiffList)/float(len(neuronDiffList)) #and average
     return myGauss(avgDiff)
-            
+
 def arrayAbsSum(array):
     total = 0.0
     for a in array:
@@ -125,15 +127,23 @@ def myGauss(x,mu=0.0,sig=1.0):
     g = np.exp(p1/p2)
     return g
 
-def main(population = None, trainData = None): #trainData is docy() type
-    if population == None:
-        population = Population()
-    if trainData == None:
-        trainData = docy()
-        trainData.generateSin(len(population.creatureList[0].input), len(population.creatureList[0].output))
-    evolve(population, trainData, setsPerGen=1)
+def main(): #trainData is docy() type
+    root = Tk()
+    population = Population(CreatureCount=40, NeuronCount=50, InputCount=1, OutputCount=1)
+    trainData = docy()
+    #generateSinTracker(self, inputCount, outputCount, cycleCount=360, a=1, b=1, c=1, reps=1)
+    trainData.generateSinTracker(len(population.creatureList[0].input), len(population.creatureList[0].output),cycleCount=360)
+    print trainData.data
+
+    #evolve(population, trainData, generations=3, setsPerGen=1)
+    #evolve(population, trainData, generations=20, setsPerGen=1)
+
     bestCreature = findBestCreature(population)
-    cg2.main(bestCreature, trainData)
+
+    #docy.data[set][io][put][cycle]
+    gui = cg2.CreatureGUI_Beta(root,bestCreature,trainData.data[0][0])
+    root.geometry("900x500+300+300")
+    root.mainloop()
 
 
 if __name__ == "__main__":
