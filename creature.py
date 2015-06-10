@@ -4,7 +4,7 @@ from trueskill import Rating, quality_1vs1, rate_1vs1
 import creatureHelper as cHelp
 
 class Creature:
-    def __init__(self , neuronCount=100, inputCount=1, outputCount=1):
+    def __init__(self , neuronCount=10, inputCount=1, outputCount=1):
         self.neuronCount, self.inputCount, self.outputCount = neuronCount, inputCount, outputCount
         self.neuronList, self.input, self.output, self.synapseList  = [], [], [], []
         self.fitness = 0.0
@@ -84,4 +84,4 @@ def main():
 
 if __name__ == '__main__':
     main()
-'''
+

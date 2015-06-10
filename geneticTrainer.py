@@ -5,7 +5,7 @@ from random import *
 from Tkinter import *
 import creatureGUI_2 as cg2
 
-def evolve(population, trainData, generations=3, setsPerGen=1):
+def evolve(population, trainData, generations=10, setsPerGen=1):
     for G in range (generations):
         print "GENERATION: ",G
         for t in range(setsPerGen):
@@ -86,7 +86,7 @@ def trainCreature(creature, trainData, setsPerGen, tSetIndex = None, huntWindow 
     newAvgFit = sum(cycleFitnessList)/float(len(cycleFitnessList)) #then average all together for the creature
     creature.fitness = ( ( setsPerGen - 1 ) * creature.fitness + newAvgFit) / setsPerGen
 
-def judgeFitnessWithHunt(creature, trainData, cyc, tSetIndex, huntWindow):
+def judgeFitnessWithHunt(creature, trainData, cyc, tSetIndex, huntWindow=2):
     neuronDiffList = []
     for outputIndex in range(len(creature.output)): #for each output
         windowIndex = 0
@@ -129,14 +129,17 @@ def myGauss(x,mu=0.0,sig=1.0):
 
 def main(): #trainData is docy() type
     root = Tk()
-    population = Population(CreatureCount=40, NeuronCount=50, InputCount=1, OutputCount=1)
+    population = Population(CreatureCount=60, NeuronCount=10, InputCount=1, OutputCount=1)
     trainData = docy()
-    #generateSinTracker(self, inputCount, outputCount, cycleCount=360, a=1, b=1, c=1, reps=1)
+    #generateSinTracker(self, inputCount, outputCount, cycleCount=360, a=1, b=1, c=0, reps=1)
     trainData.generateSinTracker(len(population.creatureList[0].input), len(population.creatureList[0].output),cycleCount=360)
-    print trainData.data
+    print "ins"
+    print trainData.data[0][0]
+    print "outs"
+    print trainData.data[0][1]
 
     #evolve(population, trainData, generations=3, setsPerGen=1)
-    #evolve(population, trainData, generations=20, setsPerGen=1)
+    evolve(population, trainData, generations=25, setsPerGen=1)
 
     bestCreature = findBestCreature(population)
 
@@ -144,7 +147,10 @@ def main(): #trainData is docy() type
     gui = cg2.CreatureGUI_Beta(root,bestCreature,trainData.data[0][0])
     root.geometry("900x500+300+300")
     root.mainloop()
-
+    print "ins"
+    print trainData.data[0][0]
+    print "outs"
+    print trainData.data[0][1]
 
 if __name__ == "__main__":
     main()

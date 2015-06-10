@@ -21,6 +21,10 @@ class Neuron:
         if self.propertyList[0]<self.propertyList[1]:
             self.propertyList[0],self.propertyList[1] = self.propertyList[1],self.propertyList[0]
 
+        if self.isInput:
+            self.propertyList[0]=.01
+            self.propertyList[1]=-.01
+
         if len(self.inbox) != 0:
             self.avgInput = sum(self.inbox)/float(len(self.inbox))
             self.value = min(self.maxVal,max(self.avgInput+self.value,-1*self.maxVal))
