@@ -21,7 +21,7 @@ class Neuron:
         if self.propertyList[0]<self.propertyList[1]:
             self.propertyList[0],self.propertyList[1] = self.propertyList[1],self.propertyList[0]
 
-        if self.isInput:
+        if self.isInput or self.isOutput:
             self.propertyList[0]=.01
             self.propertyList[1]=-.01
 

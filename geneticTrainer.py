@@ -40,12 +40,21 @@ def prune ( pop , killPercent = .50 ):
 def mutate (pop, mutateIDs, mutateAmount = .01):
     for ID in mutateIDs:
         index = pop.IDToIndex(ID)
+
+        #on average mutate one property of one synapse
         for s in range(len(pop.creatureList[index].synapseList)):
-            for p in range(len(pop.creatureList[index].synapseList[s].propertyList)):
-                pop.creatureList[index].synapseList[s].propertyList[p] = max(min(gauss( pop.creatureList[index].synapseList[s].propertyList[p] , mutateAmount),1000),-1000)
+            #if random()< 1/len(pop.creatureList[index].synapseList):
+                for p in range(len(pop.creatureList[index].synapseList[s].propertyList)):
+                    #if random()< 1/len(pop.creatureList[index].synapseList[s].propertyList):
+                        propertyMutateAmount = p*mutateAmount
+                        pop.creatureList[index].synapseList[s].propertyList[p] = max(min(gauss( pop.creatureList[index].synapseList[s].propertyList[p] , propertyMutateAmount),1000),-1000)
+        #on average mutate one property of one neuron
         for n in range(len(pop.creatureList[index].neuronList)):
-            for p in range(len(pop.creatureList[index].neuronList[n].propertyList)):
-                pop.creatureList[index].neuronList[n].propertyList[p] = max(min(gauss( pop.creatureList[index].neuronList[n].propertyList[p] , mutateAmount),1000),-1000)
+            #if random()<1/len(pop.creatureList[index].neuronList):
+                for p in range(len(pop.creatureList[index].neuronList[n].propertyList)):
+                    #if random()<1/len(pop.creatureList[index].neuronList[n].propertyList):
+                        propertyMutateAmount = p*mutateAmount
+                        pop.creatureList[index].neuronList[n].propertyList[p] = max(min(gauss( pop.creatureList[index].neuronList[n].propertyList[p] , propertyMutateAmount),1000),-1000)
 
 def battle( pop, battles = "Random" ):
     if battles == "Random":
@@ -129,7 +138,7 @@ def myGauss(x,mu=0.0,sig=1.0):
 
 def main(): #trainData is docy() type
     root = Tk()
-    population = Population(CreatureCount=60, NeuronCount=10, InputCount=1, OutputCount=1)
+    population = Population(CreatureCount=1000, NeuronCount=15, InputCount=1, OutputCount=1)
     trainData = docy()
     #generateSinTracker(self, inputCount, outputCount, cycleCount=360, a=1, b=1, c=0, reps=1)
     trainData.generateSinTracker(len(population.creatureList[0].input), len(population.creatureList[0].output),cycleCount=360)
@@ -139,7 +148,7 @@ def main(): #trainData is docy() type
     print trainData.data[0][1]
 
     #evolve(population, trainData, generations=3, setsPerGen=1)
-    evolve(population, trainData, generations=25, setsPerGen=1)
+    evolve(population, trainData, generations=20, setsPerGen=1)
 
     bestCreature = findBestCreature(population)
 
