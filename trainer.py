@@ -42,6 +42,22 @@ class docy:
                 outputList.append(outputs)
         self.data = [[inputList, outputList]]
 
+    def generateConstant(self, inputCount, outputCount, constantIn=1, constantOut=10, cycleCount=360, reps=1):
+        inputList, outputList = [] , []
+        inputs , outputs = [] , []
+        for x in range(int(cycleCount * reps)):
+                valin = constantIn
+                valout = constantOut
+                #valout=valin
+                inputs.append(valin)
+                outputs.append(valout)
+        for y in range(inputCount):
+                inputList.append(inputs)
+        for z in range(outputCount):
+                outputList.append(outputs)
+        self.data = [[inputList, outputList]]
+
+
 def arrayAbsSum(array):
     total = 0.0
     for a in array:

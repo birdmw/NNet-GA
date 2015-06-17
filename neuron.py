@@ -22,11 +22,11 @@ class Neuron:
             self.propertyList[0],self.propertyList[1] = self.propertyList[1],self.propertyList[0]
 
         if self.isInput or self.isOutput:
-            self.propertyList[0]=.01
-            self.propertyList[1]=-.01
+            self.propertyList[0]=.001
+            self.propertyList[1]=-.001
 
         if len(self.inbox) != 0:
-            self.avgInput = sum(self.inbox)/float(len(self.inbox))
+            self.avgInput = sum(self.inbox)#/float(len(self.inbox))
             self.value = min(self.maxVal,max(self.avgInput+self.value,-1*self.maxVal))
 
         if (self.value >= self.propertyList[0]):
@@ -54,3 +54,11 @@ class Neuron:
 
         if not self.isInput:
             self.inbox = []
+
+    def setNeuronInput(self,value):
+        #print "setting neuron input   ", value 
+        self.inbox = [value]
+        if self.inbox < .5 and self.inbox>-.5:
+            print self.inbox
+        if value != self.inbox[0]:
+            print "not same"

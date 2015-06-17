@@ -299,8 +299,10 @@ class CreatureGUI_Beta(Frame):
         for i in range(len(self.inputPatterns)):
             if self.patternPosition[i] >= len(self.inputPatterns[i]):
                 self.patternPosition[i] = 0
-            print [self.inputPatterns[i][self.patternPosition[i]]]
-            self.myCreature.input[i].inbox = [self.inputPatterns[i][self.patternPosition[i]]]
+            #print [self.inputPatterns[i][self.patternPosition[i]]]
+            #self.myCreature.input[i].inbox = [self.inputPatterns[i][self.patternPosition[i]]]
+            #print self.inputPatterns[i][self.patternPosition[i]]
+            self.myCreature.setInputs([self.inputPatterns[i][self.patternPosition[i]]])
             self.patternPosition[i] += 1
 
         self.myCreature.run()

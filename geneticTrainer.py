@@ -4,11 +4,13 @@ from trainer import *
 from random import *
 from Tkinter import *
 import creatureGUI_2 as cg2
+from trueskill import Rating, quality_1vs1, rate_1vs1
 
 def evolve(population, trainData, generations=10, setsPerGen=1):
     for G in range (generations):
         print "GENERATION: ",G
         for t in range(setsPerGen):
+            print "  set: ", t
             trainPopulation(population, trainData, setsPerGen)
             battle(population)
         prune(population)
@@ -16,45 +18,54 @@ def evolve(population, trainData, generations=10, setsPerGen=1):
         mutate(population, mutateIDs)
 
 def prune ( pop , killPercent = .50 ):
+    #print "before prune statistics:"
+    #pop.printAverages()
     saveIDs = list()
-    saveCount = len ( pop.creatureList ) * max(min(1.0-killPercent,1.0),0.0)
+    saveCount = int(len ( pop.creatureList ) * max(min(1.0-killPercent,1.0),0.0))
     while len(saveIDs) < (saveCount):
         pop.creatureList.sort(key = lambda x: x.ELO.mu, reverse=True)
         i=0
         while (pop.creatureList[i].ID in saveIDs):
             i+=1
         saveIDs.append(pop.creatureList[i].ID)
+        '''#saveTheChildren
+        pop.creatureList.sort(key = lambda x: x.ELO.sigma, reverse=True)
         if len(saveIDs) < (saveCount):
-            pop.creatureList.sort(key = lambda x: x.ELO.sigma, reverse=True)
             i=0
             while (pop.creatureList[i].ID in saveIDs):
                 i+=1
             saveIDs.append(pop.creatureList[i].ID)
+        '''
     finalCreatureList = []
     for creature in pop.creatureList:
       if (creature.ID in saveIDs):
         finalCreatureList.append(creature)
     pop.creatureList = finalCreatureList
     pop.sortByID()
+    #print "after prune statistics:"
+    #pop.printAverages()
 
 def mutate (pop, mutateIDs, mutateAmount = .01):
+
     for ID in mutateIDs:
         index = pop.IDToIndex(ID)
 
         #on average mutate one property of one synapse
         for s in range(len(pop.creatureList[index].synapseList)):
-            #if random()< 1/len(pop.creatureList[index].synapseList):
+            if random()< 1/len(pop.creatureList[index].synapseList):
                 for p in range(len(pop.creatureList[index].synapseList[s].propertyList)):
-                    #if random()< 1/len(pop.creatureList[index].synapseList[s].propertyList):
+                    if random()< 1/len(pop.creatureList[index].synapseList[s].propertyList):
                         propertyMutateAmount = p*mutateAmount
                         pop.creatureList[index].synapseList[s].propertyList[p] = max(min(gauss( pop.creatureList[index].synapseList[s].propertyList[p] , propertyMutateAmount),1000),-1000)
         #on average mutate one property of one neuron
         for n in range(len(pop.creatureList[index].neuronList)):
-            #if random()<1/len(pop.creatureList[index].neuronList):
+            if random()<1/len(pop.creatureList[index].neuronList):
                 for p in range(len(pop.creatureList[index].neuronList[n].propertyList)):
-                    #if random()<1/len(pop.creatureList[index].neuronList[n].propertyList):
+                    if random()<1/len(pop.creatureList[index].neuronList[n].propertyList):
                         propertyMutateAmount = p*mutateAmount
                         pop.creatureList[index].neuronList[n].propertyList[p] = max(min(gauss( pop.creatureList[index].neuronList[n].propertyList[p] , propertyMutateAmount),1000),-1000)
+    print "after mutate statistics:"
+    pop.printAverages()
 
 def battle( pop, battles = "Random" ):
     if battles == "Random":
@@ -72,11 +83,11 @@ def updateELO( creature1, creature2 ):
     else:
         creature1.ELO, creature2.ELO = rate_1vs1(creature1.ELO,creature2.ELO, drawn=True)
 
-def trainPopulation(pop, trainData, setsPerGen, tSetIndex = None):
-    for c in pop.creatureList:
-        trainCreature(c, trainData, setsPerGen)
+def trainPopulation(population, trainData, setsPerGen, tSetIndex = None):
+    for c in range(len(population.creatureList)):
+        trainCreature(population, c, trainData, setsPerGen)
 
-def trainCreature(creature, trainData, setsPerGen, tSetIndex = None, huntWindow = 4):
+def trainCreature(population, c, trainData, setsPerGen, tSetIndex = None, huntWindow = 4):
     #accepts a creature and a training set
     #runs the creature for the length of the dataset
     #sets the creatures fitness using hunt
@@ -87,13 +98,14 @@ def trainCreature(creature, trainData, setsPerGen, tSetIndex = None, huntWindow 
         tSet = trainData.data[tSetIndex]
     cycleFitnessList = []
     creatureOutputArray = []
-    for cyc in range(len(tSet[1][0])): #for each cycle
-        for inp in range(len(tSet[0])): #set the inputs
-            creature.input[inp].inbox = [tSet[0][inp][cyc]]
-        creature.run(1)
-        cycleFitnessList.append( judgeFitnessWithHunt( creature, trainData, cyc, tSetIndex, huntWindow ) ) #judge
+    for cyc in range(len(tSet[1][0])): # for each cycle
+        inputs = []
+        for i in range(len(tSet[0])): # for each input
+            inputs.append(tSet[0][i][cyc]) # make a list of input neuron inputs
+        population.creatureList[c].run(1, inputs) #
+        cycleFitnessList.append( judgeFitnessWithHunt( population.creatureList[c] , trainData, cyc, tSetIndex, huntWindow ) ) #judge
     newAvgFit = sum(cycleFitnessList)/float(len(cycleFitnessList)) #then average all together for the creature
-    creature.fitness = ( ( setsPerGen - 1 ) * creature.fitness + newAvgFit) / setsPerGen
+    population.creatureList[c].fitness = ( ( setsPerGen - 1 ) * population.creatureList[c].fitness + newAvgFit) / setsPerGen
 
 def judgeFitnessWithHunt(creature, trainData, cyc, tSetIndex, huntWindow=2):
     neuronDiffList = []
@@ -138,17 +150,18 @@ def myGauss(x,mu=0.0,sig=1.0):
 
 def main(): #trainData is docy() type
     root = Tk()
-    population = Population(CreatureCount=50, NeuronCount=7, InputCount=1, OutputCount=1)
+    population = Population(CreatureCount=100, NeuronCount=8, InputCount=1, OutputCount=1)
     trainData = docy()
     #generateSinTracker(self, inputCount, outputCount, cycleCount=360, a=1, b=1, c=0, reps=1)
-    trainData.generateSinTracker(len(population.creatureList[0].input), len(population.creatureList[0].output),cycleCount=360)
+    #trainData.generateSinTracker(len(population.creatureList[0].input), len(population.creatureList[0].output),cycleCount=360)
+    trainData.generateConstant(len(population.creatureList[0].input), len(population.creatureList[0].output), constantIn=1, constantOut=5)
     print "ins"
     print trainData.data[0][0]
     print "outs"
     print trainData.data[0][1]
 
     #evolve(population, trainData, generations=3, setsPerGen=1)
-    evolve(population, trainData, generations=20, setsPerGen=1)
+    evolve(population, trainData, generations=4, setsPerGen=1)
 
     bestCreature = findBestCreature(population)
 
