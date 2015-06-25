@@ -138,17 +138,19 @@ def myGauss(x,mu=0.0,sig=1.0):
 
 def main(): #trainData is docy() type
     root = Tk()
-    population = Population(CreatureCount=1000, NeuronCount=15, InputCount=1, OutputCount=1)
+    print 'making babehs'
+    population = Population(CreatureCount=1000, NeuronCount=20, InputCount=1, OutputCount=1)
+    print 'docy-mentation'
     trainData = docy()
     #generateSinTracker(self, inputCount, outputCount, cycleCount=360, a=1, b=1, c=0, reps=1)
-    trainData.generateSinTracker(len(population.creatureList[0].input), len(population.creatureList[0].output),cycleCount=360)
+    trainData.generateSinTracker(len(population.creatureList[0].input), len(population.creatureList[0].output),cycleCount=45, b=8)
     print "ins"
     print trainData.data[0][0]
     print "outs"
     print trainData.data[0][1]
 
     #evolve(population, trainData, generations=3, setsPerGen=1)
-    evolve(population, trainData, generations=20, setsPerGen=1)
+    evolve(population, trainData, generations=75, setsPerGen=1)
 
     bestCreature = findBestCreature(population)
 
