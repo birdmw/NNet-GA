@@ -488,7 +488,10 @@ class CreatureGUI_Beta(Frame):
 ##            elif neuron.value > neurThreshold:
 ##                percVal=((.5/(topPt-neurThreshold))*(neuron.value-neurThreshold)+1)
             else:
-                percVal = (1.0/(topPt-botPt))*(neuron.value-botPt)
+                if topPt == botPt:
+                    percVal = 1
+                else:
+                    percVal = (1.0/(topPt-botPt))*(neuron.value-botPt)
         else:
             neurThreshold=neuron.propertyList[0]
 
@@ -1320,7 +1323,10 @@ class NeuroloScope(Frame):
             elif neuron.value > neurThreshold:
                 percVal=((.5/(topPt-neurThreshold))*(neuron.value-neurThreshold)+1)
             else:
-                percVal = (1.0/(neurThreshold-botPt))*(neuron.value-botPt)
+                if neurThreshold == botPt:
+                    perVal = 1
+                else:
+                    percVal = (1.0/(neurThreshold-botPt))*(neuron.value-botPt)
 
         percVal=percVal*100
         return percVal

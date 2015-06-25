@@ -32,3 +32,19 @@ class Synapse:
             #self.output = self.propertyList[0] * self.n1.outbox
             #self.output = 0
             self.n2.inbox.append(self.output)
+
+class DummySynapse:
+    def __init__(self, n1, n2, neuronCount, ID=0):
+        self.a = 1
+        self.n1, self.n2 = n1, n2
+        self.propertyList=[self.a]
+        #self.propertyList=[self.a]
+        self.output = self.n1.outbox
+        self.prevOutput = self.output
+        self.ID = ID
+
+    def run(self):
+        if self.n1.isOutput == 0 and self.n2.isInput == 0: #If not an input and not an output
+            self.prevOutput = self.output
+            self.output = self.n1.outbox
+            self.n2.inbox.append(self.output)

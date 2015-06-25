@@ -6,13 +6,13 @@ from Tkinter import *
 import creatureGUI_2 as cg2
 from trueskill import Rating, quality_1vs1, rate_1vs1
 
-def evolve(population, trainData, generations=10, setsPerGen=1):
+def evolve(population, trainData, generations=10, setsPerGen=1,battles = "Random"):
     for G in range (generations):
         print "GENERATION: ",G
         for t in range(setsPerGen):
             print "  set: ", t
             trainPopulation(population, trainData, setsPerGen)
-            battle(population)
+            battle(population,battles)
         prune(population)
         mutateIDs = population.repopulate()
         mutate(population, mutateIDs)
@@ -85,7 +85,7 @@ def updateELO( creature1, creature2 ):
 
 def trainPopulation(population, trainData, setsPerGen, tSetIndex = None):
     for c in range(len(population.creatureList)):
-        trainCreature(population, c, trainData, setsPerGen)
+        trainCreature(population, c, trainData, setsPerGen, tSetIndex)
 
 def trainCreature(population, c, trainData, setsPerGen, tSetIndex = None, huntWindow = 4):
     #accepts a creature and a training set
@@ -150,18 +150,18 @@ def myGauss(x,mu=0.0,sig=1.0):
 
 def main(): #trainData is docy() type
     root = Tk()
-    population = Population(CreatureCount=100, NeuronCount=8, InputCount=1, OutputCount=1)
+    population = Population(CreatureCount=4000, NeuronCount=15, InputCount=1, OutputCount=1)
     trainData = docy()
     #generateSinTracker(self, inputCount, outputCount, cycleCount=360, a=1, b=1, c=0, reps=1)
-    #trainData.generateSinTracker(len(population.creatureList[0].input), len(population.creatureList[0].output),cycleCount=360)
-    trainData.generateConstant(len(population.creatureList[0].input), len(population.creatureList[0].output), constantIn=1, constantOut=5)
+    trainData.generateSinTracker(len(population.creatureList[0].input), len(population.creatureList[0].output),cycleCount=45,a=1,b=8,c=0)
+    #trainData.generateConstant(len(population.creatureList[0].input), len(population.creatureList[0].output), constantIn=1, constantOut=5)
     print "ins"
     print trainData.data[0][0]
     print "outs"
     print trainData.data[0][1]
 
     #evolve(population, trainData, generations=3, setsPerGen=1)
-    evolve(population, trainData, generations=4, setsPerGen=1)
+    evolve(population, trainData, generations=2, setsPerGen=1,battles=150000)
 
     bestCreature = findBestCreature(population)
 

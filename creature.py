@@ -50,7 +50,60 @@ class Creature:
         for n in range(len(self.neuronList)):
             if self.neuronList[n].isInput == 1:
                 self.neuronList[n].setNeuronInput(inputs[n])
-                
+
+
+class DummyCreature:
+    def __init__(self , neuronCount=10, inputCount=1, outputCount=1):
+        self.neuronCount, self.inputCount, self.outputCount = neuronCount, inputCount, outputCount
+        self.neuronList, self.input, self.output, self.synapseList  = [], [], [], []
+        self.fitness = 0.0
+        self.ELO = Rating()
+        self.ID = ''
+
+        #MAKE NEURONS
+        for n in range(self.neuronCount):
+            self.neuronList.append(DummyNeuron(n))
+        for i in range (self.inputCount):
+            self.input.append(self.neuronList[i])
+            self.input[-1].isInput = 1
+        for o in range (self.outputCount):
+            self.output.append(self.neuronList[self.neuronCount - self.outputCount + o])
+            self.output[-1].isOutput = 1
+
+        #MAKE SYNAPSES
+        createdSynapses = 0
+        for n1 in self.neuronList:
+            for n2 in self.neuronList:
+                if not(n1 in self.output) and not(n2 in self.input ):
+                    self.synapseList.append( DummySynapse(n1, n2, len(self.neuronList),createdSynapses ) )
+                    n2.synapseList.append(self.synapseList[-1])
+                    n2.inputSynapseCount += 1
+                    createdSynapses+=1
+
+    def run( self, cycles = 1, inputs = [0], ForceTracking = True ): #no cycles or population, that info is internal to creature now
+        self.setInputs(inputs)
+        for c in range( cycles ):
+            for n in self.neuronList:
+                n.run()
+            for s in self.synapseList:
+                s.run()
+        if ForceTracking:
+            self.bypassNet(inputs)
+
+    def setInputs(self, inputs):
+        for n in range(len(self.input)):
+            self.input[n].setNeuronInput(inputs[n])
+##
+##        for n in range(len(self.neuronList)):
+##            if self.neuronList[n].isInput == 1:
+##                self.neuronList[n].setNeuronInput(inputs[n])
+
+    def bypassNet(self,outputs):
+        inputList = []
+        for n in range(len(self.output)):
+            self.output[n].setNeuronInput(outputs[n])
+
+
 
 def main():
     neuronCount = 17
