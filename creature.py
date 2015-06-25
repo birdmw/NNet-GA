@@ -31,12 +31,26 @@ class Creature:
                     n2.inputSynapseCount += 1
                     createdSynapses+=1
 
-    def run( self, cycles = 1 ): #no cycles or population, that info is internal to creature now
-        for c in range( cycles ):
-            for n in self.neuronList:
-                n.run()
-            for s in self.synapseList:
-                s.run()
+    def run( self, cycles = 1, inputs = None ): #no cycles or population, that info is internal to creature now
+        if inputs == None:
+            for c in range( cycles ):
+                for n in self.neuronList:
+                    n.run()
+                for s in self.synapseList:
+                    s.run()
+        else: #inputs is passed
+            self.setInputs(inputs)
+            for c in range( cycles ):
+                for n in self.neuronList:
+                    n.run()
+                for s in self.synapseList:
+                    s.run()
+
+    def setInputs(self, inputs):
+        for n in range(len(self.neuronList)):
+            if self.neuronList[n].isInput == 1:
+                self.neuronList[n].setNeuronInput(inputs[n])
+                
 
 def main():
     neuronCount = 17

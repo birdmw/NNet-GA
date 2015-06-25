@@ -24,10 +24,13 @@ class Population:
               self.issueID += 1
 
     def repopulate(self, matePercent = .25, asexualChance = 0.1):#returns a list of IDs for children spawned asexually
+        print "before repop statistics:"
+        self.printAverages()
+
         newCreatureIDList = []
         nonBreederIDs = []
         creatureCount = len ( self.creatureList )
-        nonBreederCount = creatureCount * int(max(min(1-matePercent,1.0),0.0))
+        nonBreederCount = int(creatureCount * max(min(1-matePercent,1.0),0.0))
 
         #BUILD A LIST OF IDs FOR NON BREEDERS
         while len(nonBreederIDs) < (nonBreederCount):
@@ -36,14 +39,14 @@ class Population:
             while (self.creatureList[i].ID in nonBreederIDs):
                 i+=1
             nonBreederIDs.append(self.creatureList[i].ID)
-
+            '''#save the children
             if len(nonBreederIDs) < (nonBreederCount):
                 self.creatureList.sort(key = lambda x: x.ELO.sigma, reverse=True)
                 i=0
                 while (self.creatureList[i].ID in nonBreederIDs):
                     i+=1
                 nonBreederIDs.append(self.creatureList[i].ID)
-
+            '''
         #FIND PARENTS FROM BREEDERS
 
         #LOOP OVER THIS##################################################
@@ -76,16 +79,19 @@ class Population:
                 asexualOffspringList.append(child.ID)
             self.creatureList.append( child )
         self.sortByID()
+        print "after repop:"
+        self.printAverages()
+
         return asexualOffspringList
 
     def mate (self, mother, father):
         child = Creature( self.neuronCount, self.inputCount, self.outputCount  )
-        for nInd in range(len(child.neuronList)):
+        for nInd in range(len(mother.neuronList)):
                 if getrandbits(1):
                     child.neuronList[nInd] = father.neuronList[nInd]
                 else:
                     child.neuronList[nInd] = mother.neuronList[nInd]
-        for sInd in range(len(child.synapseList)):
+        for sInd in range(len(mother.synapseList)):
                 if getrandbits(1):
                     child.synapseList[sInd] = father.synapseList[sInd]
                 else:
@@ -103,6 +109,19 @@ class Population:
 
     def sortByID( self ):
         self.creatureList.sort(key = lambda x: x.ID, reverse=False)
+
+    def printAverages( self ):
+        avgFitness = 0.0
+        avgMu = 0.0
+        avgSigma = 0.0
+        for c in self.creatureList:
+            avgFitness += c.fitness
+            avgMu += c.ELO.mu
+            avgSigma += c.ELO.sigma
+        avgFitness = avgFitness / len(self.creatureList)
+        avgMu = avgMu / len(self.creatureList)
+        avgSigma = avgSigma / len(self.creatureList)
+        print "AvgFitness: ",avgFitness," AvgMu: ",avgMu," AvgSigma: ",avgSigma
 
     #MAKE DICTIONARY FOR ID VS INDEX
     def IDToIndex (self, ID):
