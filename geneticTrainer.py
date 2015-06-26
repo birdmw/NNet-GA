@@ -69,7 +69,7 @@ def mutate (pop, mutateIDs, mutateAmount = .01):
 
 def battle( pop, battles = "Random" ):
     if battles == "Random":
-        battles = min(int(random()*len(pop.creatureList)**2),10000)
+        battles = min(int(len(pop.creatureList)/2+(random()*len(pop.creatureList)**2)),10000)
     for b in range(battles):
         creature1 = choice( pop.creatureList )
         creature2 = choice( pop.creatureList )
@@ -150,7 +150,7 @@ def myGauss(x,mu=0.0,sig=1.0):
 
 def main(): #trainData is docy() type
     root = Tk()
-    population = Population(CreatureCount=4000, NeuronCount=15, InputCount=1, OutputCount=1)
+    population = Population(CreatureCount=1000, NeuronCount=7, InputCount=1, OutputCount=1)
     trainData = docy()
     #generateSinTracker(self, inputCount, outputCount, cycleCount=360, a=1, b=1, c=0, reps=1)
     trainData.generateSinTracker(len(population.creatureList[0].input), len(population.creatureList[0].output),cycleCount=45,a=1,b=8,c=0)
@@ -160,8 +160,8 @@ def main(): #trainData is docy() type
     print "outs"
     print trainData.data[0][1]
 
-    #evolve(population, trainData, generations=3, setsPerGen=1)
-    evolve(population, trainData, generations=2, setsPerGen=1,battles=150000)
+    #evolve(population, trainData, generations=3, setsPerGen=1,battles = "Random")
+    evolve(population, trainData, generations=2, setsPerGen=1,battles= "Random")
 
     bestCreature = findBestCreature(population)
 
