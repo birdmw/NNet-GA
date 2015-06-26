@@ -18,8 +18,8 @@ def evolve(population, trainData, generations=10, setsPerGen=1,battles = "Random
         mutate(population, mutateIDs)
 
 def prune ( pop , killPercent = .50 ):
-    #print "before prune statistics:"
-    #pop.printAverages()
+    print "before prune statistics:"
+    pop.printAverages()
     saveIDs = list()
     saveCount = int(len ( pop.creatureList ) * max(min(1.0-killPercent,1.0),0.0))
     while len(saveIDs) < (saveCount):
@@ -28,22 +28,22 @@ def prune ( pop , killPercent = .50 ):
         while (pop.creatureList[i].ID in saveIDs):
             i+=1
         saveIDs.append(pop.creatureList[i].ID)
-        '''#saveTheChildren
+        #saveTheChildren
         pop.creatureList.sort(key = lambda x: x.ELO.sigma, reverse=True)
         if len(saveIDs) < (saveCount):
             i=0
             while (pop.creatureList[i].ID in saveIDs):
                 i+=1
             saveIDs.append(pop.creatureList[i].ID)
-        '''
+
     finalCreatureList = []
     for creature in pop.creatureList:
       if (creature.ID in saveIDs):
         finalCreatureList.append(creature)
     pop.creatureList = finalCreatureList
     pop.sortByID()
-    #print "after prune statistics:"
-    #pop.printAverages()
+    print "after prune statistics:"
+    pop.printAverages()
 
 def mutate (pop, mutateIDs, mutateAmount = .01):
 
@@ -85,7 +85,8 @@ def updateELO( creature1, creature2 ):
 
 def trainPopulation(population, trainData, setsPerGen, tSetIndex = None):
     for c in range(len(population.creatureList)):
-        trainCreature(population, c, trainData, setsPerGen, tSetIndex)
+        #trainCreature(population, c, trainData, setsPerGen, tSetIndex)
+        trainCreature_InvertedAbsDist(population, c, trainData, setsPerGen, tSetIndex)
 
 def trainCreature(population, c, trainData, setsPerGen, tSetIndex = None, huntWindow = 4):
     #accepts a creature and a training set
@@ -107,6 +108,39 @@ def trainCreature(population, c, trainData, setsPerGen, tSetIndex = None, huntWi
     newAvgFit = sum(cycleFitnessList)/float(len(cycleFitnessList)) #then average all together for the creature
     population.creatureList[c].fitness = ( ( setsPerGen - 1 ) * population.creatureList[c].fitness + newAvgFit) / setsPerGen
 
+
+def trainCreature_InvertedAbsDist(population, c, trainData, setsPerGen, tSetIndex = None):
+
+
+    #!!!!!!!!!!!!!!!!!!!WARNING ONLY WORKS WITH ONE TRAINING SET!!!!!!!!!!!
+
+
+    #accepts a creature and a training set
+    #runs the creature for the length of the dataset
+    #sets the creatures fitness using hunt
+    if tSetIndex == None:
+        tSet = trainData.randomSet()
+        tSetIndex = trainData.data.index(tSet)
+    else:
+        tSet = trainData.data[tSetIndex]
+    totalFitness = 0
+    creatureOutputArray = []
+    cycles =len(tSet[1][0])
+    if cycles == 0:
+        print 'AHHHH NO VALUES IN DOCY OUTPUT AHHHHHHHHHHHHHHHHHHHHHHHHHHHHH'
+        return
+    for cyc in range(cycles): # for each cycle
+        inputs = []
+        for i in range(len(tSet[0])): # for each input
+            inputs.append(tSet[0][i][cyc]) # make a list of input neuron inputs
+
+        population.creatureList[c].run(1, inputs) #
+        totalFitness+=judgeCycleFitnessInvertedAbsDistance(population.creatureList[c] , trainData, cyc, tSetIndex)
+
+    newAvgFit = totalFitness/cycles
+    population.creatureList[c].fitness = newAvgFit
+
+
 def judgeFitnessWithHunt(creature, trainData, cyc, tSetIndex, huntWindow=2):
     neuronDiffList = []
     for outputIndex in range(len(creature.output)): #for each output
@@ -121,6 +155,13 @@ def judgeFitnessWithHunt(creature, trainData, cyc, tSetIndex, huntWindow=2):
         neuronDiffList.append(minDiff)
     avgDiff = sum(neuronDiffList)/float(len(neuronDiffList)) #and average
     return myGauss(avgDiff)
+
+def judgeCycleFitnessInvertedAbsDistance(creature, trainData, cyc, tSetIndex):
+    neuronDiffList = []
+    totalDiff=1 #Minimum distance is one (Prevents divide by zero, and infinity fitness
+    for outputIndex in range(len(creature.output)): #for each output
+        totalDiff += abs(creature.output[outputIndex].outbox - trainData.data[tSetIndex][1][outputIndex][cyc])
+    return 1/totalDiff
 
 def arrayAbsSum(array):
     total = 0.0
@@ -150,10 +191,14 @@ def myGauss(x,mu=0.0,sig=1.0):
 
 def main(): #trainData is docy() type
     root = Tk()
-    population = Population(CreatureCount=1000, NeuronCount=7, InputCount=1, OutputCount=1)
+    population = DummyPopulation(CreatureCount=40, NeuronCount=7, InputCount=1, OutputCount=1)
     trainData = docy()
     #generateSinTracker(self, inputCount, outputCount, cycleCount=360, a=1, b=1, c=0, reps=1)
-    trainData.generateSinTracker(len(population.creatureList[0].input), len(population.creatureList[0].output),cycleCount=45,a=1,b=8,c=0)
+    cycleCount=360
+    a=1
+    b=1
+    c=0
+    trainData.generateSinTracker(len(population.creatureList[0].input), len(population.creatureList[0].output),cycleCount,a,b,c)
     #trainData.generateConstant(len(population.creatureList[0].input), len(population.creatureList[0].output), constantIn=1, constantOut=5)
     print "ins"
     print trainData.data[0][0]
@@ -161,7 +206,7 @@ def main(): #trainData is docy() type
     print trainData.data[0][1]
 
     #evolve(population, trainData, generations=3, setsPerGen=1,battles = "Random")
-    evolve(population, trainData, generations=2, setsPerGen=1,battles= "Random")
+    evolve(population, trainData, generations=5, setsPerGen=1,battles= 2000)
 
     bestCreature = findBestCreature(population)
 

@@ -170,14 +170,14 @@ class CreatureGUI:
 
 def main():
 
-    neuronCount =16
+    neuronCount =5
 
     inputCount = 1
     outputCount = 1
     MaxCycles = 1
 
 
-    demoCreature = Creature(neuronCount, inputCount, outputCount,MaxCycles)
+    demoCreature = Creature(neuronCount, inputCount, outputCount)
     demoCreature.expectedOutputs = [1]
 
     CGUI = CreatureGUI(demoCreature)

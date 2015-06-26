@@ -10,6 +10,8 @@ class Creature:
         self.fitness = 0.0
         self.ELO = Rating()
         self.ID = ''
+        self.age = 0
+        self.battleCount = 0
 
         #MAKE NEURONS
         for n in range(self.neuronCount):
@@ -50,6 +52,8 @@ class Creature:
         for n in range(len(self.neuronList)):
             if self.neuronList[n].isInput == 1:
                 self.neuronList[n].setNeuronInput(inputs[n])
+            else:
+                break
 
 
 class DummyCreature:
@@ -59,6 +63,7 @@ class DummyCreature:
         self.fitness = 0.0
         self.ELO = Rating()
         self.ID = ''
+        self.offset = random()*2-1
 
         #MAKE NEURONS
         for n in range(self.neuronCount):
@@ -82,6 +87,7 @@ class DummyCreature:
 
     def run( self, cycles = 1, inputs = [0], ForceTracking = True ): #no cycles or population, that info is internal to creature now
         self.setInputs(inputs)
+
         for c in range( cycles ):
             for n in self.neuronList:
                 n.run()
@@ -91,36 +97,48 @@ class DummyCreature:
             self.bypassNet(inputs)
 
     def setInputs(self, inputs):
-        for n in range(len(self.input)):
-            self.input[n].setNeuronInput(inputs[n])
-##
-##        for n in range(len(self.neuronList)):
-##            if self.neuronList[n].isInput == 1:
-##                self.neuronList[n].setNeuronInput(inputs[n])
+##        for n in range(len(self.input)):
+##            self.input[n].setNeuronInput(inputs[n])
+
+        for n in range(len(self.neuronList)):
+            if self.neuronList[n].isInput == 1:
+                self.neuronList[n].setNeuronInput(inputs[n])
+            else:
+                break
 
     def bypassNet(self,outputs):
         inputList = []
-        for n in range(len(self.output)):
-            self.output[n].setNeuronInput(outputs[n])
+##        for n in range(len(self.output)):
+##            self.output[n].setNeuronInput(outputs[n]+self.offset)
+
+        index = len(self.neuronList)-1
+        for n in range(len(self.neuronList)):
+            if self.neuronList[index-n].isOutput == 1:
+                self.neuronList[index-n].setNeuronInput(outputs[-1*n-1]+self.offset)
+            else:
+                break
 
 
 
 def main():
-    neuronCount = 17
-    inputCount =3
-    outputCount = 5
-    inputSet=[]
+    neuronCount = 5
+    inputCount = 1
+    outputCount = 1
+    cycles = 100
+    inputSets=[]
     for i in range(inputCount):
-        inputSet.append(randint(0,10))
+        inputSets.append([])
+        for c in range(cycles):
+            inputSets[-1].append(2*random()-1)
 
-    demoCreature = Creature(neuronCount, inputCount, outputCount)
+    #demoCreature = Creature(neuronCount, inputCount, outputCount)
+    demoCreature = DummyCreature(neuronCount, inputCount, outputCount)
     for i in range(len(inputSet)):
         demoCreature.input[i].inbox = [inputSet[i]]
 
     demoCreature.ID = randint(0,1000)
 ##    filename = r'C:\Users\chris.nelson\Desktop\NNet\CreatureDebugging\bestie4lyfe_2015_2_17_12_17_35'
 ##    demoCreature = load_creature(filename)
-
 
     print 'Creature Description:'
     print '  Number of neurons:',len(demoCreature.neuronList)

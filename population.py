@@ -168,14 +168,14 @@ class DummyPopulation:
             while (self.creatureList[i].ID in nonBreederIDs):
                 i+=1
             nonBreederIDs.append(self.creatureList[i].ID)
-            '''#save the children
+            #save the children
             if len(nonBreederIDs) < (nonBreederCount):
                 self.creatureList.sort(key = lambda x: x.ELO.sigma, reverse=True)
                 i=0
                 while (self.creatureList[i].ID in nonBreederIDs):
                     i+=1
                 nonBreederIDs.append(self.creatureList[i].ID)
-            '''
+
         #FIND PARENTS FROM BREEDERS
 
         #LOOP OVER THIS##################################################

@@ -40,6 +40,7 @@ class CreatureGUI_Beta(Frame):
         self.parent = parent
         self.myCreature = Creature
         self.inputPatterns = inputPatterns
+        print 'self.inputPatterns in gui init',self.inputPatterns
         self.patternPosition = []
         for i in range(len(self.inputPatterns)):
             self.patternPosition.append(0)
@@ -266,6 +267,7 @@ class CreatureGUI_Beta(Frame):
                 self.myCreature.input[i].inbox = [inputSet[i][0]]
 
             self.inputPatterns = inputSet
+            print 'self.inputPatterns in onOpen',self.inputPatterns
             self.patternPosition = []
             for i in range(len(self.inputPatterns)):
                 self.patternPosition.append(0)
