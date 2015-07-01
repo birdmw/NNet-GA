@@ -40,7 +40,7 @@ class CreatureGUI_Beta(Frame):
         self.parent = parent
         self.myCreature = Creature
         self.inputPatterns = inputPatterns
-        print 'self.inputPatterns in gui init',self.inputPatterns
+##        print 'self.inputPatterns in gui init',self.inputPatterns
         self.patternPosition = []
         for i in range(len(self.inputPatterns)):
             self.patternPosition.append(0)
@@ -298,16 +298,23 @@ class CreatureGUI_Beta(Frame):
         self.stopRunning = 1
 
     def stepCreature(self):
-        for i in range(len(self.inputPatterns)):
-            if self.patternPosition[i] >= len(self.inputPatterns[i]):
-                self.patternPosition[i] = 0
+##        for i in range(len(self.inputPatterns)):
+##            if self.patternPosition[i] >= len(self.inputPatterns[i]):
+##                self.patternPosition[i] = 0
             #print [self.inputPatterns[i][self.patternPosition[i]]]
             #self.myCreature.input[i].inbox = [self.inputPatterns[i][self.patternPosition[i]]]
             #print self.inputPatterns[i][self.patternPosition[i]]
-            self.myCreature.setInputs([self.inputPatterns[i][self.patternPosition[i]]])
-            self.patternPosition[i] += 1
 
-        self.myCreature.run()
+
+##            self.myCreature.setInputs([self.inputPatterns[i][self.patternPosition[i]]])
+##            self.patternPosition[i] += 1
+
+        if self.patternPosition[0] >= len(self.inputPatterns[0])-1:
+            self.patternPosition[0] = 0
+        else:
+            self.patternPosition[0]+=1
+        #run( self, cycles = 1, inputs = [0], ForceTracking = True )
+        self.myCreature.run(1, [self.inputPatterns[0][self.patternPosition[0]]])
         self.updateVars()
         if self.myScope != None:
             self.myScope.scopeUpdateVars()
@@ -1310,6 +1317,8 @@ class NeuroloScope(Frame):
                 percVal = 0.0
 ##            elif neuron.value > neurThreshold:
 ##                percVal=((.5/(topPt-neurThreshold))*(neuron.value-neurThreshold)+1)
+            elif topPt == botPt:
+                percVal = 1
             else:
                 percVal = (1.0/(topPt-botPt))*(neuron.value-botPt)
         else:
@@ -1365,34 +1374,46 @@ def main():
 ##    neuronCount =100
 ##    inputCount =20
 ##    outputCount = 10
-    neuronCount =100
-    inputCount =10
-    outputCount = 10
+    neuronCount =10
+    inputCount =1
+    outputCount = 1
     MaxCycles = 1
     patternLength=10
     inputSet=[]
 ##    expOut=[]
-    for i in range(inputCount):
-        inputSet.append([])
-        amp = randint(1,10)
-        for j in range(patternLength):
-            #inputSet[-1].append(randint(0,10))
-            inputSet[-1].append(sin((pi*j)/patternLength)*amp)
-            #inputSet[-1].append(0)
-##
+##    for i in range(inputCount):
+##        inputSet.append([])
+##        amp = randint(1,10)
+##        for j in range(patternLength):
+##            #inputSet[-1].append(randint(0,10))
+##            inputSet[-1].append(sin((pi*j)/patternLength)*amp)
+##            #inputSet[-1].append(0)
+####
 ##    for o in range(outputCount):
 ##        expOut.append(randint(0,10))
+    trainData = docy()
+    cycleCount=360
+    a=1
+    b=1
+    c=0
+    trainData.generateSinTracker(inputCount, outputCount,cycleCount,a,b,c)
+    #trainData.generateConstant(len(population.creatureList[0].input), len(population.creatureList[0].output), constantIn=1, constantOut=5)
+    print "ins"
+    print trainData.data[0][0]
+    print "outs"
+    print trainData.data[0][1]
 
-    demoCreature = Creature(neuronCount, inputCount, outputCount)#,MaxCycles)
+    #demoCreature = Creature(neuronCount, inputCount, outputCount)#,MaxCycles)
+    demoCreature = DummyCreature(neuronCount, inputCount, outputCount)#,MaxCycles)
 
-    for i in range(len(inputSet)):
-        demoCreature.input[i].inbox = [inputSet[i][0]]
+    for i in range(inputCount):
+        demoCreature.input[i].inbox = [trainData.data[0][0][0][i]]
 
 ##    demoCreature.expectedOutputs = expOut
 
     root = Tk()
     #newScope = NeuroloScope(root,demoCreature,inputSet)
-    ex = CreatureGUI_Beta(root,demoCreature,inputSet)
+    ex = CreatureGUI_Beta(root,demoCreature,trainData.data[0][0])
 
     root.geometry("900x500+300+300")
     root.mainloop()

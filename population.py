@@ -153,8 +153,8 @@ class DummyPopulation:
               self.issueID += 1
 
     def repopulate(self, matePercent = .25, asexualChance = 0.1):#returns a list of IDs for children spawned asexually
-        print "before repop statistics:"
-        self.printAverages()
+##        print "before repop statistics:"
+##        self.printAverages()
 
         newCreatureIDList = []
         nonBreederIDs = []
@@ -208,8 +208,8 @@ class DummyPopulation:
                 asexualOffspringList.append(child.ID)
             self.creatureList.append( child )
         self.sortByID()
-        print "after repop:"
-        self.printAverages()
+##        print "after repop:"
+##        self.printAverages()
 
         return asexualOffspringList
 
@@ -252,7 +252,7 @@ class DummyPopulation:
         avgSigma = avgSigma / len(self.creatureList)
         print "AvgFitness: ",avgFitness," AvgMu: ",avgMu," AvgSigma: ",avgSigma
 
-    #MAKE DICTIONARY FOR ID VS INDEX
+    #TODO: MAKE DICTIONARY FOR ID VS INDEX
     def IDToIndex (self, ID):
         for creature in self.creatureList:
             if creature.ID == ID:
@@ -262,3 +262,12 @@ class DummyPopulation:
     def indexToID (self, index):
         return self.creatureList[index].ID
         print "No creature with index ", index
+
+
+def main():
+
+    #population = Population(CreatureCount=40, NeuronCount=7, InputCount=1, OutputCount=1)
+    population = DummyPopulation(CreatureCount=40, NeuronCount=7, InputCount=1, OutputCount=1)
+
+if __name__ == "__main__":
+    main()

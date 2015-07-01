@@ -5,6 +5,8 @@ from random import *
 from Tkinter import *
 import creatureGUI_2 as cg2
 from trueskill import Rating, quality_1vs1, rate_1vs1
+import numpy as np
+import pylab as P
 
 def evolve(population, trainData, generations=10, setsPerGen=1,battles = "Random"):
     for G in range (generations):
@@ -18,8 +20,8 @@ def evolve(population, trainData, generations=10, setsPerGen=1,battles = "Random
         mutate(population, mutateIDs)
 
 def prune ( pop , killPercent = .50 ):
-    print "before prune statistics:"
-    pop.printAverages()
+##    print "before prune statistics:"
+##    pop.printAverages()
     saveIDs = list()
     saveCount = int(len ( pop.creatureList ) * max(min(1.0-killPercent,1.0),0.0))
     while len(saveIDs) < (saveCount):
@@ -29,12 +31,12 @@ def prune ( pop , killPercent = .50 ):
             i+=1
         saveIDs.append(pop.creatureList[i].ID)
         #saveTheChildren
-        pop.creatureList.sort(key = lambda x: x.ELO.sigma, reverse=True)
-        if len(saveIDs) < (saveCount):
-            i=0
-            while (pop.creatureList[i].ID in saveIDs):
-                i+=1
-            saveIDs.append(pop.creatureList[i].ID)
+##        pop.creatureList.sort(key = lambda x: x.ELO.sigma, reverse=True)
+##        if len(saveIDs) < (saveCount):
+##            i=0
+##            while (pop.creatureList[i].ID in saveIDs):
+##                i+=1
+##            saveIDs.append(pop.creatureList[i].ID)
 
     finalCreatureList = []
     for creature in pop.creatureList:
@@ -42,8 +44,8 @@ def prune ( pop , killPercent = .50 ):
         finalCreatureList.append(creature)
     pop.creatureList = finalCreatureList
     pop.sortByID()
-    print "after prune statistics:"
-    pop.printAverages()
+##    print "after prune statistics:"
+##    pop.printAverages()
 
 def mutate (pop, mutateIDs, mutateAmount = .01):
 
@@ -64,8 +66,8 @@ def mutate (pop, mutateIDs, mutateAmount = .01):
                     if random()<1/len(pop.creatureList[index].neuronList[n].propertyList):
                         propertyMutateAmount = p*mutateAmount
                         pop.creatureList[index].neuronList[n].propertyList[p] = max(min(gauss( pop.creatureList[index].neuronList[n].propertyList[p] , propertyMutateAmount),1000),-1000)
-    print "after mutate statistics:"
-    pop.printAverages()
+##    print "after mutate statistics:"
+##    pop.printAverages()
 
 def battle( pop, battles = "Random" ):
     if battles == "Random":
@@ -190,8 +192,8 @@ def myGauss(x,mu=0.0,sig=1.0):
     return g
 
 def main(): #trainData is docy() type
-    root = Tk()
-    population = DummyPopulation(CreatureCount=40, NeuronCount=7, InputCount=1, OutputCount=1)
+    #root = Tk()
+    population = DummyPopulation(CreatureCount=500, NeuronCount=3, InputCount=1, OutputCount=1)
     trainData = docy()
     #generateSinTracker(self, inputCount, outputCount, cycleCount=360, a=1, b=1, c=0, reps=1)
     cycleCount=360
@@ -200,24 +202,76 @@ def main(): #trainData is docy() type
     c=0
     trainData.generateSinTracker(len(population.creatureList[0].input), len(population.creatureList[0].output),cycleCount,a,b,c)
     #trainData.generateConstant(len(population.creatureList[0].input), len(population.creatureList[0].output), constantIn=1, constantOut=5)
-    print "ins"
-    print trainData.data[0][0]
-    print "outs"
-    print trainData.data[0][1]
+##    print "ins"
+##    print trainData.data[0][0]
+##    print "outs"
+##    print trainData.data[0][1]
 
+    generations=50
+    setsPerGen=1
+    battles = 5000
     #evolve(population, trainData, generations=3, setsPerGen=1,battles = "Random")
-    evolve(population, trainData, generations=5, setsPerGen=1,battles= 2000)
+    evolve(population, trainData, generations, setsPerGen,battles)
+    print 'Training newbies...'
+    trainPopulation(population, trainData, setsPerGen)
+    battle(population,battles)
+    battle(population,battles)
+    battle(population,battles)
 
     bestCreature = findBestCreature(population)
 
+    print 'Best creatures offset:', bestCreature.offset
+
+    population.creatureList.sort(key = lambda x: abs(x.offset), reverse=False)
+    sortedBestOffset = population.creatureList[0].offset
+
+    print 'Best offset:', sortedBestOffset
+
+    offsetList = []
+    for creat in population.creatureList:
+        offsetList.append(creat.offset)
+
+    P.figure()
+    bins = np.linspace(-2.0, 2.0, num=25)
+    # the histogram of the data with histtype='step'
+    n, bins, patches = P.hist(offsetList, bins, histtype='bar', rwidth=1)
+
+
+    print 'PRUNING...'
+    prune(population)
+
+    bestCreature = findBestCreature(population)
+
+    print 'Best creatures offset:', bestCreature.offset
+
+    population.creatureList.sort(key = lambda x: abs(x.offset), reverse=False)
+    sortedBestOffset = population.creatureList[0].offset
+
+    print 'Best offset:', sortedBestOffset
+
+    offsetList = []
+    for creat in population.creatureList:
+        offsetList.append(creat.offset)
+
+    P.figure()
+    bins = np.linspace(-2.0, 2.0, num=25)
+    # the histogram of the data with histtype='step'
+    n, bins, patches = P.hist(offsetList, bins, histtype='bar', rwidth=1)
+    P.setp(patches, 'facecolor', 'r')
+
+
+    P.show()
     #docy.data[set][io][put][cycle]
-    gui = cg2.CreatureGUI_Beta(root,bestCreature,trainData.data[0][0])
-    root.geometry("900x500+300+300")
-    root.mainloop()
-    print "ins"
-    print trainData.data[0][0]
-    print "outs"
-    print trainData.data[0][1]
+
+    #gui = cg2.CreatureGUI_Beta(root,bestCreature,trainData.data[0][0])
+    #root.geometry("900x500+300+300")
+    #root.mainloop()
+
+
+##    print "ins"
+##    print trainData.data[0][0]
+##    print "outs"
+##    print trainData.data[0][1]
 
 if __name__ == "__main__":
     main()

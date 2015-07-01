@@ -63,7 +63,7 @@ class DummyCreature:
         self.fitness = 0.0
         self.ELO = Rating()
         self.ID = ''
-        self.offset = random()*2-1
+        self.offset = (random()-0.5)*4
 
         #MAKE NEURONS
         for n in range(self.neuronCount):
@@ -87,7 +87,6 @@ class DummyCreature:
 
     def run( self, cycles = 1, inputs = [0], ForceTracking = True ): #no cycles or population, that info is internal to creature now
         self.setInputs(inputs)
-
         for c in range( cycles ):
             for n in self.neuronList:
                 n.run()
