@@ -7,6 +7,7 @@ import creatureGUI_2 as cg2
 from trueskill import Rating, quality_1vs1, rate_1vs1
 import numpy as np
 import pylab as P
+import matplotlib.pyplot as plt
 
 def evolve(population, trainData, generations=10, setsPerGen=1,battles = "Random"):
     for G in range (generations):
@@ -19,18 +20,24 @@ def evolve(population, trainData, generations=10, setsPerGen=1,battles = "Random
         mutateIDs = population.repopulate()
         mutate(population, mutateIDs)
 
-def prune ( pop , killPercent = .50 ):
+def prune ( pop , killPercent = .50, battleThresh = 5 ):
 ##    print "before prune statistics:"
 ##    pop.printAverages()
     saveIDs = list()
-    saveCount = int(len ( pop.creatureList ) * max(min(1.0-killPercent,1.0),0.0))
+
+    #saveTheChildren
+    for creat in pop.creatureList:
+        if creat.battleCount < battleThresh:
+            saveIDs.append(creat.ID)
+
+    saveCount = int((len(pop.creatureList)-len(saveIDs)) * max(min(1.0-killPercent,1.0),0.0))
+
     while len(saveIDs) < (saveCount):
         pop.creatureList.sort(key = lambda x: x.ELO.mu, reverse=True)
         i=0
         while (pop.creatureList[i].ID in saveIDs):
             i+=1
         saveIDs.append(pop.creatureList[i].ID)
-        #saveTheChildren
 ##        pop.creatureList.sort(key = lambda x: x.ELO.sigma, reverse=True)
 ##        if len(saveIDs) < (saveCount):
 ##            i=0
@@ -75,6 +82,11 @@ def battle( pop, battles = "Random" ):
     for b in range(battles):
         creature1 = choice( pop.creatureList )
         creature2 = choice( pop.creatureList )
+        while creature1 == creature2:
+            creature2 = choice(pop.creatureList)
+
+        creature1.battleCount+=1
+        creature2.battleCount+=1
         updateELO(creature1, creature2)
 
 def updateELO( creature1, creature2 ):
@@ -193,7 +205,7 @@ def myGauss(x,mu=0.0,sig=1.0):
 
 def main(): #trainData is docy() type
     #root = Tk()
-    population = DummyPopulation(CreatureCount=500, NeuronCount=3, InputCount=1, OutputCount=1)
+    population = DummyPopulation(CreatureCount=100, NeuronCount=3, InputCount=1, OutputCount=1)
     trainData = docy()
     #generateSinTracker(self, inputCount, outputCount, cycleCount=360, a=1, b=1, c=0, reps=1)
     cycleCount=360
@@ -207,9 +219,9 @@ def main(): #trainData is docy() type
 ##    print "outs"
 ##    print trainData.data[0][1]
 
-    generations=50
+    generations=1
     setsPerGen=1
-    battles = 5000
+    battles = 10000
     #evolve(population, trainData, generations=3, setsPerGen=1,battles = "Random")
     evolve(population, trainData, generations, setsPerGen,battles)
     print 'Training newbies...'
@@ -217,6 +229,22 @@ def main(): #trainData is docy() type
     battle(population,battles)
     battle(population,battles)
     battle(population,battles)
+    trainPopulation(population, trainData, setsPerGen)
+    battle(population,battles)
+    battle(population,battles)
+    battle(population,battles)
+##    trainPopulation(population, trainData, setsPerGen)
+##    battle(population,battles)
+##    battle(population,battles)
+##    battle(population,battles)
+##    trainPopulation(population, trainData, setsPerGen)
+##    battle(population,battles)
+##    battle(population,battles)
+##    battle(population,battles)
+##    trainPopulation(population, trainData, setsPerGen)
+##    battle(population,battles)
+##    battle(population,battles)
+##    battle(population,battles)
 
     bestCreature = findBestCreature(population)
 
@@ -228,14 +256,70 @@ def main(): #trainData is docy() type
     print 'Best offset:', sortedBestOffset
 
     offsetList = []
+    muList=[]
+    sigList=[]
+    ageList=[]
+    IndList=[]
+    BCList = []
     for creat in population.creatureList:
         offsetList.append(creat.offset)
+        muList.append(creat.ELO.mu)
+        sigList.append(creat.ELO.sigma)
+        ageList.append(creat.age)
+        IndList.append(population.creatureList.index(creat))
+        BCList.append(creat.battleCount)
+
+    plt.subplot(2, 1, 1)
+    plt.plot(offsetList, muList, 'y.')
+    plt.title('ELO Statistics')
+    plt.ylabel('Mu')
+
+    plt.subplot(2, 1, 2)
+    plt.plot(offsetList, sigList, 'r.')
+    plt.xlabel('Offset')
+    plt.ylabel('Sigma')
+
+    plt.figure()
+    plt.subplot(3, 1, 1)
+    plt.plot(ageList, muList, 'g.')
+    plt.xlabel('Age')
+    plt.ylabel('Mu')
+
+    plt.subplot(3, 1, 2)
+    plt.plot(ageList, sigList, 'g.')
+    plt.xlabel('Age')
+    plt.ylabel('Sigma')
+
+    plt.subplot(3, 1, 3)
+    plt.plot(IndList,ageList, 'g.')
+    plt.ylabel('Age')
+    plt.xlabel('ID')
+
+    plt.figure()
+    plt.subplot(3, 1, 1)
+    plt.plot(BCList, muList, 'g.')
+    plt.xlabel('Battles')
+    plt.ylabel('Mu')
+
+    plt.subplot(3, 1, 2)
+    plt.plot(BCList, sigList, 'g.')
+    plt.xlabel('Battles')
+    plt.ylabel('Sigma')
+
+    plt.subplot(3, 1, 3)
+    plt.plot(IndList,BCList, 'g.')
+    plt.ylabel('Battles')
+    plt.xlabel('ID')
+
+    plt.figure()
+    plt.plot(sigList, muList, 'b.')
+    plt.xlabel('Sigma')
+    plt.ylabel('Mu')
 
     P.figure()
     bins = np.linspace(-2.0, 2.0, num=25)
     # the histogram of the data with histtype='step'
     n, bins, patches = P.hist(offsetList, bins, histtype='bar', rwidth=1)
-
 
     print 'PRUNING...'
     prune(population)
@@ -258,6 +342,7 @@ def main(): #trainData is docy() type
     # the histogram of the data with histtype='step'
     n, bins, patches = P.hist(offsetList, bins, histtype='bar', rwidth=1)
     P.setp(patches, 'facecolor', 'r')
+
 
 
     P.show()

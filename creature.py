@@ -34,6 +34,7 @@ class Creature:
                     createdSynapses+=1
 
     def run( self, cycles = 1, inputs = None ): #no cycles or population, that info is internal to creature now
+        self.age+=1
         if inputs == None:
             for c in range( cycles ):
                 for n in self.neuronList:
@@ -63,7 +64,9 @@ class DummyCreature:
         self.fitness = 0.0
         self.ELO = Rating()
         self.ID = ''
+        self.age = 0
         self.offset = (random()-0.5)*4
+        self.battleCount=0
 
         #MAKE NEURONS
         for n in range(self.neuronCount):
@@ -86,6 +89,7 @@ class DummyCreature:
                     createdSynapses+=1
 
     def run( self, cycles = 1, inputs = [0], ForceTracking = True ): #no cycles or population, that info is internal to creature now
+        self.age+=1
         self.setInputs(inputs)
         for c in range( cycles ):
             for n in self.neuronList:
