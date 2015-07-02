@@ -297,25 +297,24 @@ def resetCreatures(pop):
         c.age = 0
 
 def main(): #trainData is docy() type
-    root = Tk()
-    CreatureCount = 1000
-    population = Population(CreatureCount, NeuronCount=10, InputCount=1, OutputCount=1)
+    CreatureCount = 200
+    population = Population(CreatureCount, NeuronCount=7, InputCount=1, OutputCount=1)
     trainData = docy()
     #generateSinTracker(self, inputCount, outputCount, cycleCount=360, a=1, b=1, c=0, reps=1)
     cycleCount=360
     a=1
     b=1
-    c=0
+    c=3.1415
     trainData.generateSinTracker(len(population.creatureList[0].input), len(population.creatureList[0].output),cycleCount,a,b,c)
-    #trainData.generateConstant(len(population.creatureList[0].input), len(population.creatureList[0].output), constantIn=1, constantOut=5)
+    #trainData.generateConstant(len(population.creatureList[0].input), len(population.creatureList[0].output), constantIn=1, constantOut=2)
 ##    print "ins"
 ##    print trainData.data[0][0]
 ##    print "outs"
 ##    print trainData.data[0][1]
 
-    generations=100
+    generations=10
     setsPerGen=1
-    battles = 10000
+    battles = 1000
     #evolve(population, trainData, generations=3, setsPerGen=1,battles = "Random")
     evolve(population, trainData, generations, setsPerGen,battles, CreatureCount)
     print 'Training newbies...'
@@ -376,21 +375,21 @@ def main(): #trainData is docy() type
 ##    plt.xlabel('Offset')
 ##    plt.ylabel('Sigma')
 
-    plt.figure()
-    plt.subplot(3, 1, 1)
-    plt.plot(ageList, muList, 'g.')
-    plt.xlabel('Age')
-    plt.ylabel('Mu')
-
-    plt.subplot(3, 1, 2)
-    plt.plot(ageList, sigList, 'g.')
-    plt.xlabel('Age')
-    plt.ylabel('Sigma')
-
-    plt.subplot(3, 1, 3)
-    plt.plot(IndList,ageList, 'g.')
-    plt.ylabel('Age')
-    plt.xlabel('ID')
+##    plt.figure()
+##    plt.subplot(3, 1, 1)
+##    plt.plot(ageList, muList, 'g.')
+##    plt.xlabel('Age')
+##    plt.ylabel('Mu')
+##
+##    plt.subplot(3, 1, 2)
+##    plt.plot(ageList, sigList, 'g.')
+##    plt.xlabel('Age')
+##    plt.ylabel('Sigma')
+##
+##    plt.subplot(3, 1, 3)
+##    plt.plot(IndList,ageList, 'g.')
+##    plt.ylabel('Age')
+##    plt.xlabel('ID')
 
     plt.figure()
     plt.subplot(3, 1, 1)
@@ -404,9 +403,9 @@ def main(): #trainData is docy() type
     plt.ylabel('Sigma')
 
     plt.subplot(3, 1, 3)
-    plt.plot(IndList,BCList, 'g.')
-    plt.ylabel('Battles')
-    plt.xlabel('ID')
+    plt.plot(BCList,IndList, 'g.')
+    plt.ylabel('id')
+    plt.xlabel('Battles')
 
     plt.figure()
     plt.plot(sigList, muList, 'b.')
@@ -427,9 +426,9 @@ def main(): #trainData is docy() type
 ##    plt.plot(fitList,offsetList, 'b.')
 ##    plt.ylabel('Offset')
     P.figure()
-    bins = np.linspace(-2.0, 2.0, num=25)
+    bins = np.linspace(0, 1.0, num=25)
     # the histogram of the data with histtype='step'
-    n, bins, patches = P.hist(offsetList, bins, histtype='bar', rwidth=1)
+    n, bins, patches = P.hist(fitList, bins, histtype='bar', rwidth=1)
     '''
     population.sortByID()
     trainPopulation(population, trainData, setsPerGen)
@@ -531,12 +530,14 @@ def main(): #trainData is docy() type
 
 
     '''
+    P.show()
+
+    root = Tk()
     #docy.data[set][io][put][cycle]
     gui = cg2.CreatureGUI_Beta(root,bestCreature,trainData.data[0][0])
     root.geometry("900x500+300+300")
     root.mainloop()
 
-    P.show()
 
 
 ##    print "ins"
