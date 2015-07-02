@@ -1,7 +1,8 @@
 from neuron import *
 from synapse import *
-from trueskill import Rating, quality_1vs1, rate_1vs1
+from trueskill import Rating, quality_1vs1, rate_1vs1, setup
 import creatureHelper as cHelp
+
 
 class Creature:
     def __init__(self , neuronCount=10, inputCount=1, outputCount=1):
@@ -71,6 +72,11 @@ class DummyCreature:
         #MAKE NEURONS
         for n in range(self.neuronCount):
             self.neuronList.append(DummyNeuron(n))
+            if n < self.inputCount:
+                self.neuronList[-1].isInput = 1
+            elif n > (self.neuronCount - self.outputCount):
+                self.neuronList[-1].isOutput = 1
+
         for i in range (self.inputCount):
             self.input.append(self.neuronList[i])
             self.input[-1].isInput = 1
@@ -89,8 +95,12 @@ class DummyCreature:
                     createdSynapses+=1
 
     def run( self, cycles = 1, inputs = [0], ForceTracking = True ): #no cycles or population, that info is internal to creature now
+        #print inputs
         self.age+=1
+        #print self.neuronList[0], self.input[0]
+        #print self.neuronList[0].inbox,self.input[0].inbox
         self.setInputs(inputs)
+        #print self.neuronList[0].inbox,self.input[0].inbox
         for c in range( cycles ):
             for n in self.neuronList:
                 n.run()
@@ -98,14 +108,18 @@ class DummyCreature:
                 s.run()
         if ForceTracking:
             self.bypassNet(inputs)
+        #print self.input[0].inbox, self.output[0].outbox
 
     def setInputs(self, inputs):
 ##        for n in range(len(self.input)):
 ##            self.input[n].setNeuronInput(inputs[n])
-
+       # print 'in set inputs:'
+        #print inputs
         for n in range(len(self.neuronList)):
             if self.neuronList[n].isInput == 1:
+                #print 'set: ', self.neuronList[n].inbox, ' to ',inputs[n]
                 self.neuronList[n].setNeuronInput(inputs[n])
+                #print 'it is now: ', self.neuronList[n].inbox
             else:
                 break
 
@@ -136,7 +150,7 @@ def main():
 
     #demoCreature = Creature(neuronCount, inputCount, outputCount)
     demoCreature = DummyCreature(neuronCount, inputCount, outputCount)
-    for i in range(len(inputSet)):
+    for i in range(len(inputSets)):
         demoCreature.input[i].inbox = [inputSet[i]]
 
     demoCreature.ID = randint(0,1000)

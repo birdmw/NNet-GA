@@ -16,16 +16,16 @@ class Population:
         #Generate the seed population
         self.populate()
 
+    def addCreature(self):
+          self.creatureList.append(Creature(self.neuronCount,self.inputCount,self.outputCount))
+          self.creatureList[-1].ID = self.issueID
+          self.issueID += 1
+
     def populate( self ):
          while (len(self.creatureList) < self.creatureCount):
-              self.creatureList.append(Creature(self.neuronCount,self.inputCount,self.outputCount))
-              self.creatureList[-1].ID = self.issueID
-              self.issueID += 1
+            self.addCreature()
 
     def repopulate(self, matePercent = .25, asexualChance = 0.1):#returns a list of IDs for children spawned asexually
-        print "before repop statistics:"
-        self.printAverages()
-
         newCreatureIDList = []
         nonBreederIDs = []
         creatureCount = len ( self.creatureList )
@@ -78,23 +78,25 @@ class Population:
                 asexualOffspringList.append(child.ID)
             self.creatureList.append( child )
         self.sortByID()
-        print "after repop:"
-        self.printAverages()
 
         return asexualOffspringList
 
     def mate (self, mother, father):
         child = Creature( self.neuronCount, self.inputCount, self.outputCount  )
         for nInd in range(len(mother.neuronList)):
-                if getrandbits(1):
-                    child.neuronList[nInd] = father.neuronList[nInd]
-                else:
-                    child.neuronList[nInd] = mother.neuronList[nInd]
+            if getrandbits(1):
+                for p in range(len(mother.neuronList[nInd].propertyList)):
+                    child.neuronList[nInd].propertyList[p] = father.neuronList[nInd].propertyList[p]
+            else:
+                for p in range(len(mother.neuronList[nInd].propertyList)):
+                    child.neuronList[nInd].propertyList[p] = mother.neuronList[nInd].propertyList[p]
         for sInd in range(len(mother.synapseList)):
-                if getrandbits(1):
-                    child.synapseList[sInd] = father.synapseList[sInd]
-                else:
-                    child.synapseList[sInd] = mother.synapseList[sInd]
+            if getrandbits(1):
+                for p in range(len(mother.synapseList[nInd].propertyList)):
+                    child.synapseList[sInd].propertyList[p] = father.synapseList[sInd].propertyList[p]
+            else:
+                for p in range(len(mother.synapseList[nInd].propertyList)):
+                    child.synapseList[sInd].propertyList[p] = mother.synapseList[sInd].propertyList[p]
         return child
 
     def sortByFitness( self ):
@@ -216,15 +218,19 @@ class DummyPopulation:
     def mate (self, mother, father):
         child = DummyCreature( self.neuronCount, self.inputCount, self.outputCount  )
         for nInd in range(len(mother.neuronList)):
-                if getrandbits(1):
-                    child.neuronList[nInd] = father.neuronList[nInd]
-                else:
-                    child.neuronList[nInd] = mother.neuronList[nInd]
+            if getrandbits(1):
+                for p in range(len(mother.neuronList[nInd].propertyList)):
+                    child.neuronList[nInd].propertyList[p] = father.neuronList[nInd].propertyList[p]
+            else:
+                for p in range(len(mother.neuronList[nInd].propertyList)):
+                    child.neuronList[nInd].propertyList[p] = mother.neuronList[nInd].propertyList[p]
         for sInd in range(len(mother.synapseList)):
-                if getrandbits(1):
-                    child.synapseList[sInd] = father.synapseList[sInd]
-                else:
-                    child.synapseList[sInd] = mother.synapseList[sInd]
+            if getrandbits(1):
+                for p in range(len(mother.synapseList[nInd].propertyList)):
+                    child.synapseList[sInd].propertyList[p] = father.synapseList[sInd].propertyList[p]
+            else:
+                for p in range(len(mother.synapseList[nInd].propertyList)):
+                    child.synapseList[sInd].propertyList[p] = mother.synapseList[sInd].propertyList[p]
         return child
 
     def sortByFitness( self ):
