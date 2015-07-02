@@ -17,8 +17,8 @@ def evolve(pop, trainData, generations=10, setsPerGen=1,battles = "Random", Crea
         for t in range(setsPerGen):
             print "  set: ", t
             pop = trainPopulation(pop, trainData, setsPerGen)
-            print len(pop.creatureList), CreatureCount
-            pop = battle(pop,battles)
+            #pop = battle_random(pop,battles)
+            pop = battle_perCreature(pop,battles)
         pop = prune(pop, 0.75)
         mutateIDs = pop.repopulate(matePercent = .25, asexualChance = 0.1)
         mutate(pop, mutateIDs)
@@ -151,7 +151,29 @@ def mutate (pop, mutateIDs, mutateAmount = .01):
 ##    print "after mutate statistics:"
 ##    pop.printAverages()
 
-def battle( pop, battles = "Random" ):
+def battle_perCreature( pop, battles = 1 ):
+    for cInd in range(len(pop.creatureList)):
+        previousFightIDs=[]
+        creature1 = pop.creatureList[cInd]
+        for b in range(battles):
+            goodFight = False
+            while not goodFight:
+                creature2 = choice(pop.creatureList)
+                if creature2.ID == creature1.ID:
+                    pass
+                elif creature2.ID in previousFightIDs:
+                    pass
+                else:
+                    previousFightIDs.append(creature2.ID)
+                    goodFight = True
+
+            creature1.battleCount+=1
+            creature2.battleCount+=1
+            updateELO(creature1, creature2)
+
+    return pop
+
+def battle_random( pop, battles = "Random" ):
     if battles == "Random":
         battles = min(int(len(pop.creatureList)/2+(random()*len(pop.creatureList)**2)),10000)
     for b in range(battles):
@@ -298,31 +320,40 @@ def resetCreatures(pop):
 
 def main(): #trainData is docy() type
     CreatureCount = 200
-    population = Population(CreatureCount, NeuronCount=7, InputCount=1, OutputCount=1)
+    generations=15
+    setsPerGen=1
+    battles = 5
+    NeuronCount =11
+    InputCount=1
+    OutputCount=1
+
+    population = Population(CreatureCount, NeuronCount, InputCount, OutputCount)
     trainData = docy()
-    #generateSinTracker(self, inputCount, outputCount, cycleCount=360, a=1, b=1, c=0, reps=1)
-    cycleCount=360
-    a=1
-    b=1
-    c=3.1415
-    trainData.generateSinTracker(len(population.creatureList[0].input), len(population.creatureList[0].output),cycleCount,a,b,c)
+
+    a=[1,1]
+    b=[1,1]
+    c=[0,0]
+    d=[0,0]
+
+    cycleCount=[360,360] #Don't make these different... it will probably break...
+    trainData.generateSinTracker(len(population.creatureList[0].input), len(population.creatureList[0].output),cycleCount,a,b,c,d)
     #trainData.generateConstant(len(population.creatureList[0].input), len(population.creatureList[0].output), constantIn=1, constantOut=2)
 ##    print "ins"
 ##    print trainData.data[0][0]
 ##    print "outs"
 ##    print trainData.data[0][1]
 
-    generations=10
-    setsPerGen=1
-    battles = 1000
     #evolve(population, trainData, generations=3, setsPerGen=1,battles = "Random")
     evolve(population, trainData, generations, setsPerGen,battles, CreatureCount)
     print 'Training newbies...'
     resetCreatures(population)
     trainPopulation(population, trainData, setsPerGen)
-    battle(population,battles)
-    battle(population,battles)
-    battle(population,battles)
+    battle_perCreature(population,battles)
+    battle_perCreature(population,battles)
+    resetCreatures(population)
+    trainPopulation(population, trainData, setsPerGen)
+    battle_perCreature(population,battles)
+    battle_perCreature(population,battles)
 ##    trainPopulation(population, trainData, setsPerGen)
 ##    battle(population,battles)
 ##    battle(population,battles)

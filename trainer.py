@@ -27,14 +27,14 @@ class docy:
     def randomSet(self):
         return choice(self.data)
 
-    def generateSinTracker(self, inputCount, outputCount, cycleCount=360, a=1, b=1, c=0, reps=1):
+    def generateSinTracker(self, inputCount, outputCount, cycleCount=[360,360], a=[1,1], b=[1,1], c=[0,0], d=[0,0], reps=1):
         inputList, outputList = [] , []
         inputs , outputs = [] , []
-        for x in range(int(cycleCount * reps)):
-                valin = a*sin(b*(x*pi/180))
-                valout = a*sin(b*(x*pi/180)+c)
-                #valout=valin
+        for x in range(int(cycleCount[0] * reps)):
+                valin = a[0]*sin(b[0]*(x*pi/180)+c[0])+d[0]
                 inputs.append(valin)
+        for x in range(int(cycleCount[1] * reps)):
+                valout = a[1]*sin(b[1]*(x*pi/180)+c[1])+d[1]
                 outputs.append(valout)
         for y in range(inputCount):
                 inputList.append(inputs)
