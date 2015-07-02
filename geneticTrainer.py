@@ -299,7 +299,7 @@ def resetCreatures(pop):
 def main(): #trainData is docy() type
     root = Tk()
     CreatureCount = 1000
-    population = Population(CreatureCount, NeuronCount=7, InputCount=1, OutputCount=1)
+    population = Population(CreatureCount, NeuronCount=10, InputCount=1, OutputCount=1)
     trainData = docy()
     #generateSinTracker(self, inputCount, outputCount, cycleCount=360, a=1, b=1, c=0, reps=1)
     cycleCount=360
@@ -313,7 +313,7 @@ def main(): #trainData is docy() type
 ##    print "outs"
 ##    print trainData.data[0][1]
 
-    generations=5
+    generations=100
     setsPerGen=1
     battles = 10000
     #evolve(population, trainData, generations=3, setsPerGen=1,battles = "Random")
@@ -349,8 +349,8 @@ def main(): #trainData is docy() type
     sortedBestOffset = population.creatureList[0].offset
 
     print 'Best offset:', sortedBestOffset
-
     offsetList = []
+    '''
     muList=[]
     sigList=[]
     ageList=[]
@@ -358,7 +358,7 @@ def main(): #trainData is docy() type
     BCList = []
     fitList=[]
     for creat in population.creatureList:
-        offsetList.append(creat.offset)
+        #offsetList.append(creat.offset)
         muList.append(creat.ELO.mu)
         sigList.append(creat.ELO.sigma)
         ageList.append(creat.age)
@@ -366,15 +366,15 @@ def main(): #trainData is docy() type
         BCList.append(creat.battleCount)
         fitList.append(creat.fitness)
 
-    plt.subplot(2, 1, 1)
-    plt.plot(offsetList, muList, 'y.')
-    plt.title('ELO Statistics')
-    plt.ylabel('Mu')
-
-    plt.subplot(2, 1, 2)
-    plt.plot(offsetList, sigList, 'r.')
-    plt.xlabel('Offset')
-    plt.ylabel('Sigma')
+##    plt.subplot(2, 1, 1)
+##    plt.plot(offsetList, muList, 'y.')
+##    plt.title('ELO Statistics')
+##    plt.ylabel('Mu')
+##
+##    plt.subplot(2, 1, 2)
+##    plt.plot(offsetList, sigList, 'r.')
+##    plt.xlabel('Offset')
+##    plt.ylabel('Sigma')
 
     plt.figure()
     plt.subplot(3, 1, 1)
@@ -414,23 +414,23 @@ def main(): #trainData is docy() type
     plt.ylabel('Mu')
 
     plt.figure()
-    plt.subplot(3, 1, 1)
+    plt.subplot(2, 1, 1)
     plt.plot(fitList, muList, 'y.')
     plt.ylabel('Mu')
 
-    plt.subplot(3, 1, 2)
+    plt.subplot(2, 1, 2)
     plt.plot(fitList, sigList, 'r.')
     plt.ylabel('Sigma')
-
-    plt.subplot(3, 1, 3)
-    plt.plot(fitList,offsetList, 'b.')
-    plt.ylabel('Offset')
     plt.xlabel('Fitness')
+
+##    plt.subplot(3, 1, 3)
+##    plt.plot(fitList,offsetList, 'b.')
+##    plt.ylabel('Offset')
     P.figure()
     bins = np.linspace(-2.0, 2.0, num=25)
     # the histogram of the data with histtype='step'
     n, bins, patches = P.hist(offsetList, bins, histtype='bar', rwidth=1)
-
+    '''
     population.sortByID()
     trainPopulation(population, trainData, setsPerGen)
 
@@ -530,12 +530,13 @@ def main(): #trainData is docy() type
 
 
 
-    P.show()
-    #docy.data[set][io][put][cycle]
     '''
+    #docy.data[set][io][put][cycle]
     gui = cg2.CreatureGUI_Beta(root,bestCreature,trainData.data[0][0])
     root.geometry("900x500+300+300")
     root.mainloop()
+
+    P.show()
 
 
 ##    print "ins"
