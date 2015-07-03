@@ -27,17 +27,69 @@ class docy:
     def randomSet(self):
         return choice(self.data)
 
-    def generateSinTracker(self, inputCount, outputCount, cycleCount=[360,360], a=[1,1], b=[1,1], c=[0,0], d=[0,0], reps=1):
+    def generateSinTracker(self, inputCount=1, outputCount=1, cycleCount=360, a=[1,1], b=[1,1], c=[0,0], d=[0,0], reps=1):
         inputList, outputList = [] , []
         inputs , outputs = [] , []
-        for x in range(int(cycleCount[0] * reps)):
-                valin = a[0]*sin(b[0]*(x*pi/180)+c[0])+d[0]
-                inputs.append(valin)
-        for x in range(int(cycleCount[1] * reps)):
-                valout = a[1]*sin(b[1]*(x*pi/180)+c[1])+d[1]
-                outputs.append(valout)
+        for x in range(int(cycleCount * reps)):
+            valin = a[0]*sin(b[0]*(x*pi/180)+c[0])+d[0]
+            inputs.append(valin)
+            valout = a[1]*sin(b[1]*(x*pi/180)+c[1])+d[1]
+            outputs.append(valout)
         for y in range(inputCount):
-                inputList.append(inputs)
+            inputList.append(inputs)
+        for z in range(outputCount):
+            outputList.append(outputs)
+        self.data = [[inputList, outputList]]
+
+
+    def generateSquareTracker(self, inputCount=1, outputCount=1, cyclesPerRep=360, mag=[1,1], period=[360,360], phase_off=[0,0], dc_off=[0,0], reps=1):
+        inputList, outputList = [] , []
+        inputs , outputs = [] , []
+        posCounter = phase_off
+        for x in range(int(cyclesPerRep * reps)):
+            if x%period[0]==0:
+                posCounter[0]=0
+            if x%period[1]==0:
+                posCounter[1]=0
+
+            if posCounter<(period[0]/2.0):
+                valin = mag[0]+dc_off[0]
+            else:
+                valin = -1*(mag[0]+dc_off[0])
+
+            if posCounter<(period[1]/2.0):
+                valout = mag[1]+dc_off[1]
+            else:
+                valout = -1*(mag[1]+dc_off[1])
+
+            inputs.append(valin)
+            outputs.append(valout)
+
+            posCounter[0]+=1
+            posCounter[1]+=1
+
+        for y in range(inputCount):
+            inputList.append(inputs)
+        for z in range(outputCount):
+            outputList.append(outputs)
+        self.data = [[inputList, outputList]]
+
+    def generateSinAdder(self, inputCount=1, outputCount=1, cyclesPerRep=360, inp_abcd=[[1,1,0,0]], reps=1):
+        inputList, outputList = [] , []
+        outputs = []
+        for inp in range(inputCount):
+            inputs=[]
+            [a,b,c,d] = inp_abcd[inp]
+            for cyc in range(int(cyclesPerRep * reps)):
+                valin = a*sin(b*(cyc*pi/180)+c)+d
+                inputs.append(valin)
+            inputList.append(inputs)
+
+        for cyc in range(int(cyclesPerRep * reps)):
+            outputs.append(0)
+            for inp in range(inputCount):
+                outputs[-1] += inputList[inp][cyc]
+
         for z in range(outputCount):
                 outputList.append(outputs)
         self.data = [[inputList, outputList]]

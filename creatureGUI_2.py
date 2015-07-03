@@ -314,7 +314,12 @@ class CreatureGUI_Beta(Frame):
         else:
             self.patternPosition[0]+=1
         #run( self, cycles = 1, inputs = [0], ForceTracking = True )
-        self.myCreature.run(1, [self.inputPatterns[0][self.patternPosition[0]]])
+        nextInputs=[]
+        for inp in range(len(self.inputPatterns)):
+            nextInputs.append(self.inputPatterns[inp][self.patternPosition[0]])
+
+        #self.myCreature.run(1, [self.inputPatterns[0][self.patternPosition[0]]])
+        self.myCreature.run(1, nextInputs)
         self.updateVars()
         if self.myScope != None:
             self.myScope.scopeUpdateVars()
@@ -579,8 +584,8 @@ class CreatureGUI_Beta(Frame):
 
     def startScope(self):
         scopeWindow =Toplevel(self)
-        scopeDefX = 600
-        scopeDefY = 400
+        scopeDefX = 1300
+        scopeDefY = 800
         scopeWindow.geometry(str(scopeDefX)+'x'+str(scopeDefY))
         self.myScope = NeuroloScope(scopeWindow,self.myCreature,self.inputPatterns,useGUIRun=True,colorDict=self.neurColorDict,GUI=self)
 

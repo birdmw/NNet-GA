@@ -319,11 +319,11 @@ def resetCreatures(pop):
         c.age = 0
 
 def main(): #trainData is docy() type
-    CreatureCount = 200
-    generations=15
+    CreatureCount = 300
+    generations=50
     setsPerGen=1
-    battles = 5
-    NeuronCount =11
+    battles = 3
+    NeuronCount =7
     InputCount=1
     OutputCount=1
 
@@ -331,17 +331,25 @@ def main(): #trainData is docy() type
     trainData = docy()
 
     a=[1,1]
-    b=[1,1]
+    b=[4,4]
     c=[0,0]
     d=[0,0]
 
-    cycleCount=[360,360] #Don't make these different... it will probably break...
-    trainData.generateSinTracker(len(population.creatureList[0].input), len(population.creatureList[0].output),cycleCount,a,b,c,d)
+    #cycleCount=int(360/(min(b)))
+    #trainData.generateSinTracker(InputCount, OutputCount,cycleCount,a,b,c,d)
+
+    mag=[1,1]
+    period=[90,90]
+    phase_off=[0,0]
+    dc_off=[0,0]
+    cycleCount=max(period)
+    trainData.generateSquareTracker(InputCount, OutputCount, cycleCount, mag, period, phase_off, dc_off)
+
+##    cycleCount = 180
+##    inp_abcd=[[1,4,0,0],[1,2,0,0]]
+##    trainData.generateSinAdder(InputCount, OutputCount, cycleCount, inp_abcd, reps=1)
+
     #trainData.generateConstant(len(population.creatureList[0].input), len(population.creatureList[0].output), constantIn=1, constantOut=2)
-##    print "ins"
-##    print trainData.data[0][0]
-##    print "outs"
-##    print trainData.data[0][1]
 
     #evolve(population, trainData, generations=3, setsPerGen=1,battles = "Random")
     evolve(population, trainData, generations, setsPerGen,battles, CreatureCount)
@@ -349,27 +357,11 @@ def main(): #trainData is docy() type
     resetCreatures(population)
     trainPopulation(population, trainData, setsPerGen)
     battle_perCreature(population,battles)
-    battle_perCreature(population,battles)
-    resetCreatures(population)
-    trainPopulation(population, trainData, setsPerGen)
-    battle_perCreature(population,battles)
-    battle_perCreature(population,battles)
+##    battle_perCreature(population,battles)
+##    resetCreatures(population)
 ##    trainPopulation(population, trainData, setsPerGen)
-##    battle(population,battles)
-##    battle(population,battles)
-##    battle(population,battles)
-##    trainPopulation(population, trainData, setsPerGen)
-##    battle(population,battles)
-##    battle(population,battles)
-##    battle(population,battles)
-##    trainPopulation(population, trainData, setsPerGen)
-##    battle(population,battles)
-##    battle(population,battles)
-##    battle(population,battles)
-##    trainPopulation(population, trainData, setsPerGen)
-##    battle(population,battles)
-##    battle(population,battles)
-##    battle(population,battles)
+##    battle_perCreature(population,battles)
+##    battle_perCreature(population,battles)
 
     bestCreature = findBestCreature(population)
     '''
@@ -396,6 +388,7 @@ def main(): #trainData is docy() type
         BCList.append(creat.battleCount)
         fitList.append(creat.fitness)
 
+#These are for dummy creature.
 ##    plt.subplot(2, 1, 1)
 ##    plt.plot(offsetList, muList, 'y.')
 ##    plt.title('ELO Statistics')
@@ -460,107 +453,7 @@ def main(): #trainData is docy() type
     bins = np.linspace(0, 1.0, num=25)
     # the histogram of the data with histtype='step'
     n, bins, patches = P.hist(fitList, bins, histtype='bar', rwidth=1)
-    '''
-    population.sortByID()
-    trainPopulation(population, trainData, setsPerGen)
 
-    print 'PRUNING...'
-    prune(population)
-
-    bestCreature = findBestCreature(population)
-
-    print 'Best creatures offset:', bestCreature.offset
-
-    population.creatureList.sort(key = lambda x: abs(x.offset), reverse=False)
-    sortedBestOffset = population.creatureList[0].offset
-
-    print 'Best offset:', sortedBestOffset
-
-    offsetList = []
-    for creat in population.creatureList:
-        offsetList.append(creat.offset)
-
-    P.figure()
-    bins = np.linspace(-2.0, 2.0, num=25)
-    # the histogram of the data with histtype='step'
-    n, bins, patches = P.hist(offsetList, bins, histtype='bar', rwidth=1)
-    P.setp(patches, 'facecolor', 'r')
-
-
-    offsetList = []
-    muList=[]
-    sigList=[]
-    ageList=[]
-    IndList=[]
-    BCList = []
-    fitList = []
-    for creat in population.creatureList:
-        offsetList.append(creat.offset)
-        muList.append(creat.ELO.mu)
-        sigList.append(creat.ELO.sigma)
-        ageList.append(creat.age)
-        IndList.append(population.creatureList.index(creat))
-        BCList.append(creat.battleCount)
-        fitList.append(creat.fitness)
-
-    plt.subplot(2, 1, 1)
-    plt.plot(offsetList, muList, 'r.')
-    plt.title('ELO Statistics')
-    plt.ylabel('Mu')
-
-    plt.subplot(2, 1, 2)
-    plt.plot(offsetList, sigList, 'r.')
-    plt.xlabel('Offset')
-    plt.ylabel('Sigma')
-
-    plt.figure()
-    plt.subplot(3, 1, 1)
-    plt.plot(ageList, muList, 'r.')
-    plt.xlabel('Age')
-    plt.ylabel('Mu')
-
-    plt.subplot(3, 1, 2)
-    plt.plot(ageList, sigList, 'r.')
-    plt.xlabel('Age')
-    plt.ylabel('Sigma')
-
-    plt.subplot(3, 1, 3)
-    plt.plot(IndList,ageList, 'r.')
-    plt.ylabel('Age')
-    plt.xlabel('ID')
-
-    plt.figure()
-    plt.subplot(3, 1, 1)
-    plt.plot(BCList, muList, 'r.')
-    plt.xlabel('Battles')
-    plt.ylabel('Mu')
-
-    plt.subplot(3, 1, 2)
-    plt.plot(BCList, sigList, 'r.')
-    plt.xlabel('Battles')
-    plt.ylabel('Sigma')
-
-    plt.subplot(3, 1, 3)
-    plt.plot(IndList,BCList, 'r.')
-    plt.ylabel('Battles')
-    plt.xlabel('ID')
-
-    plt.figure()
-    plt.plot(sigList, muList, 'r.')
-    plt.xlabel('Sigma')
-    plt.ylabel('Mu')
-
-
-
-    P.figure()
-    bins = np.linspace(-2.0, 2.0, num=25)
-    # the histogram of the data with histtype='step'
-    n, bins, patches = P.hist(offsetList, bins, histtype='bar', rwidth=1)
-    P.setp(patches, 'facecolor', 'r')
-
-
-
-    '''
     P.show()
 
     root = Tk()
@@ -570,11 +463,6 @@ def main(): #trainData is docy() type
     root.mainloop()
 
 
-
-##    print "ins"
-##    print trainData.data[0][0]
-##    print "outs"
-##    print trainData.data[0][1]
 
 if __name__ == "__main__":
     main()
