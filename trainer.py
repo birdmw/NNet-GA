@@ -46,18 +46,18 @@ class docy:
         inputList, outputList = [] , []
         inputs , outputs = [] , []
         posCounter = phase_off
+
         for x in range(int(cyclesPerRep * reps)):
             if x%period[0]==0:
                 posCounter[0]=0
             if x%period[1]==0:
                 posCounter[1]=0
-
-            if posCounter<(period[0]/2.0):
+            if posCounter[0]<(float(period[0])/2.0):
                 valin = mag[0]+dc_off[0]
             else:
                 valin = -1*(mag[0]+dc_off[0])
 
-            if posCounter<(period[1]/2.0):
+            if posCounter[1]<(float(period[1])/2.0):
                 valout = mag[1]+dc_off[1]
             else:
                 valout = -1*(mag[1]+dc_off[1])

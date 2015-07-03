@@ -320,7 +320,7 @@ def resetCreatures(pop):
 
 def main(): #trainData is docy() type
     CreatureCount = 300
-    generations=50
+    generations=20
     setsPerGen=1
     battles = 3
     NeuronCount =7
