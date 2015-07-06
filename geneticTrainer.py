@@ -129,7 +129,7 @@ def prune ( pop , killPercent = .50, battleThresh = 5 ):
 ##    print "after prune statistics:"
 ##    pop.printAverages()
 
-def mutate (pop, mutateIDs, mutateAmount = .01):
+def mutate (pop, mutateIDs, mutateAmount = .02):
 
     for ID in mutateIDs:
         index = pop.IDToIndex(ID)
@@ -319,7 +319,7 @@ def resetCreatures(pop):
         c.age = 0
 
 def main(): #trainData is docy() type
-    CreatureCount = 300
+    CreatureCount = 500
     generations=20
     setsPerGen=1
     battles = 3
