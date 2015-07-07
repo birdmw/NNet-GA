@@ -25,7 +25,11 @@ class Population:
          while (len(self.creatureList) < self.creatureCount):
             self.addCreature()
 
-    def repopulate(self, matePercent = .25, asexualChance = 0.1):#returns a list of IDs for children spawned asexually
+    def repopulate(self, matePercent = .25, asexualChance = 0.1):
+        #return self.repopulate_byMu(matePercent, asexualChance)
+        return self.repopulate_byFitness(matePercent, asexualChance)
+
+    def repopulate_byMu(self, matePercent = .25, asexualChance = 0.1):#returns a list of IDs for children spawned asexually
         newCreatureIDList = []
         nonBreederIDs = []
         creatureCount = len ( self.creatureList )
@@ -71,6 +75,54 @@ class Population:
 
             #can be optimized for asexual breeding
 
+            child = self.mate( mother , father )
+            child.ID = self.issueID
+            self.issueID += 1
+            if mother == father:
+                asexualOffspringList.append(child.ID)
+            self.creatureList.append( child )
+        self.sortByID()
+
+        return asexualOffspringList
+
+    def repopulate_byFitness(self, matePercent = .25, asexualChance = 0.1):#returns a list of IDs for children spawned asexually
+        newCreatureIDList = []
+        nonBreederIDs = []
+        creatureCount = len ( self.creatureList )
+        nonBreederCount = int(creatureCount * max(min(1-matePercent,1.0),0.0))
+
+        #BUILD A LIST OF IDs FOR NON BREEDERS
+        self.creatureList.sort(key = lambda x: x.fitness, reverse=False)
+        while len(nonBreederIDs) < (nonBreederCount):
+            i=0
+            while (self.creatureList[i].ID in nonBreederIDs):
+                i+=1
+            nonBreederIDs.append(self.creatureList[i].ID)
+
+        #FIND PARENTS FROM BREEDERS
+
+        #LOOP OVER THIS##################################################
+        breederIDs = []
+        for creature in self.creatureList:
+            if not (creature.ID in nonBreederIDs):
+                breederIDs.append(creature.ID)
+
+        #PICK PARENTS
+        asexualOffspringList = []
+        while (len(self.creatureList) < self.creatureCount):
+            motherID = choice(breederIDs)
+            if random() < asexualChance:
+                fatherID = motherID
+            else:
+                fatherID = choice(breederIDs)
+
+            for creature in self.creatureList:
+                if creature.ID == motherID:
+                    mother = creature
+                if creature.ID == fatherID:
+                    father = creature
+
+            #can be optimized for asexual breeding
             child = self.mate( mother , father )
             child.ID = self.issueID
             self.issueID += 1

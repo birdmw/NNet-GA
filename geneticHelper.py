@@ -3,10 +3,16 @@ import numpy as np
 from math import *
 
 def findBestCreature(population):
+    return findBestCreature_byFit(population)
+    #return findBestCreature_byMu(population)
+
+def findBestCreature_byMu(population):
     population.creatureList.sort(key = lambda x: x.ELO.mu, reverse=True)
     return population.creatureList[0]
-  
 
+def findBestCreature_byFit(population):
+    population.creatureList.sort(key = lambda x: x.fitness, reverse=True)
+    return population.creatureList[0]
 
 def printFinalOuts( population, ID ):
     tempList2 = []
@@ -29,20 +35,20 @@ def printFinalOuts( population, ID ):
             std3 = np.std(a)
             tempList2.append(std3)
     print "standard deviation of creature properties is: ", sum(tempList2) / float(len(tempList2))
-            
+
 
     for c in population.creatureList:
         if c.ID == ID:
             index = population.creatureList.index(c)
             break
-    
+
     print "exected outs:"
     for o in range (len(population.creatureList[index].expectedOutputs)):
         print population.creatureList[index].expectedOutputs[o]
 
     print "best creature outs: "
-    for o in range ( len ( population.creatureList[index].output ) ): 
+    for o in range ( len ( population.creatureList[index].output ) ):
         print population.creatureList[index].output[o].outbox
 
     print "ID", population.creatureList[index].ID  ,"MU: ",population.creatureList[index].ELO.mu,"Sigma: ",population.creatureList[index].ELO.sigma, "fitness: ",population.creatureList[index].fitness
-    
+

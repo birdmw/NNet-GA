@@ -44,34 +44,28 @@ class docy:
 
     def generateSquareTracker(self, inputCount=1, outputCount=1, cyclesPerRep=360, mag=[1,1], period=[360,360], phase_off=[0,0], dc_off=[0,0], reps=1):
         inputList, outputList = [] , []
-        inputs , outputs = [] , []
         posCounter = phase_off
+        putList=[]
 
-        for x in range(int(cyclesPerRep * reps)):
-            if x%period[0]==0:
-                posCounter[0]=0
-            if x%period[1]==0:
-                posCounter[1]=0
-            if posCounter[0]<(float(period[0])/2.0):
-                valin = mag[0]+dc_off[0]
+        for put in range(inputCount+outputCount):
+            putList=[]
+            for x in range(int(cyclesPerRep * reps)):
+                if posCounter[put] > period[put]:
+                    posCounter[put] = 0
+
+                if posCounter[put]<(float(period[put])/2.0):
+                    val = mag[put]+dc_off[put]
+                else:
+                    val = -1*(mag[put])+dc_off[put]
+
+                putList.append(val)
+                posCounter[put]+=1
+
+            if put < inputCount:
+                inputList.append(putList)
             else:
-                valin = -1*(mag[0]+dc_off[0])
+                outputList.append(putList)
 
-            if posCounter[1]<(float(period[1])/2.0):
-                valout = mag[1]+dc_off[1]
-            else:
-                valout = -1*(mag[1]+dc_off[1])
-
-            inputs.append(valin)
-            outputs.append(valout)
-
-            posCounter[0]+=1
-            posCounter[1]+=1
-
-        for y in range(inputCount):
-            inputList.append(inputs)
-        for z in range(outputCount):
-            outputList.append(outputs)
         self.data = [[inputList, outputList]]
 
     def generateSinAdder(self, inputCount=1, outputCount=1, cyclesPerRep=360, inp_abcd=[[1,1,0,0]], reps=1):

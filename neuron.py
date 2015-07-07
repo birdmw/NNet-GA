@@ -46,11 +46,11 @@ class Neuron:
                 self.fired = 1
             else:
                 self.fired = 0
-##                if not self.isOutput:
-##                    self.outbox = 0
+                if not self.isOutput:
+                    self.outbox = self.outbox/2
         else:
             self.fired = 0
-##            self.outbox = 0
+            self.outbox = self.outbox/2
 
         if not self.isInput:
             self.inbox = []

@@ -9,8 +9,9 @@ from trueskill import Rating, quality_1vs1, rate_1vs1,setup
 import numpy as np
 import pylab as P
 import matplotlib.pyplot as plt
+import time
 
-def evolve(pop, trainData, generations=10, setsPerGen=1,battles = "Random", CreatureCount=10):
+def evolve(pop, trainData, generations=10, setsPerGen=1,battles = "Random", CreatureCount=10, prunePerc = 0.5):
     for G in range (generations):
         print "GENERATION: ",G
         resetCreatures(pop)
@@ -18,83 +19,104 @@ def evolve(pop, trainData, generations=10, setsPerGen=1,battles = "Random", Crea
             print "  set: ", t
             pop = trainPopulation(pop, trainData, setsPerGen)
             #pop = battle_random(pop,battles)
-            pop = battle_perCreature(pop,battles)
-        pop = prune(pop, 0.75)
+            #pop = battle_perCreature(pop,battles)
+        pop = prune(pop, prunePerc)
         mutateIDs = pop.repopulate(matePercent = .25, asexualChance = 0.1)
         mutate(pop, mutateIDs)
-##        matePercent = 0.25
-##        asexualChance = 0.1
-##
-##        newCreatureIDList = []
-##        nonBreederIDs = []
-##        creatureCount = len ( pop.creatureList )
-##        nonBreederCount = int(creatureCount * max(min(1-matePercent,1.0),0.0))
-##
-##        #BUILD A LIST OF IDs FOR NON BREEDERS
-##        while len(nonBreederIDs) < (nonBreederCount):
-##            pop.creatureList.sort(key = lambda x: x.ELO.mu, reverse=False)
-##            i=0
-##            while (pop.creatureList[i].ID in nonBreederIDs):
-##                i+=1
-##            nonBreederIDs.append(pop.creatureList[i].ID)
-##            '''#save the children
-##            if len(nonBreederIDs) < (nonBreederCount):
-##                pop.creatureList.sort(key = lambda x: x.ELO.sigma, reverse=True)
-##                i=0
-##                while (pop.creatureList[i].ID in nonBreederIDs):
-##                    i+=1
-##                nonBreederIDs.append(pop.creatureList[i].ID)
-##            '''
-##        #FIND PARENTS FROM BREEDERS
-##
-##        #LOOP OVER THIS##################################################
-##        breederIDs = []
-##        for creature in pop.creatureList:
-##            if not (creature.ID in nonBreederIDs):
-##                breederIDs.append(creature.ID)
-##
-##
-##        #PICK PARENTS
-##        asexualOffspringList = []
-##        while (len(pop.creatureList) < pop.creatureCount):
-##            motherID = choice(breederIDs)
-##            fatherID = choice(breederIDs)
-##            if random() < asexualChance:
-##                fatherID = motherID
-##
-##            for creature in pop.creatureList:
-##                if creature.ID == motherID:
-##                    mother = creature
-##                if creature.ID == fatherID:
-##                    father = creature
-##
-##            #can be optimized for asexual breeding
-##            child = DummyCreature(3,1,1)
-##            child = mate(pop, mother , father, child )
-##            child.ID = pop.issueID
-##            pop.issueID += 1
-##            if mother == father:
-##                asexualOffspringList.append(child.ID)
-##            pop.creatureList.append( child )
-##        pop.sortByID()
 
-##        while len(pop.creatureList) < CreatureCount:
-##            pop.creatureList.append(DummyCreature())
-##            pop.creatureList[-1].ID = pop.issueID
-##            pop.issueID += 1
+def evolve_genStats(pop, trainData, generations=10, setsPerGen=1,battles = "Random", CreatureCount=10, prunePerc = 0.5):
+    bestFits = []
+    gens = []
+    for G in range (generations):
+        print "GENERATION: ",G
+        resetCreatures(pop)
+        for t in range(setsPerGen):
+            print "  set: ", t
+            pop = trainPopulation(pop, trainData, setsPerGen)
+            #pop = battle_random(pop,battles)
+            #pop = battle_perCreature(pop,battles)
+        pop = prune(pop, prunePerc)
+        mutateIDs = pop.repopulate(matePercent = .15, asexualChance = 0.75)
+        mutate(pop, mutateIDs, mutateAmount = 0.1)
 
+        #Find best creature stats
+        bestCreature = findBestCreature(pop)
+        print 'best creature ID:',bestCreature.ID
+        print 'best creature fitness:',bestCreature.fitness
+        #print 'best creature ELO:',bestCreature.ELO
+        print 'best creature age:',bestCreature.age
 
-            #pop.addCreature()
+        bestFits.append(bestCreature.fitness)
+        gens.append(G)
 
-##        pop = pop.repopulate()
+        #if (G+1)%10 == 0:
+    nID_list=[]
+    a_list=[]
+    b_list=[]
+    c_list=[]
+    d_list=[]
+    e_list=[]
 
+    for Nind in range(len(bestCreature.neuronList)):
+        for Sind in range(len(bestCreature.neuronList[Nind].synapseList)):
+            nID_list.append(bestCreature.neuronList[Nind].ID)
+            a_list.append(bestCreature.neuronList[Nind].synapseList[Sind].propertyList[0])
+            b_list.append(bestCreature.neuronList[Nind].synapseList[Sind].propertyList[1])
+            c_list.append(bestCreature.neuronList[Nind].synapseList[Sind].propertyList[2])
+            d_list.append(bestCreature.neuronList[Nind].synapseList[Sind].propertyList[3])
+            e_list.append(bestCreature.neuronList[Nind].synapseList[Sind].propertyList[4])
+    plt.figure()
+    plt.subplot(4, 1, 1)
+    plt.plot(nID_list, a_list, 'r.')
+    plt.ylabel('a')
 
+    plt.subplot(4, 1, 2)
+    plt.plot(nID_list, b_list, 'g.')
+    plt.ylabel('b')
 
+    plt.subplot(4, 1, 3)
+    plt.plot(nID_list,c_list, 'b.')
+    plt.ylabel('c')
+
+    plt.subplot(4, 1, 4)
+    plt.plot(nID_list,e_list, 'y.')
+    plt.xlabel('e')
+    plt.ylabel('ID')
+    #P.show()
+
+    plt.figure()
+    plt.plot(gens,bestFits, 'r.')
+    plt.xlabel('Generations')
+    plt.ylabel('Best Fitness')
+    P.show()
 
 
+def prune(pop, killPercent=.50, battleThresh=5):
+    #return prune_byMu(pop, killPercent, battleThresh)
+    return prune_byFitness(pop, killPercent, battleThresh)
 
+def prune_byFitness(pop, killPercent=.50, battleThresh=5):
+##    print "before prune statistics:"
+##    pop.printAverages()
+    saveIDs = list()
+    saveCount = int(len(pop.creatureList) * max(min(1.0-killPercent,1.0),0.0))
 
-def prune ( pop , killPercent = .50, battleThresh = 5 ):
+    pop.creatureList.sort(key = lambda x: x.fitness, reverse=True)
+    while len(saveIDs) < (saveCount): #This could be more efficient. Shouldn't need to loop. Definety not double loop
+        i=0
+        while (pop.creatureList[i].ID in saveIDs):
+            i+=1
+        saveIDs.append(pop.creatureList[i].ID)
+
+    finalCreatureList = []
+    for creature in pop.creatureList:
+      if (creature.ID in saveIDs):
+        finalCreatureList.append(creature)
+    pop.creatureList = finalCreatureList
+    pop.sortByID()
+    return pop
+
+def prune_byMu ( pop , killPercent = .50, battleThresh = 5 ):
 ##    print "before prune statistics:"
 ##    pop.printAverages()
     saveIDs = list()
@@ -129,8 +151,7 @@ def prune ( pop , killPercent = .50, battleThresh = 5 ):
 ##    print "after prune statistics:"
 ##    pop.printAverages()
 
-def mutate (pop, mutateIDs, mutateAmount = .02):
-
+def mutate (pop, mutateIDs, mutateAmount = 0.05):
     for ID in mutateIDs:
         index = pop.IDToIndex(ID)
 
@@ -316,15 +337,18 @@ def resetCreatures(pop):
     for c in pop.creatureList:
         c.ELO = Rating()
         c.battleCount = 0
-        c.age = 0
 
 def main(): #trainData is docy() type
-    CreatureCount = 500
-    generations=20
+    start =  time.localtime()
+
+    CreatureCount = 1000
+    generations=100
     setsPerGen=1
-    battles = 3
-    NeuronCount =7
-    InputCount=1
+    battles = 4
+    prunePerc = 0.25
+
+    NeuronCount =10
+    InputCount=2
     OutputCount=1
 
     population = Population(CreatureCount, NeuronCount, InputCount, OutputCount)
@@ -338,21 +362,29 @@ def main(): #trainData is docy() type
     #cycleCount=int(360/(min(b)))
     #trainData.generateSinTracker(InputCount, OutputCount,cycleCount,a,b,c,d)
 
-    mag=[1,1]
-    period=[90,90]
-    phase_off=[0,0]
-    dc_off=[0,0]
-    cycleCount=max(period)
+    mag=[1,1,1]
+    period=[90,45,90]
+    phase_off=[0,0,20]
+    dc_off=[0,0,0]
+    cycleCount=max(period)*2
     trainData.generateSquareTracker(InputCount, OutputCount, cycleCount, mag, period, phase_off, dc_off)
+
+    print 'ins:'
+    print trainData.data[0][0]
+    print 'outs:'
+    print trainData.data[0][1]
 
 ##    cycleCount = 180
 ##    inp_abcd=[[1,4,0,0],[1,2,0,0]]
 ##    trainData.generateSinAdder(InputCount, OutputCount, cycleCount, inp_abcd, reps=1)
 
-    #trainData.generateConstant(len(population.creatureList[0].input), len(population.creatureList[0].output), constantIn=1, constantOut=2)
+    #constIn = 1
+    #constOut = 2
+    #trainData.generateConstant(InputCount, OutputCount, constIn, constOut)
 
     #evolve(population, trainData, generations=3, setsPerGen=1,battles = "Random")
-    evolve(population, trainData, generations, setsPerGen,battles, CreatureCount)
+    #evolve(population, trainData, generations, setsPerGen,battles, CreatureCount, prunePerc)
+    evolve_genStats(population, trainData, generations, setsPerGen,battles, CreatureCount, prunePerc)
     print 'Training newbies...'
     resetCreatures(population)
     trainPopulation(population, trainData, setsPerGen)
@@ -364,6 +396,18 @@ def main(): #trainData is docy() type
 ##    battle_perCreature(population,battles)
 
     bestCreature = findBestCreature(population)
+
+    stop = time.localtime()
+    delta = []
+    for i in range(len(stop)):
+        delta.append( max(stop[i] - start[i],0))
+
+    hours = delta[3]
+    mins = delta[4]
+    secs = delta[5]
+
+    print 'Test duration:'
+    print hours,'H ', mins,'M ', secs,'S'
     '''
     print 'Best creatures offset:', bestCreature.offset
 
